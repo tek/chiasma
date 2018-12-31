@@ -1,0 +1,42 @@
+name: chiasma
+version: 0.1.0.0
+github: "tek/chiasma-hs"
+synopsis: tmux api
+description: Please see the README on GitHub at <https://github.com/tek/chiasma-hs>
+license: MIT
+license-file: LICENSE
+author: "Torsten Schmits"
+maintainer: "tek@tryp.io"
+copyright: "2019 Torsten Schmits"
+category: Terminal
+build-type: Simple
+
+extra-source-files:
+- README.md
+
+dependencies:
+- base >= 4.7 && < 5
+- transformers
+- resourcet
+- free
+- mtl
+- typed-process
+- bytestring
+- unliftio
+- split
+- data-default-class
+
+library:
+ source-dirs: lib
+
+tests:
+  chiasma-unit:
+    main: SpecMain.hs
+    source-dirs: test/u
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - chiasma
+    - HTF
