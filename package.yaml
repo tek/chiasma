@@ -25,6 +25,10 @@ dependencies:
 - unliftio
 - split
 - data-default-class
+- directory
+- filepath
+- unix
+- posix-pty
 
 library:
  source-dirs: lib

@@ -12,6 +12,7 @@ import Chiasma.Data.TmuxThunk (TmuxCommandFailed)
 import Chiasma.Monad.Buffered (runTmux)
 import Chiasma.Monad.Tmux (TmuxProg)
 import qualified Chiasma.Monad.Tmux as Tmux (read, write)
+import Chiasma.Test.Tmux (tmuxSpec)
 
 number :: TmuxProg a String
 number = return "1"
@@ -26,11 +27,7 @@ prog = do
 runProg :: TmuxNative -> IO [String]
 runProg api = runTmux api prog
 
-testTmux :: IO TmuxNative
-testTmux = undefined
-
 test_buffered :: IO ()
 test_buffered = do
-  api <- testTmux
-  result <- try $ runProg api
+  result <- tmuxSpec (try . runProg)
   assertEqual True (isLeft (result :: Either TmuxCommandFailed [String]))
