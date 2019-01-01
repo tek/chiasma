@@ -10,7 +10,7 @@ import System.Posix.Terminal (openPseudoTerminal)
 import System.Posix.Types (Fd)
 import System.Posix.IO (fdToHandle)
 import UnliftIO.Temporary (withSystemTempDirectory)
-import Chiasma.Api (TmuxNative(..))
+import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Test.File (fixture)
 
 testTmuxProcessConfigAtPty :: FilePath -> FilePath -> Fd -> Pty -> IO (ProcessConfig () () ())

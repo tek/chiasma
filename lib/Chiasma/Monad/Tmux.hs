@@ -5,12 +5,12 @@ module Chiasma.Monad.Tmux(
 ) where
 
 import Control.Monad.Free (Free, liftF)
-import Chiasma.Data.TmuxThunk (TmuxThunk(..), Cmd(..), Args(..))
+import Chiasma.Data.TmuxThunk (TmuxThunk(..), cmd)
 
 type TmuxProg a = Free (TmuxThunk a)
 
-read :: String -> [String] -> TmuxProg a [String]
-read cmd args = liftF $ Read (Cmd cmd) (Args args) id
+read :: String -> [String] -> TmuxProg a [[String]]
+read name args = liftF $ Read (cmd name args) id
 
 write :: String -> [String] -> TmuxProg a ()
-write cmd args = liftF $ Write (Cmd cmd) (Args args) id
+write name args = liftF $ Write (cmd name args) id

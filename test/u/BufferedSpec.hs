@@ -6,28 +6,27 @@ module BufferedSpec(
 
 import Data.Either (isLeft)
 import Test.Framework
-import UnliftIO (try)
-import Chiasma.Api (TmuxNative(..))
-import Chiasma.Data.TmuxThunk (TmuxCommandFailed)
+import Chiasma.Native.Api (TmuxNative(..))
+import Chiasma.Data.TmuxThunk (TmuxError)
 import Chiasma.Monad.Buffered (runTmux)
 import Chiasma.Monad.Tmux (TmuxProg)
 import qualified Chiasma.Monad.Tmux as Tmux (read, write)
 import Chiasma.Test.Tmux (tmuxSpec)
 
-number :: TmuxProg a String
-number = return "1"
-
-prog :: TmuxProg a [String]
+prog :: TmuxProg a ([[String]], [[String]], [[String]])
 prog = do
-  a <- number
-  out <- Tmux.read "list-panes" ["-t", "%" ++ a]
-  Tmux.write "new-windowXXX" []
-  return out
+  panes1 <- Tmux.read "list-panes" ["-t", "%0"]
+  Tmux.write "new-window" []
+  Tmux.write "new-window" []
+  wins <- Tmux.read "list-windows" []
+  panes <- Tmux.read "list-panes" ["-a"]
+  return (panes1, panes, wins)
 
-runProg :: TmuxNative -> IO [String]
+runProg :: TmuxNative -> IO (Either TmuxError ([[String]], [[String]], [[String]]))
 runProg api = runTmux api prog
 
 test_buffered :: IO ()
 test_buffered = do
-  result <- tmuxSpec (try . runProg)
-  assertEqual True (isLeft (result :: Either TmuxCommandFailed [String]))
+  result <- tmuxSpec runProg
+  print result
+  assertEqual True (isLeft (result :: Either TmuxError ([[String]], [[String]], [[String]])))

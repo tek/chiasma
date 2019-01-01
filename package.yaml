@@ -29,6 +29,8 @@ dependencies:
 - filepath
 - unix
 - posix-pty
+- parsec
+- either
 
 library:
  source-dirs: lib
