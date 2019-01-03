@@ -29,7 +29,7 @@ newtype Cmds =
   deriving (Eq, Show)
 
 data TmuxThunk a next =
-  Read Cmd ([[String]] -> next)
+  Read Cmd (String -> Either TmuxError a) ([a] -> next)
   |
   Write Cmd (() -> next)
   deriving Functor
@@ -38,6 +38,10 @@ data TmuxError =
   TmuxProcessFailed Cmds String
   |
   TmuxOutputParsingFailed Cmds String ParseError
+  |
+  TmuxNoOutput Cmds
+  |
+  TmuxDecodingFailed Cmds String String
   deriving (Eq, Show)
 
 cmd :: String -> [String] -> Cmd

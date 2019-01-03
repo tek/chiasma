@@ -11,4 +11,4 @@ import Chiasma.Native.Process (nativeTmuxProcess)
 newtype TmuxNative = TmuxNative FilePath
 
 instance TmuxApi TmuxNative where
-  runCommands (TmuxNative socket) cmds = ExceptT $ nativeTmuxProcess socket cmds
+  runCommands (TmuxNative socket) decode cmds = ExceptT $ nativeTmuxProcess socket decode cmds

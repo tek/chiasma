@@ -16,9 +16,9 @@ instance Default TmuxState where
   def = TmuxState def
 
 interpret :: (MonadIO m, TmuxApi api) => TmuxState -> api -> TmuxProg a b -> ExceptT TmuxError m b
-interpret (TmuxState cmds) api (Pure a) = a <$ runCommands api (Cmds cmds)
-interpret (TmuxState cmds) api (Free (Read cmd next)) = do
-  a <- runCommands api $ Cmds (cmd : cmds)
+interpret (TmuxState cmds) api (Pure a) = a <$ runCommands api (const $ Right ()) (Cmds cmds)
+interpret (TmuxState cmds) api (Free (Read cmd decode next)) = do
+  a <- runCommands api decode $ Cmds (cmd : cmds)
   interpret def api (next a)
 interpret _ _ _ = undefined
 
