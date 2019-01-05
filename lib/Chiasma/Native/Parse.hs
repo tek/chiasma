@@ -34,7 +34,10 @@ parseBlock = do
   manyTill tillEol (try endLine)
 
 resultParser :: GenParser Char st [[String]]
-resultParser = many parseBlock
+resultParser = do
+  result <- many (try parseBlock)
+  skipMany tillEol
+  return result
 
 resultLines :: String -> Either ParseError [[String]]
 resultLines = parse resultParser "tmux output"

@@ -20,6 +20,7 @@ dependencies:
 - resourcet
 - free
 - mtl
+- process
 - typed-process
 - bytestring
 - unliftio
@@ -31,7 +32,6 @@ dependencies:
 - posix-pty
 - parsec
 - either
-- ghc-prim
 - lens
 
 default-extensions:

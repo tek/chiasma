@@ -9,7 +9,7 @@ import Chiasma.Codec.Decode (TmuxDecodeError)
 import Chiasma.Data.TmuxThunk (Cmds, TmuxError)
 
 class TmuxApi a where
-  runCommands :: (MonadIO m) => a -> ([String] -> Either TmuxDecodeError b) -> Cmds -> ExceptT TmuxError m [b]
+  runCommands :: MonadIO m => a -> ([String] -> Either TmuxDecodeError b) -> Cmds -> ExceptT TmuxError m [b]
 
 class DecodeTmuxResponse a where
   decode :: String -> Either TmuxError a
