@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module CodecSpec(
   htf_thisModulesTests,

@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 

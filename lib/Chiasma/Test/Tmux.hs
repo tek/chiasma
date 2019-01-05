@@ -45,8 +45,8 @@ testTmuxProcessConfig socket confFile (Terminal handle pty) = do
   return $ stdio $ proc "tmux" ["-S", socket, "-f", confFile]
 
 killPid :: Integral a => a -> IO ()
-killPid pid =
-  Signal.signalProcess Signal.killProcess (fromIntegral pid)
+killPid =
+  Signal.signalProcess Signal.killProcess . fromIntegral
 
 killProcess :: Process () () () -> IO ()
 killProcess prc = do
