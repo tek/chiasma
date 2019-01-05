@@ -11,6 +11,7 @@ import Text.ParserCombinators.Parsec (
   skipMany,
   manyTill,
   notFollowedBy,
+  try,
   )
 import Text.Parsec.Char (endOfLine, string, anyChar)
 
@@ -30,10 +31,10 @@ parseBlock :: GenParser Char st [String]
 parseBlock = do
   _ <- skipMany notBeginLine
   _ <- beginLine
-  manyTill tillEol endLine
+  manyTill tillEol (try endLine)
 
 resultParser :: GenParser Char st [[String]]
 resultParser = many parseBlock
 
 resultLines :: String -> Either ParseError [[String]]
-resultLines = parse resultParser "none"
+resultLines = parse resultParser "tmux output"

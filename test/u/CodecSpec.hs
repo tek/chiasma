@@ -8,8 +8,7 @@ import GHC.Generics (Generic)
 import Test.Framework
 import Chiasma.Data.Pane (PaneId(..))
 import Chiasma.Data.Window (WindowId(..))
-import Chiasma.Codec (TmuxCodec(decode, query))
-import Chiasma.Codec.Query (Query(..))
+import Chiasma.Codec (TmuxCodec(decode, query), TmuxQuery(TmuxQuery))
 
 data Dat =
   Dat {
@@ -26,6 +25,4 @@ test_decode =
 
 test_query :: IO ()
 test_query =
-  assertEqual ["#{pane_id}", "#{window_id}"] q
-  where
-    Query q = query :: Query Dat
+  assertEqual (TmuxQuery "#{pane_id} #{window_id}") (query @Dat)

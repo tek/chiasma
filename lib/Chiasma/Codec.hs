@@ -1,13 +1,19 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Chiasma.Codec(
   TmuxCodec(..),
+  TmuxQuery(..),
 ) where
 
 import GHC.Generics (Generic, Rep, to)
 import Chiasma.Codec.Decode (TmuxDataDecode(..), TmuxDecodeError(TooManyFields))
-import Chiasma.Codec.Query (TmuxDataQuery(..), Query(..))
+import Chiasma.Codec.Query (TmuxDataQuery(..))
+
+newtype TmuxQuery =
+  TmuxQuery { unQ :: String }
+  deriving (Eq, Show)
 
 genDecode :: (Generic a, TmuxDataDecode (Rep a)) => [String] -> Either TmuxDecodeError a
 genDecode fields = do
@@ -21,6 +27,6 @@ class TmuxCodec a where
     default decode :: (Generic a, TmuxDataDecode (Rep a)) => [String] -> Either TmuxDecodeError a
     decode = genDecode
 
-    query :: Query a
-    default query :: (Generic a, TmuxDataQuery (Rep a)) => Query a
-    query = fmap to query'
+    query :: TmuxQuery
+    default query :: (Generic a, TmuxDataQuery (Rep a)) => TmuxQuery
+    query = TmuxQuery $ unwords $ query' @(Rep a)

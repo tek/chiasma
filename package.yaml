@@ -32,9 +32,18 @@ dependencies:
 - parsec
 - either
 - ghc-prim
+- lens
+
+default-extensions:
+- ExistentialQuantification
+- UnicodeSyntax
+- TypeApplications
+- ScopedTypeVariables
+- DeriveGeneric
+- DeriveAnyClass
 
 library:
- source-dirs: lib
+  source-dirs: lib
 
 tests:
   chiasma-unit:

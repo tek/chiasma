@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Chiasma.Data.TmuxThunk(
   CmdName(..),
@@ -11,6 +12,7 @@ module Chiasma.Data.TmuxThunk(
 ) where
 
 import Text.ParserCombinators.Parsec (ParseError)
+import Chiasma.Codec.Decode (TmuxDecodeError)
 
 newtype CmdName =
   CmdName String
@@ -28,21 +30,24 @@ newtype Cmds =
   Cmds [Cmd]
   deriving (Eq, Show)
 
-data TmuxThunk a next =
-  Read Cmd (String -> Either TmuxError a) ([a] -> next)
+data TmuxError =
+  ProcessFailed Cmds String
+  |
+  OutputParsingFailed Cmds [String] ParseError
+  |
+  NoOutput Cmds
+  |
+  DecodingFailed Cmds String TmuxDecodeError
+  deriving (Eq, Show)
+
+data TmuxThunk next =
+  ∀ a . Read Cmd ([String] -> Either TmuxDecodeError a) ([a] -> next)
   |
   Write Cmd (() -> next)
-  deriving Functor
+  |
+  Failed TmuxError
 
-data TmuxError =
-  TmuxProcessFailed Cmds String
-  |
-  TmuxOutputParsingFailed Cmds String ParseError
-  |
-  TmuxNoOutput Cmds
-  |
-  TmuxDecodingFailed Cmds String String
-  deriving (Eq, Show)
+deriving instance Functor TmuxThunk
 
 cmd :: String -> [String] -> Cmd
 cmd name args = Cmd (CmdName name) (CmdArgs args)

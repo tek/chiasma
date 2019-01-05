@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Chiasma.Monad.Tmux(
   Chiasma.Monad.Tmux.read,
   write,
@@ -5,13 +7,15 @@ module Chiasma.Monad.Tmux(
 ) where
 
 import Control.Monad.Free (Free, liftF)
-import Chiasma.Api.Class (DecodeTmuxResponse(..))
+import Chiasma.Codec (TmuxCodec, TmuxQuery(unQ))
+import qualified Chiasma.Codec as TmuxCodec (TmuxCodec(decode, query))
 import Chiasma.Data.TmuxThunk (TmuxThunk(..), cmd)
 
-type TmuxProg a = Free (TmuxThunk a)
+type TmuxProg = Free TmuxThunk
 
-read :: DecodeTmuxResponse a => String -> [String] -> TmuxProg a [a]
-read name args = liftF $ Read (cmd name args) decode id
+read :: ∀ a . TmuxCodec a => String -> [String] -> TmuxProg [a]
+read name args =
+  liftF $ Read (cmd name (args ++ ["-F", "'" ++ unQ (TmuxCodec.query @a) ++ "'"])) TmuxCodec.decode id
 
-write :: String -> [String] -> TmuxProg a ()
+write :: String -> [String] -> TmuxProg ()
 write name args = liftF $ Write (cmd name args) id

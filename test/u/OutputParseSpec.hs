@@ -7,13 +7,16 @@ module OutputParseSpec(
 import Test.Framework
 import Chiasma.Native.Parse (resultLines)
 
+paneLine :: String
+paneLine = "%0 100 100"
+
 tmuxOutput :: String
 tmuxOutput = unlines [
   "%begin 123",
   "%end 123",
   "%session-changed $0 0",
   "%begin 234",
-  "a",
+  paneLine,
   "b",
   "%end 234",
   "%begin 345",
@@ -24,4 +27,4 @@ tmuxOutput = unlines [
 
 test_outputParse :: IO ()
 test_outputParse =
-  assertEqual (Right [[], ["a", "b"], ["c", "d"]]) (resultLines tmuxOutput)
+  assertEqual (Right [[], [paneLine, "b"], ["c", "d"]]) (resultLines tmuxOutput)

@@ -3,6 +3,8 @@ module Chiasma.Data.Pane(
   PaneId(..),
 ) where
 
+import GHC.Generics (Generic)
+import Chiasma.Codec (TmuxCodec)
 import Chiasma.Codec.Decode (TmuxPrimDecode(..), parseId)
 
 newtype PaneId =
@@ -13,4 +15,9 @@ instance TmuxPrimDecode PaneId where
   primDecode = parseId PaneId '%'
 
 data Pane =
-  Pane PaneId Int Int
+  Pane {
+    paneId :: PaneId,
+    paneWidth :: Int,
+    paneHeight :: Int
+  }
+  deriving (Eq, Show, Generic, TmuxCodec)

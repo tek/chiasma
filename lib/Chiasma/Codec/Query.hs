@@ -1,35 +1,27 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Chiasma.Codec.Query(
   TmuxDataQuery(..),
-  Query(..),
 ) where
 
 import GHC.Generics ((:*:), D1, C1, S1, Selector, selName)
 import GHC.Unicode (isUpper, toLower)
 
-newtype Query a =
-  Query { unQ :: [String] }
-  deriving Functor
-
 class TmuxDataQuery f where
-  query' :: Query (f a)
+  query' :: [String]
 
 instance (TmuxDataQuery f, TmuxDataQuery g) => TmuxDataQuery (f :*: g) where
-  query' =
-    Query (
-      unQ (query' :: Query (f a)) ++
-      unQ (query' :: Query (g a))
-      )
+  query' = query' @f ++ query' @g
 
 instance TmuxDataQuery f => (TmuxDataQuery (D1 c f)) where
-  query' = Query (unQ (query' :: Query (f a)))
+  query' = query' @f
 
 instance TmuxDataQuery f => (TmuxDataQuery (C1 c f)) where
-  query' = Query (unQ (query' :: Query (f a)))
+  query' = query' @f
 
 trans :: Char -> String
 trans a | isUpper a = ['_', toLower a]
@@ -43,6 +35,6 @@ formatQuery q = "#{" ++ snakeCase q ++ "}"
 
 instance Selector s => (TmuxDataQuery (S1 s f)) where
   query' =
-    Query [formatQuery query]
+    [formatQuery query]
     where
       query = selName (undefined :: t s f p)

@@ -4,7 +4,7 @@ module Chiasma.Monad.Buffered(
 
 import Control.Monad.Free (Free(..))
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Data.Default.Class (Default(def))
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxThunk(..), TmuxError)
@@ -15,12 +15,15 @@ newtype TmuxState = TmuxState [Cmd]
 instance Default TmuxState where
   def = TmuxState def
 
-interpret :: (MonadIO m, TmuxApi api) => TmuxState -> api -> TmuxProg a b -> ExceptT TmuxError m b
+interpret :: (MonadIO m, TmuxApi api) => TmuxState -> api -> TmuxProg b -> ExceptT TmuxError m b
 interpret (TmuxState cmds) api (Pure a) = a <$ runCommands api (const $ Right ()) (Cmds cmds)
 interpret (TmuxState cmds) api (Free (Read cmd decode next)) = do
   a <- runCommands api decode $ Cmds (cmd : cmds)
   interpret def api (next a)
-interpret _ _ _ = undefined
+interpret (TmuxState cmds) api (Free (Write cmd next)) =
+  interpret (TmuxState (cmd : cmds)) api (next ())
+interpret _ _ (Free (Failed err)) =
+  throwE err
 
-runTmux :: (MonadIO m, TmuxApi api) => api -> TmuxProg a b -> m (Either TmuxError b)
+runTmux :: (MonadIO m, TmuxApi api) => api -> TmuxProg b -> m (Either TmuxError b)
 runTmux api prog = runExceptT $ interpret def api prog
