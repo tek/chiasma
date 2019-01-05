@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Chiasma.Codec.Decode(
   TmuxDecodeError(..),
@@ -10,8 +10,8 @@ module Chiasma.Codec.Decode(
   readInt,
 ) where
 
-import GHC.Generics ((:*:)(..), D1, C1, S1, K1(..), M1(..))
-import Data.Bifunctor (first)
+import GHC.Generics ((:*:)(..), K1(..), M1(..))
+import Data.Bifunctor (first, second)
 import Text.Read (readEither)
 import Text.ParserCombinators.Parsec (
   GenParser,
@@ -38,25 +38,14 @@ class TmuxDataDecode f where
   decode' :: [String] -> Either TmuxDecodeError ([String], f a)
 
 instance (TmuxDataDecode f, TmuxDataDecode g) => TmuxDataDecode (f :*: g) where
-  decode' as = do
-    (rest, left) <- decode' as
+  decode' fields = do
+    (rest, left) <- decode' fields
     (rest1, right) <- decode' rest
     return (rest1, left :*: right)
 
-instance TmuxDataDecode f => (TmuxDataDecode (D1 c f)) where
-  decode' fields = do
-    (rest, sub) <- decode' fields
-    return (rest, M1 sub)
-
-instance TmuxDataDecode a => (TmuxDataDecode (C1 c a)) where
-  decode' fields = do
-    (rest, sub) <- decode' fields
-    return (rest, M1 sub)
-
-instance TmuxDataDecode a => (TmuxDataDecode (S1 c a)) where
-  decode' fields = do
-    (rest, sub) <- decode' fields
-    return (rest, M1 sub)
+instance TmuxDataDecode f => (TmuxDataDecode (M1 i c f)) where
+  decode' fields =
+    second M1 <$> decode' fields
 
 instance TmuxPrimDecode a => (TmuxDataDecode (K1 c a)) where
   decode' (a:as) = do

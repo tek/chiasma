@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module CodecSpec(
   htf_thisModulesTests,
@@ -9,19 +8,24 @@ import GHC.Generics (Generic)
 import Test.Framework
 import Chiasma.Data.Pane (PaneId(..))
 import Chiasma.Data.Window (WindowId(..))
-import Chiasma.Codec (TmuxCodec(decode))
-import Chiasma.Codec.Decode (TmuxDecodeError)
+import Chiasma.Codec (TmuxCodec(decode, query))
+import Chiasma.Codec.Query (Query(..))
 
 data Dat =
   Dat {
     paneId :: PaneId,
     windowId :: WindowId
   }
-  deriving (Eq, Show, Generic, TmuxCodec)
+  deriving (Eq, Show, Generic)
 
-decodeTest :: [String] -> Either TmuxDecodeError Dat
-decodeTest = decode
+instance TmuxCodec Dat
 
-test_codec :: IO ()
-test_codec =
-  assertEqual (Right $ Dat (PaneId 1) (WindowId 2)) $ decodeTest ["%1", "@2"]
+test_decode :: IO ()
+test_decode =
+  assertEqual (Right $ Dat (PaneId 1) (WindowId 2)) $ decode ["%1", "@2"]
+
+test_query :: IO ()
+test_query =
+  assertEqual ["#{pane_id}", "#{window_id}"] q
+  where
+    Query q = query :: Query Dat

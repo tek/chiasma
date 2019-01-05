@@ -31,6 +31,7 @@ dependencies:
 - posix-pty
 - parsec
 - either
+- ghc-prim
 
 library:
  source-dirs: lib
