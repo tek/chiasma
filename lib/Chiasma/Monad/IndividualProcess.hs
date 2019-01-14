@@ -1,4 +1,5 @@
-module Chiasma.Monad.Buffered(
+module Chiasma.Monad.IndividualProcess(
+  TmuxProg,
   runTmux,
 ) where
 
@@ -8,14 +9,15 @@ import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Data.Default.Class (Default(def))
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxThunk(..), TmuxError)
-import Chiasma.Monad.Tmux (TmuxProg)
+
+type TmuxProg = Free TmuxThunk
 
 newtype TmuxState = TmuxState [Cmd]
 
 instance Default TmuxState where
   def = TmuxState def
 
-interpret :: (MonadIO m, TmuxApi api) => TmuxState -> api -> TmuxProg b -> ExceptT TmuxError m b
+interpret :: (MonadIO m, TmuxApi api) => TmuxState -> api -> TmuxProg a -> ExceptT TmuxError m a
 interpret (TmuxState cmds) api (Pure a) = a <$ runCommands api (const $ Right ()) (Cmds cmds)
 interpret (TmuxState cmds) api (Free (Read cmd decode next)) = do
   a <- runCommands api decode $ Cmds (cmd : cmds)
@@ -25,5 +27,5 @@ interpret (TmuxState cmds) api (Free (Write cmd next)) =
 interpret _ _ (Free (Failed err)) =
   throwE err
 
-runTmux :: (MonadIO m, TmuxApi api) => api -> TmuxProg b -> m (Either TmuxError b)
+runTmux :: (MonadIO m, TmuxApi api) => api -> TmuxProg a -> m (Either TmuxError a)
 runTmux api prog = runExceptT $ interpret def api prog

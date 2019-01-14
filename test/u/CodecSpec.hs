@@ -5,8 +5,7 @@ module CodecSpec(
 ) where
 import GHC.Generics (Generic)
 import Test.Framework
-import Chiasma.Data.Pane (PaneId(..))
-import Chiasma.Data.Window (WindowId(..))
+import Chiasma.Data.TmuxId (PaneId(..), WindowId(..))
 import Chiasma.Codec (TmuxCodec(decode, query), TmuxQuery(TmuxQuery))
 
 data Dat =

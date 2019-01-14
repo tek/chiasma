@@ -22,7 +22,7 @@ import System.Process.Typed (
   useHandleClose,
   unsafeProcessHandle,
   )
-import UnliftIO (finally)
+import UnliftIO (finally, throwString)
 import UnliftIO.Temporary (withSystemTempDirectory)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Test.File (fixture)
@@ -34,7 +34,7 @@ unsafeTerminal = do
   (_, slave) <- openPseudoTerminal
   mayPty <- createPty slave
   handle <- fdToHandle slave
-  pty <- maybe (error "couldn't spawn pty") return mayPty
+  pty <- maybe (throwString "couldn't spawn pty") return mayPty
   return $ Terminal handle pty
 
 testTmuxProcessConfig :: FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
@@ -64,7 +64,7 @@ withTestTmux thunk tempDir = do
   conf <- fixture "u" "tmux.conf"
   terminal <- unsafeTerminal
   pc <- testTmuxProcessConfig socket conf terminal
-  withProcess pc $ runAndKillTmux thunk (TmuxNative socket)
+  withProcess pc $ runAndKillTmux thunk (TmuxNative $ Just socket)
 
 tmuxSpec :: (TmuxNative -> IO a) -> IO a
 tmuxSpec thunk =

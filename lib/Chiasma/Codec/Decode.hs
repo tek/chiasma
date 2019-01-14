@@ -20,6 +20,7 @@ import Text.ParserCombinators.Parsec (
   many,
   )
 import Text.Parsec.Char (char, digit)
+import Chiasma.Data.TmuxId (SessionId(..), WindowId(..), PaneId(..), sessionPrefix, windowPrefix, panePrefix)
 
 data TmuxDecodeError =
   ParseFailure String ParseError
@@ -68,3 +69,12 @@ parseId cons sym input = do
   num <- first (ParseFailure "id") $ parse (idParser sym) "none" input
   i <- readInt input num
   return $ cons i
+
+instance TmuxPrimDecode SessionId where
+  primDecode = parseId SessionId sessionPrefix
+
+instance TmuxPrimDecode WindowId where
+  primDecode = parseId WindowId windowPrefix
+
+instance TmuxPrimDecode PaneId where
+  primDecode = parseId PaneId panePrefix

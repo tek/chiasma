@@ -13,14 +13,14 @@ import GHC.Unicode (isUpper, toLower)
 class TmuxDataQuery f where
   query' :: [String]
 
-instance (TmuxDataQuery f, TmuxDataQuery g) => TmuxDataQuery (f :*: g) where
-  query' = query' @f ++ query' @g
-
 instance TmuxDataQuery f => (TmuxDataQuery (D1 c f)) where
   query' = query' @f
 
 instance TmuxDataQuery f => (TmuxDataQuery (C1 c f)) where
   query' = query' @f
+
+instance (TmuxDataQuery f, TmuxDataQuery g) => TmuxDataQuery (f :*: g) where
+  query' = query' @f ++ query' @g
 
 trans :: Char -> String
 trans a | isUpper a = ['_', toLower a]

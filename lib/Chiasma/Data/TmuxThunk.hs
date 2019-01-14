@@ -38,6 +38,10 @@ data TmuxError =
   NoOutput Cmds
   |
   DecodingFailed Cmds String TmuxDecodeError
+  |
+  InvalidOutput String String
+  |
+  Other String
   deriving (Eq, Show)
 
 data TmuxThunk next =

@@ -1,25 +1,27 @@
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 
-module BufferedSpec(
+module TmuxStreamSpec(
   htf_thisModulesTests
 ) where
 
+import Control.Monad.Free.Class (MonadFree)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Test.Framework
-import Chiasma.Native.Api (TmuxNative(..))
-import Chiasma.Data.Pane (Pane(Pane), PaneId(..))
-import Chiasma.Data.Window (Window(Window), WindowId(..))
-import Chiasma.Data.TmuxThunk (TmuxError)
-import Chiasma.Monad.Buffered (runTmux)
-import Chiasma.Monad.Tmux (TmuxProg)
+import Chiasma.Codec.Data (Pane(Pane), Window(Window))
+import Chiasma.Data.TmuxId (WindowId(..), PaneId(..))
+import Chiasma.Data.TmuxThunk (TmuxThunk, TmuxError)
+import Chiasma.Monad.Stream (runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (read, write)
+import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Test.Tmux (tmuxSpec)
 
-prog :: TmuxProg ([Pane], [Pane], [Window])
+prog :: (MonadIO m, MonadFree TmuxThunk m) => m ([Pane], [Pane], [Window])
 prog = do
+  liftIO $ print "go"
   panes1 <- Tmux.read "list-panes" ["-t", "%0"]
   Tmux.write "new-window" []
   Tmux.write "new-window" []
-  wins <- Tmux.read @Window "list-windows" []
+  wins <- Tmux.read "list-windows" []
   panes <- Tmux.read "list-panes" ["-a"]
   return (panes1, panes, wins)
 
@@ -32,8 +34,8 @@ w i = Window (WindowId i) 1000 999
 runProg :: TmuxNative -> IO (Either TmuxError ([Pane], [Pane], [Window]))
 runProg api = runTmux api prog
 
-test_buffered :: IO ()
-test_buffered = do
+test_streamed :: IO ()
+test_streamed = do
   result <- tmuxSpec runProg
   assertEqual (Right ([p0], [p0, p1, p2], [w0, w1, w2])) result
   where

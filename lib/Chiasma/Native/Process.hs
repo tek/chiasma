@@ -1,9 +1,11 @@
 module Chiasma.Native.Process(
   tmuxProcessConfig,
   nativeTmuxProcess,
+  socketArg,
 ) where
 
 import GHC.IO.Exception (ExitCode(ExitSuccess))
+import Control.Monad.Error.Class (MonadError, liftEither)
 import Control.Monad.IO.Class (MonadIO)
 import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy.Internal (packChars, unpackChars)
@@ -20,9 +22,13 @@ import Chiasma.Native.Parse (resultLines)
 cmdBytes :: [String] -> ByteString
 cmdBytes cmds = packChars $ intercalate "\n" $ reverse $ "" : cmds
 
-tmuxProcessConfig :: FilePath -> [String] -> ProcessConfig () () ()
+socketArg :: Maybe FilePath -> [String]
+socketArg (Just socket) = ["-S", socket]
+socketArg Nothing = []
+
+tmuxProcessConfig :: Maybe FilePath -> [String] -> ProcessConfig () () ()
 tmuxProcessConfig socket cmds =
-  setStdin (byteStringInput $ cmdBytes cmds) $ proc "tmux" ["-S", socket, "-C", "attach"]
+  setStdin (byteStringInput $ cmdBytes cmds) $ proc "tmux" $ socketArg socket ++ ["-C", "attach"]
 
 handleProcessOutput :: Cmds -> ExitCode -> ([String] -> Either TmuxDecodeError a) -> String -> Either TmuxError [a]
 handleProcessOutput cmds ExitSuccess decode out = do
@@ -38,8 +44,13 @@ handleProcessOutput cmds _ _ out =
 formatCmd :: Cmd -> String
 formatCmd (Cmd (CmdName name) (CmdArgs args)) = unwords $ name : args
 
-nativeTmuxProcess :: MonadIO m => FilePath -> ([String] -> Either TmuxDecodeError a) -> Cmds -> m (Either TmuxError [a])
+nativeTmuxProcess ::
+  (MonadIO m, MonadError TmuxError m) =>
+  Maybe FilePath ->
+  ([String] -> Either TmuxDecodeError a) ->
+  Cmds ->
+  m [a]
 nativeTmuxProcess socket decode cmds@(Cmds cmds') = do
   let cmdLines = fmap formatCmd cmds'
   (code, out) <- readProcessStdout $ tmuxProcessConfig socket cmdLines
-  return $ handleProcessOutput cmds code decode $ unpackChars out
+  liftEither $ handleProcessOutput cmds code decode $ unpackChars out

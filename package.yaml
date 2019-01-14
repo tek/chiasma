@@ -19,11 +19,13 @@ dependencies:
 - transformers
 - resourcet
 - free
+- comonad
 - mtl
 - process
 - typed-process
 - bytestring
 - unliftio
+- unliftio-core
 - split
 - data-default-class
 - directory
@@ -31,16 +33,28 @@ dependencies:
 - unix
 - posix-pty
 - parsec
+- attoparsec
+- parsers
 - either
 - lens
+- uuid
+- conduit
+- conduit-extra
+- stm-conduit
+- stm-chans
+- text
+- exceptions
 
 default-extensions:
-- ExistentialQuantification
-- UnicodeSyntax
-- TypeApplications
-- ScopedTypeVariables
-- DeriveGeneric
 - DeriveAnyClass
+- DeriveFunctor
+- DeriveGeneric
+- ExistentialQuantification
+- FlexibleContexts
+- FlexibleInstances
+- ScopedTypeVariables
+- TypeApplications
+- UnicodeSyntax
 
 library:
   source-dirs: lib
