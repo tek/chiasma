@@ -25,6 +25,8 @@ evalFreeF ::
   CmdBuffer ->
   FreeF TmuxThunk a (FreeT TmuxThunk m a) ->
   t m a
+evalFreeF _ (CmdBuffer []) (Pure a) =
+  return a
 evalFreeF exec (CmdBuffer cmds) (Pure a) =
   lift $ a <$ exec (const $ Right ()) (Cmds cmds)
 evalFreeF exec (CmdBuffer cmds) (Free (Read cmd decode next)) = do

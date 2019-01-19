@@ -10,6 +10,7 @@ import Control.Monad.Trans.State.Strict (StateT, evalStateT)
 import Data.Default.Class (Default(def))
 import Data.Traversable (forM)
 import UnliftIO.Directory (getCurrentDirectory)
+import Chiasma.Command.Pane (panes)
 import Chiasma.Data.Ident (Ident(Str))
 import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxId (SessionId(SessionId), WindowId(WindowId), PaneId(PaneId))
@@ -23,7 +24,6 @@ import Chiasma.Test.Tmux (tmuxSpec)
 import Chiasma.Ui.Data.View (ViewTree, Tree(..), TreeSub(..), consLayout, consPane)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import qualified Chiasma.Ui.Data.View as Ui (View(View), Pane(Pane))
--- import Chiasma.Command.Pane (panes)
 import qualified Chiasma.Codec.Data as Codec (Pane)
 
 id0, id1, id2 :: Ident
@@ -50,8 +50,10 @@ runRender api = do
     prog :: TmuxProg IO (Either RenderError ())
     prog = evalStateT st views
   runTmux api $ do
+    before <- panes
     r <- prog
-    return ([], [], r)
+    after <- panes
+    return (before, after, r)
 
 test_render :: IO ()
 test_render = do

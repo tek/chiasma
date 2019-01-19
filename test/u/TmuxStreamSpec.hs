@@ -5,7 +5,6 @@ module TmuxStreamSpec(
 ) where
 
 import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.IO.Class (MonadIO, liftIO)
 import Test.Framework
 import Chiasma.Codec.Data (Pane(Pane), Window(Window))
 import Chiasma.Data.TmuxId (WindowId(..), PaneId(..))
@@ -15,9 +14,8 @@ import qualified Chiasma.Monad.Tmux as Tmux (read, write)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Test.Tmux (tmuxSpec)
 
-prog :: (MonadIO m, MonadFree TmuxThunk m) => m ([Pane], [Pane], [Window])
+prog :: MonadFree TmuxThunk m => m ([Pane], [Pane], [Window])
 prog = do
-  liftIO $ print "go"
   panes1 <- Tmux.read "list-panes" ["-t", "%0"]
   Tmux.write "new-window" []
   Tmux.write "new-window" []
