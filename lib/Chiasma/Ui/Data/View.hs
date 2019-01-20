@@ -78,6 +78,7 @@ consLayout ident' = View ident' (ViewState False) def (Layout False)
 instance Identifiable (View a) where
   identify = viewIdent
 
+-- split in two so there can be no lone leaves (panes without layout) as type 'Tree'
 data Tree l p =
   Tree {
     treeData :: l,

@@ -41,10 +41,22 @@ tree =
     subtree3 = TreeNode $ Tree (consLayout id4) [TreeLeaf openPane]
     openPane = View id1 (ViewState False) def (Pane True False Nothing)
 
-test_lens :: IO ()
-test_lens = do
+test_modify :: IO ()
+test_modify = do
   let
     ident = Str "changed"
     modded = modifyLeafByIdent id1 (set _viewIdent ident) tree
   assertEqual Nothing $ leafByIdent ident tree
   assertEqual (Just ident) $ viewIdent <$> leafByIdent ident modded
+
+failOnPaneIdent :: Ident -> ViewTree -> Maybe ViewTree
+failOnPaneIdent target t@(Tree _ sub) =
+  t <$ traverse match sub
+  where
+    match (TreeLeaf (View i _ _ _)) = if target == i then Nothing else Just ()
+    match _ = Just ()
+
+test_monadicModify :: IO ()
+test_monadicModify = do
+  assertEqual Nothing (transformM (failOnPaneIdent id2) tree)
+  assertEqual (Just tree) (transformM (failOnPaneIdent id4) tree)
