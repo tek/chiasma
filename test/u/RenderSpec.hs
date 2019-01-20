@@ -8,7 +8,6 @@ import Test.Framework
 import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT)
 import Data.Default.Class (Default(def))
-import Data.Traversable (forM)
 import UnliftIO.Directory (getCurrentDirectory)
 import Chiasma.Command.Pane (panes)
 import Chiasma.Data.Ident (Ident(Str))
@@ -21,27 +20,35 @@ import Chiasma.Monad.Stream (TmuxProg, runTmux)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Render (render)
 import Chiasma.Test.Tmux (tmuxSpec)
-import Chiasma.Ui.Data.View (ViewTree, Tree(..), TreeSub(..), consLayout, consPane)
+import Chiasma.Ui.Data.View (ViewTree, Tree(..), TreeSub(..), consLayout)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import qualified Chiasma.Ui.Data.View as Ui (View(View), Pane(Pane))
-import qualified Chiasma.Codec.Data as Codec (Pane)
+import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(..))
+import qualified Chiasma.Codec.Data as Codec (Pane(..))
 
-id0, id1, id2 :: Ident
+id0, id1 :: Ident
 id0 = Str "0"
 id1 = Str "1"
-id2 = Str "2"
 
 views :: Views
 views =
-  Views [Tmux.View id0 (Just (SessionId 0))] [Tmux.View id0 (Just (WindowId 0))] [Tmux.View id0 (Just (PaneId 0))]
+  Views
+    [Tmux.View id0 (Just (SessionId 0))]
+    [Tmux.View id0 (Just (WindowId 0))]
+    [
+      Tmux.View id0 (Just (PaneId 0))
+    ]
 
 tree :: ViewTree
 tree =
-  Tree (consLayout id0) [TreeLeaf openPane, TreeLeaf (consPane id2)]
+  Tree (consLayout id0) [
+    TreeLeaf (openPane id0 def),
+    TreeLeaf (openPane id1 (ViewGeometry Nothing Nothing (Just 700) Nothing Nothing Nothing))
+    ]
   where
-    openPane = Ui.View id1 (ViewState False) def (Ui.Pane True False Nothing)
+    openPane i geo = Ui.View i (ViewState False) geo (Ui.Pane True False Nothing)
 
-runRender :: TmuxNative -> IO (Either TmuxError ([Codec.Pane], [Codec.Pane], Either RenderError ()))
+runRender :: TmuxNative -> IO (Either TmuxError [Codec.Pane])
 runRender api = do
   cwd <- getCurrentDirectory
   let
@@ -49,17 +56,9 @@ runRender api = do
     st = runExceptT $ render cwd id0 id0 tree
     prog :: TmuxProg IO (Either RenderError ())
     prog = evalStateT st views
-  runTmux api $ do
-    before <- panes
-    r <- prog
-    after <- panes
-    return (before, after, r)
+  runTmux api $ prog *> panes
 
 test_render :: IO ()
 test_render = do
-  result <- tmuxSpec runRender
-  result' <- forM result $ \(before, after, r) -> do
-    print before
-    print after
-    return r
-  assertEqual (Right (Right ())) result'
+  ps <- tmuxSpec runRender
+  assertEqual (Right [Codec.Pane (PaneId 0) 299 999, Codec.Pane (PaneId 1) 700 999]) ps
