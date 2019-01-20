@@ -8,8 +8,7 @@ module Chiasma.Data.Ident(
 ) where
 
 import GHC.Generics (Generic)
-import Control.Comonad (extract)
-import Control.Comonad.Cofree (Cofree)
+import Control.DeepSeq (NFData)
 import Data.UUID (UUID, toString)
 import Data.Data (Data)
 
@@ -17,13 +16,10 @@ data Ident =
   Str String
   |
   Uuid UUID
-  deriving (Eq, Show, Generic, Data)
+  deriving (Eq, Show, Generic, Data, NFData)
 
 class Identifiable a where
   identify :: a -> Ident
-
-instance (Identifiable a, Functor f) => Identifiable (Cofree f a) where
-  identify = identify . extract
 
 sameIdent :: Identifiable a => Ident -> a -> Bool
 sameIdent target a =

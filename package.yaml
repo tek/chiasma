@@ -19,7 +19,6 @@ dependencies:
 - transformers
 - resourcet
 - free
-- comonad
 - mtl
 - process
 - typed-process
@@ -44,6 +43,7 @@ dependencies:
 - stm-chans
 - text
 - exceptions
+- deepseq
 
 default-extensions:
 - DeriveAnyClass
