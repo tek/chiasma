@@ -31,6 +31,8 @@ module Chiasma.Ui.Data.View(
 import GHC.Generics (Generic)
 import Control.Lens (makeClassy_)
 import Control.Lens.Plated (Plated)
+import Data.Bifunctor (Bifunctor(first, second))
+import Data.Bifoldable (Bifoldable(bifoldMap))
 import Data.Data (Data)
 import Data.Default.Class (Default(def))
 import Chiasma.Data.Ident (Ident, Identifiable(..))
@@ -86,11 +88,31 @@ data Tree l p =
     }
   deriving (Eq, Show, Data, Generic)
 
+instance Bifunctor Tree where
+  first f (Tree l sub) = Tree (f l) (fmap (first f) sub)
+
+  second f (Tree l sub) =
+    Tree l (fmap (second f) sub)
+
+instance Bifoldable Tree where
+  bifoldMap fl fr (Tree l sub) = mappend (fl l) (foldMap (bifoldMap fl fr) sub)
+
 data TreeSub l p =
   TreeNode { subTree :: Tree l p }
   |
   TreeLeaf { leafData :: p }
   deriving (Eq, Show, Data, Generic)
+
+instance Bifunctor TreeSub where
+  first f (TreeNode t) = TreeNode (first f t)
+  first _ (TreeLeaf p) = TreeLeaf p
+
+  second f (TreeNode t) = TreeNode (second f t)
+  second f (TreeLeaf p) = TreeLeaf (f p)
+
+instance Bifoldable TreeSub where
+  bifoldMap fl fr (TreeNode t) = bifoldMap fl fr t
+  bifoldMap _ fr (TreeLeaf p) = fr p
 
 instance (Data l, Data p) => Plated (Tree l p)
 
