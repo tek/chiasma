@@ -22,6 +22,7 @@ import Control.Lens (
   each,
   preview,
   )
+import Data.Foldable (foldrM)
 import Data.Data (Data)
 import Chiasma.Data.Ident (Ident, Identifiable(..))
 import Chiasma.Ui.Data.View
@@ -87,3 +88,43 @@ leavesByIdent ident = toListOf (leavesByIdentRecursive ident) . LeafIndexTree
 modifyLeafByIdent :: (Identifiable p, Data l, Data p) => Ident -> (p -> p) -> Tree l p -> Tree l p
 modifyLeafByIdent ident f tree =
   litTree $ (transform $ over (ix ident) f) (LeafIndexTree tree)
+
+-- subtreesWithLayout :: Traversal' (Tree l p) (l, TreeSub l p)
+subtreesWithLayout :: ∀ l p m. Monad m => ((l, TreeSub l p) -> m (l, TreeSub l p)) -> Tree l p -> m (Tree l p)
+subtreesWithLayout f (Tree l0 sub) = do
+  (newL, newSub) <- foldrM applySub (l0, []) sub
+  return (Tree newL newSub)
+  where
+    prependSub s (newL, newN) = (newL, newN : s)
+    applySub :: TreeSub l p -> (l, [TreeSub l p]) -> m (l, [TreeSub l p])
+    applySub (TreeNode t) (l, s) = do
+      rec <- (\rsub -> (l, TreeNode rsub)) <$> subtreesWithLayout f t
+      (fmap (prependSub s) . f) rec
+    applySub p (l, s) =
+      (fmap (prependSub s) . f) (l, p)
+
+subtrees :: ∀ l p m. Monad m => (TreeSub l p -> m (TreeSub l p)) -> Tree l p -> m (Tree l p)
+subtrees f (Tree l sub) = do
+  newSub <- mapM applySub sub
+  return (Tree l newSub)
+  where
+    applySub :: TreeSub l p -> m (TreeSub l p)
+    applySub (TreeNode t) = do
+      rec <- subtrees f t
+      f (TreeNode rec)
+    applySub p = f p
+
+treesAndSubs ::
+  Monad m =>
+  (Tree l p -> m (Tree l p)) ->
+  (TreeSub l p -> m (TreeSub l p)) ->
+  (Tree l p) ->
+  m (Tree l p)
+treesAndSubs ft fs (Tree l sub) = do
+  treeResult <- mapM applySub sub
+  ft (Tree l treeResult)
+  where
+    applySub (TreeNode t) = do
+      rec <- treesAndSubs ft fs t
+      fs (TreeNode rec)
+    applySub p = fs p
