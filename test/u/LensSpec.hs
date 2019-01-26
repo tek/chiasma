@@ -7,12 +7,16 @@ module LensSpec(
 
 import Test.Framework
 
-import Control.Lens (transformM)
+import Control.Monad.Trans.State (StateT, execStateT, modify)
+-- import Control.Lens (transformM)
+import Control.Lens
 import qualified Control.Lens as Lens (set)
 import Data.Default.Class (Default(def))
+import Data.Either (isRight)
 import Data.Foldable (traverse_)
+import Data.Traversable (forM)
 import Chiasma.Data.Ident (Ident(Str))
-import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs)
+import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs, litTree, LeafIndexTree(..))
 import Chiasma.Ui.Data.View (
   Tree(Tree),
   TreeSub(TreeNode,
@@ -27,8 +31,11 @@ import Chiasma.Ui.Data.View (
   PaneView,
   ViewTreeSub,
   )
-import Chiasma.Ui.ShowTree (showViewTree)
+import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import Chiasma.Ui.Pane (paneToggleOpen)
+import Chiasma.Ui.ShowTree (showViewTree, printViewTree)
+import Chiasma.Ui.ViewTree (togglePane)
 
 id0, id1, id2, id3, id4 :: Ident
 id0 = Str "0"
@@ -68,15 +75,25 @@ test_monadicModify = do
 
 insertPane :: Ident -> PaneView -> ViewTree -> ViewTree
 insertPane targetLayout pane (Tree l sub) =
-  if (viewIdent l == targetLayout) then Tree l (TreeLeaf pane : sub) else Tree l sub
+  if viewIdent l == targetLayout then Tree l (TreeLeaf pane : sub) else Tree l sub
 
 ensurePaneUnique :: Ident -> ViewTreeSub -> Maybe ViewTreeSub
 ensurePaneUnique paneIdent (TreeLeaf (View ident _ _ _)) | ident == paneIdent = Nothing
 ensurePaneUnique _ n = Just n
 
 test_subtrees :: IO ()
-test_subtrees = do
+test_subtrees =
   traverse_ putStrLn $ showVt $ treesAndSubs (Just . insertPane id2 (consPane id4)) (ensurePaneUnique id4) tree
   where
     showVt (Just vt) = showViewTree vt
     showVt Nothing = ["no result"]
+
+togglePaneTree :: ViewTree
+togglePaneTree =
+  Tree (consLayout id0) [TreeLeaf (consPane id0), TreeLeaf (consPane id0), TreeLeaf (consPane id2)]
+
+test_togglePane :: IO ()
+test_togglePane = do
+  assertEqual (Left $ AmbiguousPane id0 2) (togglePane id0 togglePaneTree)
+  assertEqual (Left $ PaneMissing id1) (togglePane id1 togglePaneTree)
+  assertBool (isRight $ togglePane id2 togglePaneTree)

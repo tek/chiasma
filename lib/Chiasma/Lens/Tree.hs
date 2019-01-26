@@ -118,7 +118,7 @@ treesAndSubs ::
   Monad m =>
   (Tree l p -> m (Tree l p)) ->
   (TreeSub l p -> m (TreeSub l p)) ->
-  (Tree l p) ->
+  Tree l p ->
   m (Tree l p)
 treesAndSubs ft fs (Tree l sub) = do
   treeResult <- mapM applySub sub
