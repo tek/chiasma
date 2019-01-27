@@ -9,7 +9,9 @@ module Chiasma.Data.Views(
   ViewsError(..),
 ) where
 
+import GHC.Generics (Generic)
 import Control.Lens (makeClassy_)
+import Data.Default.Class (Default)
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.View (View)
 import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
@@ -28,6 +30,6 @@ data Views =
     viewsWindows :: [View WindowId],
     viewsPanes :: [View PaneId]
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic, Default)
 
 makeClassy_ ''Views
