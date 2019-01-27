@@ -5,6 +5,7 @@ module Chiasma.Command.Window(
   newWindow,
   sessionWindows,
   splitWindow,
+  newSessionWindow,
 ) where
 
 import Control.Monad.Free.Class (MonadFree)
@@ -29,6 +30,10 @@ window windowId =
 sessionWindows :: MonadFree TmuxThunk m => SessionId -> m [Window]
 sessionWindows sid =
   Tmux.read "list-windows" ["-t", formatId sid]
+
+newSessionWindow :: MonadFree TmuxThunk m => SessionId -> m Window
+newSessionWindow sid =
+  Tmux.readOne "list-windows" ["-t", formatId sid]
 
 doesWindowExist :: MonadFree TmuxThunk m => WindowId -> m Bool
 doesWindowExist windowId =
