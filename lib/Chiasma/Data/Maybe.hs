@@ -1,6 +1,7 @@
 module Chiasma.Data.Maybe(
   maybeExcept,
   findMaybe,
+  orElse,
 ) where
 
 import Control.Monad.Error.Class (MonadError(throwError))
@@ -15,3 +16,7 @@ findMaybe f as =
   case mapMaybe f as of
     (a : _) -> Just a
     _ -> Nothing
+
+orElse :: Maybe a -> Maybe a -> Maybe a
+orElse _ (Just a) = Just a
+orElse fallback Nothing = fallback
