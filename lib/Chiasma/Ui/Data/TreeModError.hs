@@ -17,4 +17,6 @@ data TreeModError =
   AmbiguousPane Ident Int
   |
   AmbiguousLayout Ident Int
+  |
+  NoTrees
   deriving (Eq, Show)

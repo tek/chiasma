@@ -4,6 +4,7 @@ module Chiasma.Ui.Measure(
 
 import GHC.Float (int2Float)
 import Data.Maybe (fromMaybe)
+import Chiasma.Data.Maybe (orElse)
 import Chiasma.Ui.Data.Measure (MeasureTree, Measured(..), MeasureTreeSub)
 import Chiasma.Ui.Data.View (ViewTree, Tree(..), View(View), Layout(Layout), TreeSub(..), ViewTreeSub, Pane(Pane))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(minSize, maxSize, fixedSize))
@@ -23,10 +24,6 @@ minimizedSizeOrDefault = fromMaybe 2 . minSize
 effectiveFixedSize :: ViewState -> ViewGeometry -> Maybe Float
 effectiveFixedSize (ViewState minimized) viewGeom =
   if minimized then Just (minimizedSizeOrDefault viewGeom) else fixedSize viewGeom
-
-orElse :: Maybe a -> Maybe a -> Maybe a
-orElse _ (Just a) = Just a
-orElse fallback Nothing = fallback
 
 actualSize :: (ViewGeometry -> Maybe Float) ->  ViewState -> ViewGeometry -> Maybe Float
 actualSize getter viewState viewGeom =

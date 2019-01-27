@@ -24,7 +24,10 @@ formatLayout :: LayoutView -> String
 formatLayout (View ident _ _ _) = "l: " ++ identString ident
 
 formatPane :: PaneView -> String
-formatPane (View ident _ _ (Pane open _ _)) = "p: " ++ identString ident ++ " " ++ if open then "open" else "closed"
+formatPane (View ident _ _ (Pane open _ _)) =
+  "p: " ++ identString ident ++ openFrag
+  where
+    openFrag = " " ++ if open then "open" else "closed"
 
 formatViewTree :: ViewTree -> Tree String String
 formatViewTree = bimap formatLayout formatPane

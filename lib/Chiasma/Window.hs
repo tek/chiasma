@@ -7,6 +7,7 @@ module Chiasma.Window(
   findPrincipal,
   ensureView,
   windowState,
+  registerWindowId,
 ) where
 
 import Control.Monad (join)
@@ -20,7 +21,7 @@ import qualified Chiasma.Command.Pane as Cmd (windowPanes, closePane, firstWindo
 import qualified Chiasma.Codec.Data as Codec (Window(Window, windowId), Pane(Pane, paneId))
 import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
 import Chiasma.Data.Ident (Ident)
-import Chiasma.Data.Maybe (maybeExcept, findMaybe)
+import Chiasma.Data.Maybe (maybeExcept, findMaybe, orElse)
 import Chiasma.Data.RenderError (RenderError(RenderError))
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Data.View as Tmux (View(View))
@@ -30,14 +31,22 @@ import qualified Chiasma.Data.WindowState as WindowStateType (WindowStateType(..
 import Chiasma.Pane (addPane)
 import Chiasma.Ui.Data.View (ViewTree, Tree(..), ViewTreeSub, TreeSub(..))
 import qualified Chiasma.Ui.Data.View as Ui (View(View), Pane(Pane), PaneView)
-import Chiasma.View (findOrCreateView, paneById)
-import qualified Chiasma.View as Views (window, insertWindow, updateWindow, pane, updatePane, insertPane)
+import Chiasma.View (findOrCreateView)
+import qualified Chiasma.View as Views (window, insertWindow, updateWindow, pane, updatePane, insertPane, paneById)
 
 findOrCreateWindow ::
   (MonadState Views m, MonadError RenderError m) =>
   Ident ->
   m (Tmux.View WindowId)
 findOrCreateWindow = findOrCreateView Views.window Views.insertWindow
+
+registerWindowId ::
+  (MonadState Views m) =>
+  Ident ->
+  WindowId ->
+  m ()
+registerWindowId ident windowId =
+  modify $ Views.updateWindow $ Tmux.View ident (Just windowId)
 
 spawnWindow ::
   (MonadState Views m, MonadFree TmuxThunk m) =>
@@ -46,33 +55,27 @@ spawnWindow ::
   m Codec.Window
 spawnWindow sid ident = do
   win@(Codec.Window windowId _ _) <- Cmd.newWindow sid ident
-  modify $ Views.updateWindow $ Tmux.View ident (Just windowId)
+  registerWindowId ident windowId
   return win
 
 findPrincipalSub :: ViewTreeSub -> Maybe Ui.PaneView
 findPrincipalSub (TreeNode t) = findPrincipal t
-findPrincipalSub (TreeLeaf p) = Just p
+findPrincipalSub (TreeLeaf p@(Ui.View _ _ _ (Ui.Pane True _ _))) = Just p
+findPrincipalSub _ = Nothing
 
 findPrincipal :: ViewTree -> Maybe Ui.PaneView
 findPrincipal (Tree _ sub) =
   findMaybe findPrincipalSub sub
 
-principalNative ::
-  (MonadFree TmuxThunk m, MonadError RenderError m) =>
-  WindowId ->
-  m Codec.Pane
-principalNative windowId = do
-  panes <- Cmd.windowPanes windowId
-  case panes of
-    (princ : _) -> return princ
-    _ -> throwError $ RenderError $ "tmux returned no panes for window `" ++ show windowId ++ "`"
+noPrincipal :: RenderError
+noPrincipal = RenderError "no principal ui pane in layout"
 
 principalPane ::
   (MonadState Views m, MonadError RenderError m) =>
   ViewTree ->
   m (Ui.PaneView, Tmux.View PaneId)
 principalPane tree = do
-  uiPane@(Ui.View uiPaneIdent _ _ _) <- maybeExcept (RenderError "no principal ui pane in layout") $ findPrincipal tree
+  uiPane@(Ui.View uiPaneIdent _ _ _) <- maybeExcept noPrincipal $ findPrincipal tree
   existingTmuxPane <- gets $ Views.pane uiPaneIdent
   tmuxPane <- either (const $ addPane uiPaneIdent) return existingTmuxPane
   return (uiPane, tmuxPane)
@@ -83,18 +86,23 @@ syncPrincipal ::
   ViewTree ->
   m ()
 syncPrincipal windowId tree = do
-  (_, Tmux.View paneIdent _) <- principalPane tree
-  (Codec.Pane paneId _ _) <- principalNative windowId
-  modify $ Views.updatePane (Tmux.View paneIdent (Just paneId))
+  (Codec.Pane paneId _ _) <- Cmd.firstWindowPane windowId
+  existing <- gets (Views.paneById paneId)
+  case existing of
+    Nothing -> do
+      (_, Tmux.View paneIdent _) <- principalPane tree
+      modify $ Views.updatePane (Tmux.View paneIdent (Just paneId))
+    _ -> return ()
 
 ensureWindow ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   SessionId ->
   Tmux.View WindowId ->
+  Maybe WindowId ->
   ViewTree ->
   m Codec.Window
-ensureWindow sid (Tmux.View ident mayWid) tree = do
-  preexisting <- join <$> traverse Cmd.window mayWid
+ensureWindow sid (Tmux.View ident mayWid) newSessionWid tree = do
+  preexisting <- join <$> traverse Cmd.window (orElse newSessionWid mayWid)
   window <- maybe (spawnWindow sid ident) return preexisting
   syncPrincipal (Codec.windowId window) tree
   return window
@@ -168,6 +176,6 @@ windowState ::
   m WindowState
 windowState windowIdent window tree = do
   nativeRef <- Cmd.firstWindowPane (Codec.windowId window)
-  ref <- gets $ paneById (Codec.paneId nativeRef)
+  ref <- gets $ Views.paneById (Codec.paneId nativeRef)
   let tpe = maybe WindowStateType.Pristine WindowStateType.Tracked ref
   return $ WindowState window nativeRef windowIdent tree tpe
