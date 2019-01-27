@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Chiasma.Ui.Data.View(
   Pane(..),
@@ -29,7 +30,12 @@ module Chiasma.Ui.Data.View(
 ) where
 
 import GHC.Generics (Generic)
-import Control.Lens (makeClassy_)
+import Control.Lens (
+  makeClassy_,
+  Index,
+  IxValue,
+  Ixed(ix),
+  )
 import Control.Lens.Plated (Plated)
 import Data.Bifunctor (Bifunctor(first, second))
 import Data.Bifoldable (Bifoldable(bifoldMap))
@@ -38,6 +44,7 @@ import Data.Default.Class (Default(def))
 import Chiasma.Data.Ident (Ident, Identifiable(..))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import Chiasma.Ui.Lens.Ident (matchIdentP)
 
 data Pane =
   Pane {
@@ -121,3 +128,12 @@ makeClassy_ ''TreeSub
 
 type ViewTree = Tree LayoutView PaneView
 type ViewTreeSub = TreeSub LayoutView PaneView
+
+instance Identifiable l => Identifiable (Tree l p) where
+  identify (Tree l _) = identify l
+
+type instance Index (Tree l p) = Ident
+type instance IxValue (Tree l p) = Tree l p
+
+instance (Identifiable l, Data l, Data p) => Ixed (Tree l p) where
+  ix ident = matchIdentP ident

@@ -26,9 +26,7 @@ import Data.Foldable (foldrM)
 import Data.Data (Data)
 import Chiasma.Data.Ident (Ident, Identifiable(..))
 import Chiasma.Ui.Data.View
-import Chiasma.Ui.Lens.Ident
-
-type instance Index (Tree l p) = Ident
+import Chiasma.Ui.Lens.Ident (matchIdentP)
 
 newtype NodeIndexTree l p =
   NodeIndexTree {
