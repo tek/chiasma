@@ -16,7 +16,8 @@ import Chiasma.Command.Pane (isPaneOpen, isPaneIdOpen, movePane, resizePane)
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.List (head')
 import Chiasma.Data.Maybe (maybeExcept)
-import Chiasma.Data.PackError (PackError(PackError))
+import Chiasma.Data.RenderError (RenderError)
+import qualified Chiasma.Data.RenderError as RenderError (RenderError(Pack))
 import Chiasma.Data.TmuxId (WindowId, PaneId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Data.View as Tmux (View(View))
@@ -38,10 +39,10 @@ import qualified Chiasma.Ui.Data.View as Ui (
 import Chiasma.Ui.Measure (measureTree)
 import qualified Chiasma.View as Views (pane)
 
-refPaneError :: Ident -> PackError
-refPaneError ident = PackError $ "reference pane `" ++ show ident ++ "` not found"
+refPaneError :: Ident -> RenderError
+refPaneError ident = RenderError.Pack $ "reference pane `" ++ show ident ++ "` not found"
 
-referenceUiPane :: Ident -> ViewTree -> Either PackError Ui.PaneView
+referenceUiPane :: Ident -> ViewTree -> Either RenderError Ui.PaneView
 referenceUiPane ident = maybeToRight (refPaneError ident) . leafByIdent ident
 
 isTmuxPaneOpen ::
@@ -64,15 +65,15 @@ referencePane subs = do
   openPanes <- filterM isTmuxPaneOpen panes
   return $ head' openPanes
 
-paneIdFatal :: (MonadState Views m, MonadError PackError m) => Ident -> m PaneId
+paneIdFatal :: (MonadState Views m, MonadError RenderError m) => Ident -> m PaneId
 paneIdFatal ident = do
   pane <- gets $ Views.pane ident
   case pane of
     (Right (Tmux.View _ (Just paneId))) -> return paneId
-    _ -> throwError $ PackError $ "no tmux pane for `" ++ show ident ++ "`"
+    _ -> throwError $ RenderError.Pack $ "no tmux pane for `" ++ show ident ++ "`"
 
 moveTmuxPane ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Ident -> Ident -> Bool -> m ()
 moveTmuxPane paneIdent refIdent vertical = do
   refId <- paneIdFatal refIdent
@@ -81,7 +82,7 @@ moveTmuxPane paneIdent refIdent vertical = do
   when open $ movePane paneId refId vertical
 
 packPane ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Ui.PaneView ->
   Bool ->
   Ui.PaneView ->
@@ -90,7 +91,7 @@ packPane refPane vertical pane@(Ui.View _ _ _ (Ui.Pane open _ _)) =
   when (open && pane /= refPane) $ moveTmuxPane (Ui.viewIdent pane) (Ui.viewIdent refPane) vertical
 
 positionView ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Bool ->
   Ui.PaneView ->
   TreeSub (Measured Ui.LayoutView) (Measured Ui.PaneView) ->
@@ -107,7 +108,7 @@ positionView vertical refPane =
       pp pane
 
 resizeViewWith ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Int ->
   Ui.PaneView ->
   Bool ->
@@ -117,19 +118,19 @@ resizeViewWith size pane vertical = do
   resizePane paneId vertical size
 
 resizeView ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Bool ->
   TreeSub (Measured Ui.LayoutView) (Measured Ui.PaneView) ->
   m ()
 resizeView vertical (TreeNode (Tree (Measured _ size) sub)) = do
   layoutRefPane <- referencePane sub
-  ref <- maybeExcept (PackError "no ref pane") layoutRefPane
+  ref <- maybeExcept (RenderError.Pack "no ref pane") layoutRefPane
   resizeViewWith size ref vertical
 resizeView vertical (TreeLeaf (Measured pane size)) =
   resizeViewWith size pane vertical
 
 packTree ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   WindowId ->
   Ui.PaneView ->
   MeasureTree ->
@@ -146,7 +147,7 @@ packTree _ _ measures initialRef =
       traverse_ (resizeView vertical) sub
 
 packPristineWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   WindowState ->
   WindowId ->
   Ui.PaneView ->
@@ -154,7 +155,7 @@ packPristineWindow ::
 packPristineWindow = undefined
 
 packTrackedWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Tmux.View PaneId ->
   WindowState ->
   WindowId ->
@@ -166,7 +167,7 @@ packTrackedWindow (Tmux.View paneIdent _) (WindowState (Codec.Window _ width hei
   packTree windowId principal measures uiRef
 
 packWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError PackError m) =>
+  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   WindowState ->
   WindowId ->
   Ui.PaneView ->

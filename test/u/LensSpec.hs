@@ -7,16 +7,13 @@ module LensSpec(
 
 import Test.Framework
 
-import Control.Monad.Trans.State (StateT, execStateT, modify)
--- import Control.Lens (transformM)
-import Control.Lens
+import Control.Lens (transformM)
 import qualified Control.Lens as Lens (set)
 import Data.Default.Class (Default(def))
 import Data.Either (isRight)
 import Data.Foldable (traverse_)
-import Data.Traversable (forM)
 import Chiasma.Data.Ident (Ident(Str))
-import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs, litTree, LeafIndexTree(..))
+import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs)
 import Chiasma.Ui.Data.View (
   Tree(Tree),
   TreeSub(TreeNode,
@@ -33,8 +30,7 @@ import Chiasma.Ui.Data.View (
   )
 import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
-import Chiasma.Ui.Pane (paneToggleOpen)
-import Chiasma.Ui.ShowTree (showViewTree, printViewTree)
+import Chiasma.Ui.ShowTree (showViewTree)
 import Chiasma.Ui.ViewTree (togglePane)
 
 id0, id1, id2, id3, id4 :: Ident

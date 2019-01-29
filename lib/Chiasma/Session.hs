@@ -8,14 +8,12 @@ module Chiasma.Session(
 import Control.Monad (join)
 import Control.Monad.Free.Class (MonadFree)
 import Control.Monad.State.Class (MonadState, modify)
-import Control.Monad.Trans.Except (ExceptT)
 import Data.Bifunctor (second)
 import Chiasma.Command.Session (newSession, existingSessionId)
 import Chiasma.Command.Window (newSessionWindow)
 import qualified Chiasma.Codec.Data as Codec (Session(Session), Window(Window))
 import Chiasma.Data.TmuxId (SessionId, WindowId)
 import Chiasma.Data.Ident (Ident)
-import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Data.View as Tmux (
   View(viewId, viewIdent),
@@ -25,7 +23,7 @@ import Chiasma.Data.Views (Views)
 import Chiasma.View (findOrCreateView)
 import qualified Chiasma.View as Views (session, insertSession, updateSession)
 
-findOrCreateSession :: MonadState Views m => Ident -> ExceptT RenderError m (Tmux.View SessionId)
+findOrCreateSession :: MonadState Views m => Ident -> m (Tmux.View SessionId)
 findOrCreateSession = findOrCreateView Views.session Views.insertSession
 
 spawnSession ::

@@ -14,15 +14,12 @@ import Data.Traversable (mapAccumL)
 import Data.Monoid (Sum(..))
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Lens.Tree (
-  leafByIdent,
-  modifyLeafByIdent,
-  treesAndSubs,
   _litTree,
   LeafIndexTree(..),
   leafDataTraversal,
   )
 import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane, LayoutMissing, AmbiguousLayout))
-import Chiasma.Ui.Data.View (Tree(Tree), TreeSub(TreeLeaf), LayoutView, PaneView, ViewTree, View(..), Pane(..))
+import Chiasma.Ui.Data.View (Tree(Tree), TreeSub(TreeLeaf), PaneView, ViewTree, View(View), Pane(Pane))
 import Chiasma.Ui.Pane (paneToggleOpen)
 
 modCounted :: Monad m => (a -> m a) -> a -> WriterT (Sum Int) m a

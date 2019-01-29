@@ -3,12 +3,14 @@ module Chiasma.Data.RenderError(
 ) where
 
 import Chiasma.Data.Views (ViewsError)
-import Chiasma.Data.PackError (PackError)
+import Chiasma.Data.TmuxThunk (TmuxError)
 
 data RenderError =
   RenderError String
   |
   Views ViewsError
   |
-  Pack PackError
+  Pack String
+  |
+  Fatal TmuxError
   deriving (Eq, Show)

@@ -13,7 +13,7 @@ module Chiasma.Window(
 import Control.Monad (join)
 import Control.Monad.Free.Class (MonadFree)
 import Control.Monad.State.Class (MonadState, modify, gets)
-import Control.Monad.Error.Class (MonadError(throwError))
+import Control.Monad.Error.Class (MonadError)
 import Data.Foldable (traverse_, find)
 import Data.Maybe (fromMaybe)
 import qualified Chiasma.Command.Window as Cmd (window, newWindow, splitWindow)
