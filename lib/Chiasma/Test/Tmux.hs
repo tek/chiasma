@@ -14,6 +14,7 @@ import System.Process (getPid)
 import System.Process.Typed (
   ProcessConfig,
   Process,
+  StreamSpec,
   withProcess,
   proc,
   setStdin,
@@ -24,7 +25,10 @@ import System.Process.Typed (
   )
 import UnliftIO (finally, throwString)
 import UnliftIO.Temporary (withSystemTempDirectory)
+
 import Chiasma.Native.Api (TmuxNative(..))
+import Chiasma.Monad.Stream (runTmux)
+import qualified Chiasma.Monad.Tmux as Tmux (write)
 import Chiasma.Test.File (fixture)
 
 data Terminal = Terminal Handle Pty
@@ -40,23 +44,27 @@ unsafeTerminal = do
 testTmuxProcessConfig :: FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
 testTmuxProcessConfig socket confFile (Terminal handle pty) = do
   resizePty pty (1000, 1000)
-  let stream = useHandleClose handle
-  let stdio = setStdin stream . setStdout stream . setStderr stream
+  let
+    stream :: StreamSpec st ()
+    stream = useHandleClose handle
+    stdio = setStdin stream . setStdout stream . setStderr stream
   return $ stdio $ proc "tmux" ["-S", socket, "-f", confFile]
 
 killPid :: Integral a => a -> IO ()
 killPid =
   Signal.signalProcess Signal.killProcess . fromIntegral
 
-killProcess :: Process () () () -> IO ()
-killProcess prc = do
+killProcess :: TmuxNative -> Process () () () -> IO ()
+killProcess api prc = do
+  runTmux api $ Tmux.write "kill-server" []
   let handle = unsafeProcessHandle prc
   mayPid <- getPid handle
+  print mayPid
   maybe (return ()) killPid mayPid
 
 runAndKillTmux :: (TmuxNative -> IO a) -> TmuxNative -> Process () () () -> IO a
 runAndKillTmux thunk api prc =
-  finally (thunk api) (killProcess prc)
+  finally (thunk api) (killProcess api prc)
 
 withTestTmux :: (TmuxNative -> IO a) -> FilePath -> IO a
 withTestTmux thunk tempDir = do
