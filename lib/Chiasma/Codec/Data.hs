@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Chiasma.Codec.Data(
   Session(..),
   Window(..),
@@ -8,7 +10,7 @@ import GHC.Generics (Generic)
 import Chiasma.Codec (TmuxCodec)
 import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
 
-newtype Session =
+data Session =
   Session {
     sessionId :: SessionId
   }

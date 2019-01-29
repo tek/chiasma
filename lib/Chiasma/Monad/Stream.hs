@@ -62,9 +62,7 @@ runTmuxProg ::
   t m a
 runTmuxProg prog writeCmd readOutput = do
   lift $ runConduit $ readOutput .| Conduit.drop 1
-  evalFreeT exec def prog
-  where
-    exec = executeCommands writeCmd readOutput
+  evalFreeT (executeCommands writeCmd readOutput) def prog
 
 runTmux ::
   (MonadUnliftIO m, MonadThrow m, TmuxApi api) =>

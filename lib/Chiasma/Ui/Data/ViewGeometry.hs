@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Chiasma.Ui.Data.ViewGeometry(
   ViewGeometry(..),
