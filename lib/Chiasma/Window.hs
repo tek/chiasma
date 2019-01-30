@@ -20,7 +20,7 @@ import qualified Chiasma.Command.Window as Cmd (window, newWindow, splitWindow)
 import qualified Chiasma.Command.Pane as Cmd (windowPanes, closePane, firstWindowPane)
 import qualified Chiasma.Codec.Data as Codec (Window(Window, windowId), Pane(Pane, paneId))
 import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
-import Chiasma.Data.Ident (Ident)
+import Chiasma.Data.Ident (Ident, identString)
 import Chiasma.Data.Maybe (maybeExcept, findMaybe, orElse)
 import Chiasma.Data.RenderError (RenderError(RenderError))
 import Chiasma.Data.TmuxThunk (TmuxThunk)
@@ -31,7 +31,7 @@ import qualified Chiasma.Data.WindowState as WindowStateType (WindowStateType(..
 import Chiasma.Pane (addPane)
 import Chiasma.Ui.Data.View (ViewTree, Tree(..), ViewTreeSub, TreeSub(..))
 import qualified Chiasma.Ui.Data.View as Ui (View(View), Pane(Pane), PaneView)
-import Chiasma.View (findOrCreateView)
+import Chiasma.View (findOrCreateView, viewsLog)
 import qualified Chiasma.View as Views (window, insertWindow, updateWindow, pane, updatePane, insertPane, paneById)
 
 findOrCreateWindow ::
@@ -56,6 +56,7 @@ spawnWindow ::
 spawnWindow sid ident = do
   win@(Codec.Window windowId _ _) <- Cmd.newWindow sid ident
   registerWindowId ident windowId
+  viewsLog $ "spawned window in session " ++ show sid ++ " with id " ++ show windowId
   return win
 
 findPrincipalSub :: ViewTreeSub -> Maybe Ui.PaneView
@@ -85,12 +86,14 @@ syncPrincipal ::
   WindowId ->
   ViewTree ->
   m ()
-syncPrincipal windowId tree = do
+syncPrincipal windowId tree@(Tree (Ui.View layoutIdent _ _ _) _) = do
   (Codec.Pane paneId _ _) <- Cmd.firstWindowPane windowId
   existing <- gets (Views.paneById paneId)
   case existing of
     Nothing -> do
       (_, Tmux.View paneIdent _) <- principalPane tree
+      viewsLog $ "setting principal of layout " ++ identString layoutIdent ++ " to pane " ++ identString paneIdent ++
+        "/" ++ show paneId
       modify $ Views.updatePane (Tmux.View paneIdent (Just paneId))
     _ -> return ()
 
@@ -123,21 +126,32 @@ nativePane windowId (Tmux.View _ (Just paneId)) = do
     sameId (Codec.Pane i _ _) = i == paneId
 nativePane _ _ = return Nothing
 
+openPane ::
+  (MonadState Views m, MonadFree TmuxThunk m) =>
+  FilePath ->
+  WindowId ->
+  m PaneId
+openPane dir windowId = do
+  (Codec.Pane i _ _) <- Cmd.splitWindow dir windowId
+  viewsLog $ "opened pane " ++ show i ++ " in window " ++ show windowId
+  return i
+
 ensurePaneOpen ::
-  (MonadFree TmuxThunk m) =>
+  (MonadState Views m, MonadFree TmuxThunk m) =>
   FilePath ->
   Maybe Codec.Pane ->
   WindowId ->
   m PaneId
-ensurePaneOpen dir existing windowId = do
-  (Codec.Pane i _ _) <- maybe (Cmd.splitWindow dir windowId) return existing
-  return i
+ensurePaneOpen dir existing windowId =
+  maybe (openPane dir windowId) (return . Codec.paneId) existing
 
 ensurePaneClosed ::
-  (MonadFree TmuxThunk m) =>
+  (MonadState Views m, MonadFree TmuxThunk m) =>
   Maybe Codec.Pane ->
   m ()
-ensurePaneClosed (Just (Codec.Pane i _ _)) = Cmd.closePane i
+ensurePaneClosed (Just (Codec.Pane i _ _)) = do
+  viewsLog $ "closing pane " ++ show i
+  Cmd.closePane i
 ensurePaneClosed _ = return ()
 
 ensurePane ::

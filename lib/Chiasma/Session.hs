@@ -20,28 +20,33 @@ import qualified Chiasma.Data.View as Tmux (
   setViewId,
   )
 import Chiasma.Data.Views (Views)
-import Chiasma.View (findOrCreateView)
-import qualified Chiasma.View as Views (session, insertSession, updateSession)
+import Chiasma.View (findOrCreateView, viewsLog)
+import qualified Chiasma.View as Views (session, insertSession, updateSession, updateWindow)
 
 findOrCreateSession :: MonadState Views m => Ident -> m (Tmux.View SessionId)
-findOrCreateSession = findOrCreateView Views.session Views.insertSession
+findOrCreateSession =
+  findOrCreateView Views.session Views.insertSession
 
 spawnSession ::
   (MonadState Views m, MonadFree TmuxThunk m) =>
   Tmux.View SessionId ->
+  Tmux.View WindowId ->
   m (SessionId, WindowId)
-spawnSession session' = do
+spawnSession session' window = do
   Codec.Session sid <- newSession (Tmux.viewIdent session')
   modify $ Views.updateSession $ Tmux.setViewId sid session'
   Codec.Window wid _ _ <- newSessionWindow sid
+  modify $ Views.updateWindow $ Tmux.setViewId wid window
+  viewsLog $ "spawned session " ++ show session' ++ " with id " ++ show sid ++ " and window id " ++ show wid
   return (sid, wid)
 
 ensureSession ::
   (MonadState Views m, MonadFree TmuxThunk m) =>
   Tmux.View SessionId ->
+  Tmux.View WindowId ->
   m (SessionId, Maybe WindowId)
-ensureSession session' = do
+ensureSession session' window = do
   existing <- join <$> traverse existingSessionId (Tmux.viewId session')
   case existing of
     Just sid -> return (sid, Nothing)
-    Nothing -> second Just <$> spawnSession session'
+    Nothing -> second Just <$> spawnSession session' window

@@ -30,7 +30,7 @@ unsafeRender ::
 unsafeRender cwd sessionIdent windowIdent tree = do
   initialSession <- findOrCreateSession sessionIdent
   initialWindow <- findOrCreateWindow windowIdent
-  (sid, newSessionWid) <- ensureSession initialSession
+  (sid, newSessionWid) <- ensureSession initialSession initialWindow
   window@(Codec.Window windowId _ _) <- ensureWindow sid initialWindow newSessionWid tree
   ensureView cwd windowId tree
   (uiPrinc, _) <- principalPane tree

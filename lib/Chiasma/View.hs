@@ -19,17 +19,18 @@ module Chiasma.View(
   sessionById,
   windowById,
   paneById,
+  viewsLog,
 ) where
 
-import Control.Lens (Lens')
+import Control.Lens (Lens', over)
 import qualified Control.Lens as Lens (view, over, set)
 import Control.Monad.State.Class (MonadState, modify, gets)
 import Data.Either.Combinators (maybeToRight)
 import Data.Foldable (find)
 import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
-import Chiasma.Data.Ident (Ident, sameIdent)
+import Chiasma.Data.Ident (Ident, sameIdent, identString)
 import Chiasma.Data.View (View(View), viewIdent)
-import Chiasma.Data.Views (Views, ViewsError(..), _viewsSessions, _viewsWindows, _viewsPanes)
+import Chiasma.Data.Views (Views, ViewsError(..), _viewsSessions, _viewsWindows, _viewsPanes, _viewsLog)
 import Chiasma.Lens.Where (where1)
 
 sameId :: Eq a => a -> View a -> Bool
@@ -90,14 +91,18 @@ updatePane = updateView _viewsPanes NoSuchPane
 type Getter a = Ident -> Views -> Either ViewsError (View a)
 type Setter a = View a -> Views -> Views
 
-addView :: MonadState Views m => Setter a -> Ident -> m (View a)
+addView :: (MonadState Views m, Show a) => Setter a -> Ident -> m (View a)
 addView setter ident = do
   modify $ setter newView
+  viewsLog $ "added tmux view " ++ identString ident
   return newView
   where
     newView = View ident Nothing
 
-findOrCreateView :: MonadState Views m => Getter a -> Setter a -> Ident -> m (View a)
+findOrCreateView :: (MonadState Views m, Show a) => Getter a -> Setter a -> Ident -> m (View a)
 findOrCreateView getter setter ident = do
   existing <- gets $ getter ident
   either (const $ addView setter ident) return existing
+
+viewsLog :: MonadState Views m => String -> m ()
+viewsLog message = modify $ over _viewsLog (message :)

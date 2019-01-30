@@ -7,6 +7,7 @@ module Chiasma.Data.Views(
   _viewsSessions,
   _viewsWindows,
   _viewsPanes,
+  _viewsLog,
   ViewsError(..),
 ) where
 
@@ -29,7 +30,8 @@ data Views =
   Views {
     viewsSessions :: [View SessionId],
     viewsWindows :: [View WindowId],
-    viewsPanes :: [View PaneId]
+    viewsPanes :: [View PaneId],
+    viewsLog :: [String]
   }
   deriving (Eq, Show, Generic, Default)
 

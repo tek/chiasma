@@ -56,7 +56,7 @@ killPid =
 
 killProcess :: TmuxNative -> Process () () () -> IO ()
 killProcess api prc = do
-  runTmux api $ Tmux.write "kill-server" []
+  _ <- runTmux api $ Tmux.write "kill-server" []
   let handle = unsafeProcessHandle prc
   mayPid <- getPid handle
   maybe (return ()) killPid mayPid
