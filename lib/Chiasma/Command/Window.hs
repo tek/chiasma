@@ -21,7 +21,7 @@ sameId target (Window i _ _) = target == i
 
 windows :: MonadFree TmuxThunk m => m [Window]
 windows =
-  Tmux.read "list-windows" []
+  Tmux.read "list-windows" ["-a"]
 
 window :: MonadFree TmuxThunk m => WindowId -> m (Maybe Window)
 window windowId =
