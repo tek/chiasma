@@ -6,9 +6,9 @@ module Chiasma.Codec.Data(
   Pane(..),
 ) where
 
-import GHC.Generics (Generic)
 import Chiasma.Codec (TmuxCodec)
 import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
+import GHC.Generics (Generic)
 
 data Session =
   Session {

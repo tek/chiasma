@@ -10,9 +10,8 @@ module Chiasma.Codec.Decode(
   readInt,
 ) where
 
-import GHC.Generics ((:*:)(..), K1(..), M1(..))
 import Data.Bifunctor (first, second)
-import Text.Read (readEither)
+import GHC.Generics ((:*:)(..), K1(..), M1(..))
 import Text.ParserCombinators.Parsec (
   GenParser,
   ParseError,
@@ -20,6 +19,8 @@ import Text.ParserCombinators.Parsec (
   many,
   )
 import Text.Parsec.Char (char, digit)
+import Text.Read (readEither)
+
 import Chiasma.Data.TmuxId (SessionId(..), WindowId(..), PaneId(..), sessionPrefix, windowPrefix, panePrefix)
 
 data TmuxDecodeError =
@@ -78,3 +79,6 @@ instance TmuxPrimDecode WindowId where
 
 instance TmuxPrimDecode PaneId where
   primDecode = parseId PaneId panePrefix
+
+instance TmuxPrimDecode [Char] where
+  primDecode = Right
