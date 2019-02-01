@@ -24,6 +24,8 @@ data ViewsError =
   NoSuchWindow Ident
   |
   NoSuchPane Ident
+  |
+  NoPaneId Ident
   deriving (Eq, Show)
 
 data Views =
