@@ -20,6 +20,7 @@ module Chiasma.View(
   windowById,
   paneById,
   viewsLog,
+  paneId,
 ) where
 
 import Control.Lens (Lens', over)
@@ -27,8 +28,9 @@ import qualified Control.Lens as Lens (view, over, set)
 import Control.Monad.State.Class (MonadState, modify, gets)
 import Data.Either.Combinators (maybeToRight)
 import Data.Foldable (find)
-import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
+
 import Chiasma.Data.Ident (Ident, sameIdent, identString)
+import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
 import Chiasma.Data.View (View(View), viewIdent)
 import Chiasma.Data.Views (Views, ViewsError(..), _viewsSessions, _viewsWindows, _viewsPanes, _viewsLog)
 import Chiasma.Lens.Where (where1)
@@ -81,6 +83,13 @@ pane = view _viewsPanes NoSuchPane
 
 paneById :: PaneId -> Views -> Maybe (View PaneId)
 paneById = viewById _viewsPanes
+
+paneId :: Ident -> Views -> Either ViewsError PaneId
+paneId paneIdent views =
+  pane paneIdent views >>= trans
+  where
+    trans (View _ (Just paneId')) = Right paneId'
+    trans _ = Left $ NoPaneId paneIdent
 
 insertPane :: View PaneId -> Views -> Views
 insertPane = insertView _viewsPanes
