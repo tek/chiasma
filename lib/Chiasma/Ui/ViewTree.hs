@@ -2,16 +2,19 @@ module Chiasma.Ui.ViewTree(
   toggleLayout,
   togglePane,
   hasOpenPanes,
+  modifyPane,
+  openPane,
 ) where
 
 import Control.Lens (transformM, mapMOf, ix, cosmos, filtered, has)
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import Control.Monad.Trans.Writer (WriterT, runWriterT, tell)
-import Control.Monad.Trans.Class (lift)
 import Data.Functor.Identity (Identity(..))
-import Data.Traversable (mapAccumL)
 import Data.Monoid (Sum(..))
+import Data.Traversable (mapAccumL)
+
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Lens.Tree (
   _litTree,
@@ -20,7 +23,7 @@ import Chiasma.Lens.Tree (
   )
 import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane, LayoutMissing, AmbiguousLayout))
 import Chiasma.Ui.Data.View (Tree(Tree), TreeSub(TreeLeaf), PaneView, ViewTree, View(View), Pane(Pane))
-import Chiasma.Ui.Pane (paneToggleOpen)
+import Chiasma.Ui.Pane (paneToggleOpen, paneSetOpen)
 
 modCounted :: Monad m => (a -> m a) -> a -> WriterT (Sum Int) m a
 modCounted f a = do
@@ -56,9 +59,17 @@ modifyPaneUniqueM f ident tree = do
     0 -> throwError $ PaneMissing ident
     n -> throwError $ AmbiguousPane ident n
 
+modifyPane :: (PaneView -> PaneView) -> Ident -> ViewTree -> Either TreeModError ViewTree
+modifyPane modification ident tree =
+  runIdentity $ runExceptT $ modifyPaneUniqueM (Identity . modification) ident tree
+
 togglePane :: Ident -> ViewTree -> Either TreeModError ViewTree
-togglePane ident tree =
-  runIdentity $ runExceptT $ modifyPaneUniqueM (Identity . paneToggleOpen) ident tree
+togglePane =
+  modifyPane paneToggleOpen
+
+openPane :: Ident -> ViewTree -> Either TreeModError ViewTree
+openPane =
+  modifyPane paneSetOpen
 
 hasOpenPanes :: ViewTree -> Bool
 hasOpenPanes tree =
