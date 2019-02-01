@@ -7,6 +7,7 @@ module Chiasma.Monad.Tmux(
   readOne,
   readFirst,
   unsafeReadFirst,
+  readRaw,
 ) where
 
 import Prelude hiding (read)
@@ -41,6 +42,10 @@ unsafeReadFirst name args = do
   case mayFirst of
     (Just a) -> return a
     Nothing -> liftF $ Failed $ InvalidOutput "no data" (name ++ unwords args)
+
+readRaw :: ∀ m . (MonadFree TmuxThunk m) => String -> [String] -> m [String]
+readRaw name args =
+  liftF $ Read (cmd name args) (Right . unlines) id
 
 write :: MonadFree TmuxThunk m => String -> [String] -> m ()
 write name args = liftF $ Write (cmd name args) id
