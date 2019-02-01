@@ -38,6 +38,7 @@ views =
     [
       Tmux.View id0 (Just (PaneId 0))
     ]
+    []
 
 tree :: ViewTree
 tree =

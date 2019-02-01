@@ -7,14 +7,19 @@ module Chiasma.Command.Pane(
   movePane,
   isPaneIdOpen,
   resizePane,
+  sendKeys,
 ) where
 
-import Control.Monad.Free.Class (MonadFree)
-import Chiasma.Data.TmuxThunk (TmuxThunk)
-import Chiasma.Data.TmuxId (WindowId, PaneId, formatId)
-import Chiasma.Data.View (View(View))
+import Data.Foldable (traverse_)
+import Data.List (intercalate)
+import Data.List.Split (splitOn)
+
 import qualified Chiasma.Codec.Data as Codec (Pane(Pane))
+import Chiasma.Data.TmuxId (WindowId, PaneId, formatId)
+import Chiasma.Data.TmuxThunk (TmuxThunk)
+import Chiasma.Data.View (View(View))
 import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, write)
+import Control.Monad.Free.Class (MonadFree)
 
 panes :: MonadFree TmuxThunk m => m [Codec.Pane]
 panes =
@@ -68,3 +73,20 @@ resizePane paneId vertical size =
   Tmux.write "resize-pane" ["-t", formatId paneId, direction, show size]
   where
     direction = if vertical then "-y" else "-x"
+
+formatLine :: String -> [String]
+formatLine line =
+  [['"'] ++ replace ['"'] ['\\', '"'] line ++ ['"'], "enter"]
+  where
+    replace from to = intercalate to . splitOn from
+
+sendKeys ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  [String] ->
+  m ()
+sendKeys paneId lines' =
+  traverse_ send formatted
+  where
+    formatted = lines' >>= formatLine
+    send line = Tmux.write "send-keys" ["-t", formatId paneId, line]
