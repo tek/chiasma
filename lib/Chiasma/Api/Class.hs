@@ -4,13 +4,15 @@ module Chiasma.Api.Class(
 ) where
 
 import Conduit (ConduitT, Void, Flush)
+
+import Chiasma.Codec.Decode (TmuxDecodeError)
+import Chiasma.Data.TmuxThunk (Cmds, Cmd, TmuxError)
+import Chiasma.Native.StreamParse (TmuxOutputBlock)
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.IO.Unlift (MonadUnliftIO)
 import Control.Monad.Trans.Except (ExceptT)
-import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.TmuxThunk (Cmds, Cmd, TmuxError)
 
 class TmuxApi a where
   runCommands ::
@@ -25,7 +27,7 @@ class TmuxApi a where
   withTmux ::
     (MonadUnliftIO m, MonadThrow m) =>
     a ->
-    (ConduitT (Flush Cmd) Void m () -> ConduitT () [String] m () -> ExceptT TmuxError m b) ->
+    (ConduitT (Flush Cmd) Void m () -> ConduitT () TmuxOutputBlock m () -> ExceptT TmuxError m b) ->
     ExceptT TmuxError m b
 
 class DecodeTmuxResponse a where

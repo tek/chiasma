@@ -7,8 +7,9 @@ module StreamParseSpec(
 import Conduit
 import Data.ByteString.Internal (packChars)
 import Data.Conduit.List
-import Test.Framework
-import Chiasma.Native.StreamParse (parseConduit)
+import Test.Framework hiding (Success)
+
+import Chiasma.Native.StreamParse (TmuxOutputBlock(Success), parseConduit)
 
 paneLine :: String
 paneLine = "%0 100 100"
@@ -28,4 +29,4 @@ tmuxOutput = [
 test_conduit :: IO ()
 test_conduit = do
   r <- runConduit $ sourceList tmuxOutput .| mapC packChars .| parseConduit .| sinkList
-  assertEqual [[], [paneLine, "b"], ["c", "d"]] r
+  assertEqual [Success [], Success [paneLine, "b"], Success ["c", "d"]] r

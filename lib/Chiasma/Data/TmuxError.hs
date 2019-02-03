@@ -2,9 +2,9 @@ module Chiasma.Data.TmuxError(
   TmuxError(..),
 ) where
 
-import Text.ParserCombinators.Parsec (ParseError)
 import Chiasma.Codec.Decode (TmuxDecodeError)
 import Chiasma.Data.Cmd (Cmds(..))
+import Text.ParserCombinators.Parsec (ParseError)
 
 data TmuxError =
   ProcessFailed {
@@ -29,5 +29,10 @@ data TmuxError =
   InvalidOutput {
     invalidOutputReason :: String,
     invalidOutputCommand :: String
+  }
+  |
+  CommandFailed {
+    commandFailedCmds :: Cmds,
+    commandFailedError :: [String]
   }
   deriving (Eq, Show)

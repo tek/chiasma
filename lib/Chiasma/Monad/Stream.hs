@@ -3,8 +3,7 @@ module Chiasma.Monad.Stream(
   runTmux,
 ) where
 
-import Conduit (ConduitT, Void, (.|), runConduit, Flush(..), yield, yieldMany)
-import qualified Data.Conduit.Combinators as Conduit (drop, head)
+import Conduit (ConduitT, Void, (.|), runConduit, Flush(..), yield, yieldMany, sinkList)
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.IO.Class (MonadIO)
@@ -12,13 +11,18 @@ import Control.Monad.IO.Unlift (MonadUnliftIO)
 import Control.Monad.Trans.Class (MonadTrans, lift)
 import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.Free (FreeT(..))
+import qualified Data.Conduit.Combinators as Conduit (drop, take)
 import Data.Default.Class (Default(def))
 import Data.Either.Combinators (mapLeft)
+import Data.Foldable (traverse_)
+
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Codec.Decode (TmuxDecodeError)
 import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxThunk(..), TmuxError)
-import qualified Chiasma.Data.TmuxThunk as TmuxError (TmuxError(ProcessFailed, DecodingFailed))
+import qualified Chiasma.Data.TmuxThunk as TmuxError (TmuxError(ProcessFailed, DecodingFailed, CommandFailed))
 import Chiasma.Monad.EvalFreeT (evalFreeT)
+import Chiasma.Native.StreamParse (TmuxOutputBlock)
+import qualified Chiasma.Native.StreamParse as TmuxOutputBlock (TmuxOutputBlock(..))
 
 type TmuxProg = FreeT TmuxThunk
 
@@ -26,19 +30,23 @@ type WriteCmd m =
   ConduitT (Flush Cmd) Void m ()
 
 type ReadOutput m =
-  ConduitT () [String] m ()
+  ConduitT () TmuxOutputBlock m ()
 
 handleProcessOutput ::
   Cmds ->
   ([String] -> Either TmuxDecodeError a) ->
-  Maybe [String] ->
+  [TmuxOutputBlock] ->
   Either TmuxError [a]
-handleProcessOutput cmds decode (Just output) =
-  traverse decode' output
+handleProcessOutput cs@(Cmds cmds) _ output | length output < length cmds =
+  Left $ TmuxError.ProcessFailed cs "tmux terminated before all commands were processed"
+handleProcessOutput cmds decode output = do
+  readOutput <- foldl validate (Right []) output
+  traverse decode' readOutput
   where
-    decode' = mapLeft (TmuxError.DecodingFailed cmds (unlines output)) . decode . words
-handleProcessOutput cmds _ _ =
-  Left $ TmuxError.ProcessFailed cmds "tmux terminated before all commands were processed"
+    validate (Left err) _ = Left err
+    validate _ (TmuxOutputBlock.Success a) = Right a
+    validate _ (TmuxOutputBlock.Error a) = Left $ TmuxError.CommandFailed cmds a
+    decode' outputLine = mapLeft (TmuxError.DecodingFailed cmds outputLine) $ decode $ words outputLine
 
 executeCommands ::
   MonadIO m =>
@@ -51,7 +59,7 @@ executeCommands writeCmd readOutput decode cs@(Cmds cmds) = do
   output <- runConduit $ do
     yieldMany (Chunk <$> reverse cmds) .| writeCmd
     yield Flush .| writeCmd
-    readOutput .| (Conduit.drop (length cmds - 1) >> Conduit.head)
+    readOutput .| Conduit.take (length cmds) .| sinkList
   return $ handleProcessOutput cs decode output
 
 runTmuxProg ::
