@@ -2,14 +2,14 @@ module Chiasma.Pack(
   packWindow,
 ) where
 
+import Control.Lens (each, toListOf, mapMOf_)
 import Control.Monad (filterM, when)
 import Control.Monad.Error.Class (MonadError(throwError), liftEither)
 import Control.Monad.Free.Class (MonadFree)
 import Control.Monad.State.Class (MonadState, gets)
-import Control.Lens (each, toListOf, mapMOf_)
 import Data.Either.Combinators (maybeToRight)
-import Data.Maybe (fromMaybe)
 import Data.Foldable (traverse_)
+import Data.Maybe (fromMaybe)
 
 import qualified Chiasma.Codec.Data as Codec (Window(Window))
 import Chiasma.Command.Pane (isPaneOpen, isPaneIdOpen, movePane, resizePane)

@@ -27,9 +27,9 @@ module Chiasma.Ui.Data.View(
   _treeData,
   _treeSubs,
   _leafData,
+  consLayoutVertical,
 ) where
 
-import GHC.Generics (Generic)
 import Control.Lens (
   makeClassy_,
   Index,
@@ -37,10 +37,12 @@ import Control.Lens (
   Ixed(ix),
   )
 import Control.Lens.Plated (Plated)
-import Data.Bifunctor (Bifunctor(first, second))
 import Data.Bifoldable (Bifoldable(bifoldMap))
+import Data.Bifunctor (Bifunctor(first, second))
 import Data.Data (Data)
 import Data.Default.Class (Default(def))
+import GHC.Generics (Generic)
+
 import Chiasma.Data.Ident (Ident, Identifiable(..))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
@@ -81,8 +83,16 @@ type LayoutView = View Layout
 consPane :: Ident -> PaneView
 consPane ident' = View ident' (ViewState False) def (Pane False False Nothing)
 
+consLayoutAs :: Bool -> Ident -> LayoutView
+consLayoutAs vert ident' = View ident' (ViewState False) def (Layout vert)
+
 consLayout :: Ident -> LayoutView
-consLayout ident' = View ident' (ViewState False) def (Layout False)
+consLayout =
+  consLayoutAs False
+
+consLayoutVertical :: Ident -> LayoutView
+consLayoutVertical =
+  consLayoutAs True
 
 instance Identifiable (View a) where
   identify = viewIdent
