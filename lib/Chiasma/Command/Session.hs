@@ -3,14 +3,16 @@ module Chiasma.Command.Session(
   doesSessionExist,
   newSession,
   existingSessionId,
+  activateSession,
 ) where
 
 import Control.Monad.Free.Class (MonadFree)
-import Chiasma.Data.Ident (Ident, identString)
+
 import Chiasma.Codec.Data (Session(Session))
+import Chiasma.Data.Ident (Ident, identString)
 import Chiasma.Data.TmuxId (SessionId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
-import qualified Chiasma.Monad.Tmux as Tmux (read, readOne)
+import qualified Chiasma.Monad.Tmux as Tmux (read, readOne, write)
 
 sameId :: SessionId -> Session -> Bool
 sameId target (Session i) = target == i
@@ -31,3 +33,7 @@ existingSessionId sessionId = do
 newSession :: MonadFree TmuxThunk m => Ident -> m Session
 newSession name =
   Tmux.readOne "new-session" ["-s", identString name, "-P"]
+
+activateSession :: MonadFree TmuxThunk m => Int -> m ()
+activateSession sessionId =
+  Tmux.write "send-keys" ["-t", "%1", "'tmux switch-client -t \\$" ++ show sessionId ++ "'", "enter"]
