@@ -8,6 +8,7 @@ module Chiasma.Command.Pane(
   isPaneIdOpen,
   resizePane,
   sendKeys,
+  pipePane,
 ) where
 
 import Data.Foldable (traverse_)
@@ -90,3 +91,11 @@ sendKeys paneId lines' =
   where
     formatted = lines' >>= formatLine
     send line = Tmux.write "send-keys" ["-t", formatId paneId, line]
+
+pipePane ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  String ->
+  m ()
+pipePane paneId cmd =
+  Tmux.write "pipe-pane" ["-t", formatId paneId, cmd]
