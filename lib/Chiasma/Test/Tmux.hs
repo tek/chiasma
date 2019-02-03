@@ -6,10 +6,10 @@ module Chiasma.Test.Tmux(
   usleep,
 ) where
 
-import GHC.IO.Handle (Handle)
-import GHC.Real (fromIntegral)
 import Control.Concurrent (threadDelay)
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import GHC.IO.Handle (Handle)
+import GHC.Real (fromIntegral)
 import System.FilePath ((</>))
 import System.Posix.IO (fdToHandle)
 import System.Posix.Pty (Pty, resizePty, createPty)
@@ -29,12 +29,14 @@ import System.Process.Typed (
   unsafeProcessHandle,
   )
 import UnliftIO (finally, throwString)
+import UnliftIO.Exception (tryAny)
 import UnliftIO.Temporary (withSystemTempDirectory)
 
 import Chiasma.Monad.Stream (runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (write)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Test.File (fixture)
+import Data.Functor (void)
 
 data Terminal = Terminal Handle Pty
 
@@ -54,22 +56,29 @@ unsafeTerminal = do
   pty <- maybe (throwString "couldn't spawn pty") return mayPty
   return $ Terminal handle pty
 
+windowWidth :: Int
+windowWidth = 200
+
+windowHeight :: Int
+windowHeight = 51
+
 testTmuxProcessConfig :: Bool -> FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
 testTmuxProcessConfig gui socket confFile (Terminal handle pty) = do
-  resizePty pty (1000, 1000)
+  resizePty pty (windowWidth, windowHeight)
   let
     stream :: StreamSpec st ()
     stream = useHandleClose handle
     stdio = setStdin stream . setStdout stream . setStderr stream
+    tmuxArgs = ["-S", socket, "-f", confFile]
     prc =
       if gui
-      then proc "urxvt" ["-geometry", "1000x1000", "-e", "tmux", "-f", confFile, "-S", socket]
-      else proc "tmux" ["-S", socket, "-f", confFile]
+      then proc "urxvt" (["-geometry", show windowWidth ++ "x" ++ show windowHeight, "-e", "tmux"] ++ tmuxArgs)
+      else proc "tmux" tmuxArgs
   return $ stdio prc
 
 killPid :: Integral a => a -> IO ()
 killPid =
-  Signal.signalProcess Signal.killProcess . fromIntegral
+  void . tryAny . Signal.signalProcess Signal.killProcess . fromIntegral
 
 killProcess :: TmuxNative -> Process () () () -> IO ()
 killProcess api prc = do
@@ -78,9 +87,13 @@ killProcess api prc = do
   mayPid <- getPid handle
   maybe (return ()) killPid mayPid
 
+-- FIXME find a way to wait for tmux deterministically instead of sleeping
+-- if the first tmux control mode process from a TmuxProg runs before urxvt has started the server,
+-- it will not use the test tmux.conf
+-- maybe start tmux first, then urxvt?
 runAndKillTmux :: (TmuxNative -> IO a) -> TmuxNative -> Process () () () -> IO a
 runAndKillTmux thunk api prc = do
-  sleep 0.1
+  sleep 0.2
   finally (thunk api) (killProcess api prc)
 
 withTestTmux :: Bool -> (TmuxNative -> IO a) -> FilePath -> IO a
