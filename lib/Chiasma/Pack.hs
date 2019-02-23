@@ -9,7 +9,11 @@ import Control.Monad.Free.Class (MonadFree)
 import Control.Monad.State.Class (MonadState, gets)
 import Data.Either.Combinators (maybeToRight)
 import Data.Foldable (traverse_)
+import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NonEmpty (head)
 import Data.Maybe (fromMaybe)
+import qualified Data.Text as T (pack)
+import Data.Text.Prettyprint.Doc (Doc, pretty, line, (<>), (<+>))
 
 import qualified Chiasma.Codec.Data as Codec (Window(Window))
 import Chiasma.Command.Pane (isPaneOpen, isPaneIdOpen, movePane, resizePane)
@@ -18,15 +22,16 @@ import Chiasma.Data.List (head')
 import Chiasma.Data.Maybe (maybeExcept)
 import Chiasma.Data.RenderError (RenderError)
 import qualified Chiasma.Data.RenderError as RenderError (RenderError(Pack))
-import Chiasma.Data.TmuxId (WindowId, PaneId)
+import Chiasma.Data.Text.Pretty (prettyS)
+import Chiasma.Data.TmuxId (WindowId, PaneId, WindowId(..))
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Data.View as Tmux (View(View))
 import Chiasma.Data.Views (Views)
 import Chiasma.Data.WindowState (WindowState(..))
-import qualified Chiasma.Data.WindowState as WindowState (WindowStateType(..))
 import Chiasma.Lens.Tree (leafByIdent)
-import Chiasma.Ui.Data.Measure (Measured(Measured), MeasureTree, _measuredView)
-import Chiasma.Ui.Data.View (Tree(Tree), ViewTree, _subTree, TreeSub(..))
+import Chiasma.Ui.Data.Measure (Measured(Measured), MeasureTree, MeasureTreeSub(..), MPane(..), MLayout(..))
+import Chiasma.Ui.Data.Tree (Tree(Tree), Node(Sub, Leaf))
+import qualified Chiasma.Ui.Data.Tree as Tree (forest, leafData, subTree)
 import qualified Chiasma.Ui.Data.View as Ui (
   View(View),
   PaneView,
@@ -37,143 +42,83 @@ import qualified Chiasma.Ui.Data.View as Ui (
   _leafData,
   )
 import Chiasma.Ui.Measure (measureTree)
+import Chiasma.View (viewsLog)
 import qualified Chiasma.View as Views (pane)
-
-refPaneError :: Ident -> RenderError
-refPaneError ident = RenderError.Pack $ "reference pane `" ++ show ident ++ "` not found"
-
-referenceUiPane :: Ident -> ViewTree -> Either RenderError Ui.PaneView
-referenceUiPane ident = maybeToRight (refPaneError ident) . leafByIdent ident
 
 isTmuxPaneOpen ::
   (MonadState Views m, MonadFree TmuxThunk m) =>
-  Ui.PaneView ->
+  Measured MPane ->
   m Bool
-isTmuxPaneOpen uiPane = do
-  tmuxPane <- gets $ Views.pane (Ui.viewIdent uiPane)
-  either (return . const False) isPaneOpen tmuxPane
+isTmuxPaneOpen (Measured _ (MPane paneId)) =
+  isPaneIdOpen paneId
 
-layoutPanes :: [TreeSub (Measured Ui.LayoutView) (Measured Ui.PaneView)] -> [Ui.PaneView]
-layoutPanes = toListOf (each . Ui._leafData . _measuredView)
-
-referencePane ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
-  [TreeSub (Measured Ui.LayoutView) (Measured Ui.PaneView)] ->
-  m (Maybe Ui.PaneView)
-referencePane subs = do
-  let panes = layoutPanes subs
-  openPanes <- filterM isTmuxPaneOpen panes
-  return $ head' openPanes
-
-paneIdFatal :: (MonadState Views m, MonadError RenderError m) => Ident -> m PaneId
-paneIdFatal ident = do
-  pane <- gets $ Views.pane ident
-  case pane of
-    (Right (Tmux.View _ (Just paneId))) -> return paneId
-    _ -> throwError $ RenderError.Pack $ "no tmux pane for `" ++ show ident ++ "`"
+layoutPanes :: NonEmpty MeasureTreeSub -> [Measured MPane]
+layoutPanes = toListOf (each . Tree.leafData)
 
 moveTmuxPane ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
-  Ident -> Ident -> Bool -> m ()
-moveTmuxPane paneIdent refIdent vertical = do
-  refId <- paneIdFatal refIdent
-  paneId <- paneIdFatal paneIdent
+  PaneId -> PaneId -> Bool -> m ()
+moveTmuxPane paneId refId vertical = do
   open <- isPaneIdOpen paneId
   when open $ movePane paneId refId vertical
 
 packPane ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
-  Ui.PaneView ->
+  PaneId ->
   Bool ->
-  Ui.PaneView ->
+  PaneId ->
   m ()
-packPane refPane vertical pane@(Ui.View _ _ _ (Ui.Pane open _ _)) =
-  when (open && pane /= refPane) $ moveTmuxPane (Ui.viewIdent pane) (Ui.viewIdent refPane) vertical
+packPane refId vertical paneId =
+  when (paneId /= refId) $ moveTmuxPane paneId refId vertical
 
 positionView ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Bool ->
-  Ui.PaneView ->
-  TreeSub (Measured Ui.LayoutView) (Measured Ui.PaneView) ->
+  PaneId ->
+  MeasureTreeSub ->
   m ()
-positionView vertical refPane =
+positionView vertical refId =
   position
   where
-    pp = packPane refPane vertical
-    position (TreeNode (Tree _ sub)) =
-      traverse_ pp firstPane
-      where
-        firstPane = head' $ layoutPanes sub
-    position (TreeLeaf (Measured pane _)) =
-      pp pane
+    position (Sub (Tree (Measured _ (MLayout layoutRefId _)) sub)) =
+      packPane refId vertical layoutRefId
+    position (Leaf (Measured _ (MPane paneId))) =
+      packPane refId vertical paneId
 
-resizeViewWith ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
-  Int ->
-  Ui.PaneView ->
-  Bool ->
-  m ()
-resizeViewWith size pane vertical = do
-  paneId <- paneIdFatal (Ui.viewIdent pane)
-  resizePane paneId vertical size
+describeVertical :: Bool -> Doc a
+describeVertical True = prettyS "vertically"
+describeVertical False = prettyS "horizontally"
 
 resizeView ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Bool ->
-  TreeSub (Measured Ui.LayoutView) (Measured Ui.PaneView) ->
+  MeasureTreeSub ->
   m ()
-resizeView vertical (TreeNode (Tree (Measured _ size) sub)) = do
-  layoutRefPane <- referencePane sub
-  ref <- maybeExcept (RenderError.Pack "no ref pane") layoutRefPane
-  resizeViewWith size ref vertical
-resizeView vertical (TreeLeaf (Measured pane size)) =
-  resizeViewWith size pane vertical
+resizeView vertical (Sub (Tree (Measured size (MLayout refId _)) sub)) = do
+  viewsLog $ prettyS "resizing layout with ref" <+> pretty refId <+> prettyS "to" <+> pretty size <+>
+    describeVertical vertical
+  resizePane refId vertical size
+resizeView vertical (Leaf (Measured size (MPane paneId))) = do
+  viewsLog $ prettyS "resizing pane" <+> pretty paneId <+> prettyS "to" <+> pretty size <+> describeVertical vertical
+  resizePane paneId vertical size
 
 packTree ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
-  WindowId ->
-  Ui.PaneView ->
   MeasureTree ->
-  Ui.PaneView ->
   m ()
-packTree _ _ measures initialRef =
-  pack initialRef measures
+packTree =
+  pack
   where
-    pack ref (Tree (Measured (Ui.View _ _ _ (Ui.Layout vertical)) _) sub) = do
-      layoutRefPane <- referencePane sub
-      let newRefPane = fromMaybe ref layoutRefPane
-      traverse_ (positionView vertical newRefPane) sub
-      mapMOf_ (each . _subTree) (pack newRefPane) sub
+    pack (Tree (Measured _ (MLayout ref vertical)) sub) = do
+      traverse_ (positionView vertical ref) sub
+      mapMOf_ (each . Tree.subTree) pack sub
       traverse_ (resizeView vertical) sub
-
-packPristineWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
-  WindowState ->
-  WindowId ->
-  Ui.PaneView ->
-  m ()
-packPristineWindow = undefined
-
-packTrackedWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
-  Tmux.View PaneId ->
-  WindowState ->
-  WindowId ->
-  Ui.PaneView ->
-  m ()
-packTrackedWindow (Tmux.View paneIdent _) (WindowState (Codec.Window _ width height) _ _ tree _) windowId principal = do
-  uiRef <- liftEither $ referenceUiPane paneIdent tree
-  let measures = measureTree tree width height
-  packTree windowId principal measures uiRef
 
 packWindow ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   WindowState ->
-  WindowId ->
-  Ui.PaneView ->
   m ()
-packWindow wState =
-  pack (wsType wState) wState
-  where
-    pack WindowState.Pristine = packPristineWindow
-    pack (WindowState.Tracked pane) = packTrackedWindow pane
+packWindow (WindowState w@(Codec.Window (WindowId wid) width height) _ _ tree paneId) = do
+  let measures = measureTree tree width height
+  viewsLog $ pretty (T.pack "measured tree:") <> line <> pretty measures
+  packTree measures

@@ -6,9 +6,13 @@ module RenderSpec(
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (runExceptT)
-import Control.Monad.Trans.State.Strict (StateT, evalStateT)
+import Control.Monad.Trans.State.Strict (StateT, runStateT)
 import Data.Default.Class (Default(def))
+import Data.Foldable (traverse_)
+import Data.Text.Prettyprint.Doc ((<>), line)
+import Data.Text.Prettyprint.Doc.Util (putDocW)
 import Test.Framework
+import UnliftIO (throwString)
 import UnliftIO.Directory (getCurrentDirectory)
 
 import qualified Chiasma.Codec.Data as Codec (Pane(..))
@@ -19,7 +23,7 @@ import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxId (SessionId(SessionId), WindowId(WindowId), PaneId(PaneId))
 import Chiasma.Data.TmuxThunk (TmuxError)
 import qualified Chiasma.Data.View as Tmux (View(View))
-import Chiasma.Data.Views (Views(Views))
+import Chiasma.Data.Views (Views(Views), viewsLog)
 import Chiasma.Monad.Stream (TmuxProg, runTmux)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Render (render)
@@ -42,6 +46,27 @@ views =
     [Tmux.View id0 (Just (PaneId 0))]
     []
 
+renderOnce :: ViewTree -> TmuxNative -> FilePath -> Views -> IO Views
+renderOnce tree api cwd vs = do
+  r <- runTmux api $ runStateT (runExceptT $ render cwd id1 id1 tree) vs
+  either (throwString . show) (return . snd) r
+
+runRender :: ViewTree -> TmuxNative -> IO (Either TmuxError [Codec.Pane])
+runRender tree api = do
+  cwd <- getCurrentDirectory
+  vs1 <- renderOnce tree api cwd views
+  runTmux api $ activateSession 0
+  runTmux api $ activateSession 1
+  vs2 <- renderOnce tree api cwd vs1
+  sleep 0.5
+  -- traverse_ (putDocW 100) (fmap (<> line) $ reverse $ viewsLog vs2)
+  runTmux api panes
+
+renderSpec :: ViewTree -> [Codec.Pane] -> IO ()
+renderSpec tree target = do
+  ps <- tmuxSpec $ runRender tree
+  assertEqual (Right target) ps
+
 treeImbalanced :: ViewTree
 treeImbalanced =
   Tree (consLayout id0) [
@@ -50,6 +75,14 @@ treeImbalanced =
     ]
   where
     openPane i geo = Ui.View i (ViewState False) geo (Ui.Pane True False Nothing)
+
+imbalancedTarget :: [Codec.Pane]
+imbalancedTarget =
+  [Codec.Pane (PaneId 0) 200 50, Codec.Pane (PaneId 1) 49 50, Codec.Pane (PaneId 2) 150 50]
+
+test_imbalanced :: IO ()
+test_imbalanced =
+  renderSpec treeImbalanced imbalancedTarget
 
 treeNested :: ViewTree
 treeNested =
@@ -67,34 +100,38 @@ treeNested =
   where
     openPane i geo = Ui.View i (ViewState False) geo (Ui.Pane True False Nothing)
 
-runRender :: ViewTree -> TmuxNative -> IO (Either TmuxError [Codec.Pane])
-runRender tree api = do
-  cwd <- getCurrentDirectory
-  let
-    st :: StateT Views (TmuxProg IO) (Either RenderError ())
-    st = runExceptT $ render cwd id1 id1 tree
-    prog :: TmuxProg IO (Either RenderError ())
-    prog = evalStateT st views
-  runTmux api prog
-  runTmux api $ activateSession 1
-  sleep 1
-  runTmux api panes
-
-test_imbalanced :: IO ()
-test_imbalanced = do
-  ps <- tmuxSpec $ runRender treeImbalanced
-  assertEqual (Right [Codec.Pane (PaneId 0) 200 50, Codec.Pane (PaneId 1) 62 50, Codec.Pane (PaneId 2) 137 50]) ps
-
 nestedTarget :: [Codec.Pane]
 nestedTarget =
   [
   Codec.Pane (PaneId 0) 200 50,
-  Codec.Pane (PaneId 1) 99 50,
-  Codec.Pane (PaneId 2) 100 24,
-  Codec.Pane (PaneId 2) 100 25
+  Codec.Pane (PaneId 1) 100 50,
+  Codec.Pane (PaneId 2) 99 25,
+  Codec.Pane (PaneId 3) 99 24
   ]
 
 test_nested :: IO ()
-test_nested = do
-  ps <- tmuxGuiSpec $ runRender treeNested
-  assertEqual (Right nestedTarget) ps
+test_nested =
+  renderSpec treeNested nestedTarget
+
+treeTwoLayouts :: ViewTree
+treeTwoLayouts =
+  Tree (consLayout id0) [
+    TreeNode $
+      Tree (consLayoutVertical id1) [
+        TreeLeaf (openPane id0 def)
+        ],
+    TreeNode $
+      Tree (consLayoutVertical id2) [
+        TreeLeaf (openPane id1 def)
+        ]
+    ]
+  where
+    openPane i geo = Ui.View i (ViewState False) geo (Ui.Pane True False Nothing)
+
+twoLayoutsTarget :: [Codec.Pane]
+twoLayoutsTarget =
+  [Codec.Pane (PaneId 0) 200 50, Codec.Pane (PaneId 1) 100 50, Codec.Pane (PaneId 2) 99 50]
+
+test_twoLayouts :: IO ()
+test_twoLayouts =
+  renderSpec treeTwoLayouts twoLayoutsTarget

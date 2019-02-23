@@ -11,12 +11,15 @@ module Chiasma.Data.Views(
   ViewsError(..),
 ) where
 
-import GHC.Generics (Generic)
 import Control.Lens (makeClassy_)
 import Data.Default.Class (Default)
+import Data.Text.Prettyprint.Doc (Doc)
+import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle)
+import GHC.Generics (Generic)
+
 import Chiasma.Data.Ident (Ident)
-import Chiasma.Data.View (View)
 import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
+import Chiasma.Data.View (View)
 
 data ViewsError =
   NoSuchSession Ident
@@ -33,8 +36,8 @@ data Views =
     viewsSessions :: [View SessionId],
     viewsWindows :: [View WindowId],
     viewsPanes :: [View PaneId],
-    viewsLog :: [String]
+    viewsLog :: [Doc AnsiStyle]
   }
-  deriving (Eq, Show, Generic, Default)
+  deriving (Show, Generic, Default)
 
 makeClassy_ ''Views

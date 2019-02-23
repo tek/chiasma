@@ -2,21 +2,22 @@ module Chiasma.Ui.Measure(
   measureTree,
 ) where
 
-import GHC.Float (int2Float)
+import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NonEmpty (zip, filter, zipWith, toList)
 import Data.Maybe (fromMaybe)
+import GHC.Float (int2Float)
+
 import Chiasma.Data.Maybe (orElse)
-import Chiasma.Ui.Data.Measure (MeasureTree, Measured(..), MeasureTreeSub)
-import Chiasma.Ui.Data.View (ViewTree, Tree(..), View(View), Layout(Layout), TreeSub(..), ViewTreeSub, Pane(Pane))
+import Chiasma.Data.TmuxId (PaneId(..))
+import Chiasma.Ui.Data.Measure (MeasureTree, Measured(..), MeasureTreeSub, MPane(..), MLayout(..))
+import Chiasma.Ui.Data.RenderableTree (RenderableTree, RenderableNode, RLayout(..), Renderable(..), RPane(..))
+import Chiasma.Ui.Data.Tree (Tree(..))
+import qualified Chiasma.Ui.Data.Tree as Tree (Node(..))
+import Chiasma.Ui.Data.View (View(View), Layout(Layout), Pane(Pane))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(minSize, maxSize, fixedSize))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
-import Chiasma.Ui.Measure.Weights (viewWeights)
 import Chiasma.Ui.Measure.Balance (balanceSizes)
-
-isViewOpen :: ViewTreeSub -> Bool
-isViewOpen (TreeNode (Tree _ sub)) =
-  any isViewOpen sub
-isViewOpen (TreeLeaf (View _ _ _ (Pane open _ _))) =
-  open
+import Chiasma.Ui.Measure.Weights (viewWeights)
 
 minimizedSizeOrDefault :: ViewGeometry -> Float
 minimizedSizeOrDefault = fromMaybe 2 . minSize
@@ -29,22 +30,22 @@ actualSize :: (ViewGeometry -> Maybe Float) ->  ViewState -> ViewGeometry -> May
 actualSize getter viewState viewGeom =
   orElse (getter viewGeom) (effectiveFixedSize viewState viewGeom)
 
-actualMinSizes :: [(ViewState, ViewGeometry)] -> [Float]
+actualMinSizes :: NonEmpty (ViewState, ViewGeometry) -> NonEmpty Float
 actualMinSizes =
   fmap (fromMaybe 0.0 . uncurry (actualSize minSize))
 
-actualMaxSizes :: [(ViewState, ViewGeometry)] -> [Maybe Float]
+actualMaxSizes :: NonEmpty (ViewState, ViewGeometry) -> NonEmpty (Maybe Float)
 actualMaxSizes =
   fmap (uncurry $ actualSize maxSize)
 
 isMinimized :: ViewState -> ViewGeometry -> Bool
 isMinimized (ViewState minimized) _ = minimized
 
-subMeasureData :: ViewTreeSub -> (ViewState, ViewGeometry)
-subMeasureData (TreeNode (Tree (View _ s g _) _)) = (s, g)
-subMeasureData (TreeLeaf (View _ s g _)) = (s, g)
+subMeasureData :: RenderableNode -> (ViewState, ViewGeometry)
+subMeasureData (Tree.Sub (Tree (Renderable s g _) _)) = (s, g)
+subMeasureData (Tree.Leaf (Renderable s g _)) = (s, g)
 
-measureLayoutViews :: Float -> [ViewTreeSub] -> [Float]
+measureLayoutViews :: Float -> NonEmpty RenderableNode -> NonEmpty Int
 measureLayoutViews total views =
   balanceSizes minSizes maxSizes weights minimized cells
   where
@@ -57,23 +58,23 @@ measureLayoutViews total views =
     minimized = fmap (uncurry isMinimized) measureData
     weights = viewWeights measureData
 
-measureSub :: Float -> Float -> Bool -> ViewTreeSub -> Float -> MeasureTreeSub
-measureSub width height vertical (TreeNode tree) size =
-  TreeNode $ measureLayout tree newWidth newHeight
+measureSub :: Int -> Int -> Bool -> RenderableNode -> Int -> MeasureTreeSub
+measureSub width height vertical (Tree.Sub tree) size =
+  Tree.Sub $ measureLayout tree newWidth newHeight vertical
   where
     (newWidth, newHeight) = if vertical then (width, size) else (size, height)
-measureSub _ _ _ (TreeLeaf v) size =
-  TreeLeaf (Measured v (round size))
+measureSub _ _ _ (Tree.Leaf (Renderable _ _ (RPane paneId))) size =
+  Tree.Leaf (Measured size (MPane paneId))
 
-measureLayout :: ViewTree -> Float -> Float -> MeasureTree
-measureLayout (Tree v@(View _ _ _ (Layout vertical)) sub) width height =
-  Tree (Measured v (round size)) measuredSub
+measureLayout :: RenderableTree -> Int -> Int -> Bool -> MeasureTree
+measureLayout (Tree v@(Renderable _ _ (RLayout refId vertical)) sub) width height parentVertical =
+  Tree (Measured sizeInParent (MLayout refId vertical)) measuredSub
   where
-    size = if vertical then height else width
-    views = filter isViewOpen sub
-    sizes = measureLayoutViews size views
-    measuredSub = uncurry (measureSub width height vertical) <$> zip views sizes
+    sizeInParent = if parentVertical then height else width
+    subTotalSize = if vertical then height else width
+    sizes = measureLayoutViews (int2Float subTotalSize) sub
+    measuredSub = uncurry (measureSub width height vertical) <$> NonEmpty.zip sub sizes
 
-measureTree :: ViewTree -> Int -> Int -> MeasureTree
+measureTree :: RenderableTree -> Int -> Int -> MeasureTree
 measureTree tree width height =
-  measureLayout tree (int2Float width) (int2Float height)
+  measureLayout tree width height False

@@ -4,7 +4,6 @@ module IndividualProcessSpec(
   htf_thisModulesTests
 ) where
 
-import Test.Framework
 import Chiasma.Codec.Data (Pane(Pane), Window(Window))
 import Chiasma.Data.TmuxId (WindowId(..), PaneId(..))
 import Chiasma.Data.TmuxThunk (TmuxError)
@@ -12,6 +11,7 @@ import Chiasma.Monad.IndividualProcess (runTmux, TmuxProg)
 import qualified Chiasma.Monad.Tmux as Tmux (read, write)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Test.Tmux (tmuxSpec)
+import Test.Framework
 
 prog :: TmuxProg ([Pane], [Pane], [Window])
 prog = do
@@ -23,10 +23,10 @@ prog = do
   return (panes1, panes, wins)
 
 p :: Int -> Pane
-p i = Pane (PaneId i) 1000 999
+p i = Pane (PaneId i) 200 50
 
 w :: Int -> Window
-w i = Window (WindowId i) 1000 999
+w i = Window (WindowId i) 200 50
 
 runProg :: TmuxNative -> IO (Either TmuxError ([Pane], [Pane], [Window]))
 runProg api = runTmux api prog

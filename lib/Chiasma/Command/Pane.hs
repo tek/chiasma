@@ -9,6 +9,7 @@ module Chiasma.Command.Pane(
   resizePane,
   sendKeys,
   pipePane,
+  sameId,
 ) where
 
 import Data.Foldable (traverse_)
@@ -21,6 +22,9 @@ import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.View (View(View))
 import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, write)
 import Control.Monad.Free.Class (MonadFree)
+
+sameId :: PaneId -> Codec.Pane -> Bool
+sameId target (Codec.Pane i _ _) = target == i
 
 panes :: MonadFree TmuxThunk m => m [Codec.Pane]
 panes =
@@ -43,7 +47,7 @@ isPaneIdOpen ::
   PaneId ->
   m Bool
 isPaneIdOpen paneId =
-  any (\(Codec.Pane i _ _) -> i == paneId) <$> panes
+  any (sameId paneId) <$> panes
 
 isPaneOpen ::
   MonadFree TmuxThunk m =>

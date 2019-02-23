@@ -5,23 +5,23 @@ module Chiasma.Session(
   ensureSession,
 ) where
 
-import Control.Monad (join)
-import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.State.Class (MonadState, modify)
-import Data.Bifunctor (second)
+import qualified Chiasma.Codec.Data as Codec (Session(Session), Window(Window))
 import Chiasma.Command.Session (newSession, existingSessionId)
 import Chiasma.Command.Window (newSessionWindow)
-import qualified Chiasma.Codec.Data as Codec (Session(Session), Window(Window))
-import Chiasma.Data.TmuxId (SessionId, WindowId)
 import Chiasma.Data.Ident (Ident)
+import Chiasma.Data.TmuxId (SessionId, WindowId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Data.View as Tmux (
   View(viewId, viewIdent),
   setViewId,
   )
 import Chiasma.Data.Views (Views)
-import Chiasma.View (findOrCreateView, viewsLog)
+import Chiasma.View (findOrCreateView, viewsLogS)
 import qualified Chiasma.View as Views (session, insertSession, updateSession, updateWindow)
+import Control.Monad (join)
+import Control.Monad.Free.Class (MonadFree)
+import Control.Monad.State.Class (MonadState, modify)
+import Data.Bifunctor (second)
 
 findOrCreateSession :: MonadState Views m => Ident -> m (Tmux.View SessionId)
 findOrCreateSession =
@@ -37,7 +37,7 @@ spawnSession session' window = do
   modify $ Views.updateSession $ Tmux.setViewId sid session'
   Codec.Window wid _ _ <- newSessionWindow sid
   modify $ Views.updateWindow $ Tmux.setViewId wid window
-  viewsLog $ "spawned session " ++ show session' ++ " with id " ++ show sid ++ " and window id " ++ show wid
+  viewsLogS $ "spawned session " ++ show session' ++ " with id " ++ show sid ++ " and window id " ++ show wid
   return (sid, wid)
 
 ensureSession ::

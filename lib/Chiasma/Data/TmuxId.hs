@@ -8,12 +8,17 @@ module Chiasma.Data.TmuxId(
   panePrefix,
 ) where
 
+import Data.Text.Prettyprint.Doc (Pretty(..))
+
 sessionPrefix :: Char
 sessionPrefix = '$'
 
 newtype SessionId =
   SessionId Int
   deriving (Eq, Show)
+
+instance Pretty SessionId where
+  pretty = pretty . formatId
 
 windowPrefix :: Char
 windowPrefix = '@'
@@ -22,12 +27,18 @@ newtype WindowId =
   WindowId Int
   deriving (Eq, Show)
 
+instance Pretty WindowId where
+  pretty = pretty . formatId
+
 panePrefix :: Char
 panePrefix = '%'
 
 newtype PaneId =
   PaneId Int
   deriving (Eq, Show)
+
+instance Pretty PaneId where
+  pretty = pretty . formatId
 
 data TmuxIdPrefix a =
   TmuxIdPrefix Char

@@ -4,34 +4,37 @@ module Chiasma.Ui.Measure.Weights(
   amendAndNormalizeWeights,
 ) where
 
-import GHC.Float (int2Float)
+import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NonEmpty (toList, filter)
 import Data.Maybe (fromMaybe, isJust, catMaybes, isNothing)
-import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import GHC.Float (int2Float)
+
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry))
+import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 
 effectiveWeight :: ViewState -> ViewGeometry -> Maybe Float
 effectiveWeight (ViewState minimized) (ViewGeometry _ _ fixedSize _ weight _) =
   if isJust fixedSize || minimized then Just 0 else weight
 
-amendWeights :: [Maybe Float] -> [Float]
+amendWeights :: NonEmpty (Maybe Float) -> NonEmpty Float
 amendWeights weights =
   fmap (fromMaybe emptyWeight) weights
   where
-    total = sum (catMaybes weights)
+    total = sum (catMaybes $ NonEmpty.toList weights)
     normTotal = if total == 0 then 1 else total
-    empties = length (filter isNothing weights)
+    empties = length (NonEmpty.filter isNothing weights)
     normEmpties = if empties == 0 then 1 else empties
     emptyWeight = normTotal / int2Float normEmpties
 
-normalizeWeights :: [Float] -> [Float]
+normalizeWeights :: NonEmpty Float -> NonEmpty Float
 normalizeWeights weights =
   fmap (/ normTotal) weights
   where
     total = sum weights
     normTotal = if total == 0 then 1 else total
 
-amendAndNormalizeWeights :: [Maybe Float] -> [Float]
+amendAndNormalizeWeights :: NonEmpty (Maybe Float) -> NonEmpty Float
 amendAndNormalizeWeights = normalizeWeights . amendWeights
 
-viewWeights :: [(ViewState, ViewGeometry)] -> [Float]
+viewWeights :: NonEmpty (ViewState, ViewGeometry) -> NonEmpty Float
 viewWeights = amendAndNormalizeWeights . fmap (uncurry effectiveWeight)

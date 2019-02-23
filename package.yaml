@@ -45,6 +45,8 @@ dependencies:
 - exceptions
 - deepseq
 - random
+- prettyprinter
+- prettyprinter-ansi-terminal
 
 default-extensions:
 - AutoDeriveTypeable

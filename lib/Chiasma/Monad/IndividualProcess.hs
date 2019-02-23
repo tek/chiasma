@@ -3,12 +3,12 @@ module Chiasma.Monad.IndividualProcess(
   runTmux,
 ) where
 
+import Chiasma.Api.Class (TmuxApi(..))
+import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxThunk(..), TmuxError)
 import Control.Monad.Free (Free(..))
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Data.Default.Class (Default(def))
-import Chiasma.Api.Class (TmuxApi(..))
-import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxThunk(..), TmuxError)
 
 type TmuxProg = Free TmuxThunk
 
