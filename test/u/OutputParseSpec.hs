@@ -4,14 +4,17 @@ module OutputParseSpec(
   htf_thisModulesTests
 ) where
 
+import Data.Text (Text)
+import qualified Data.Text as T (unlines)
 import Test.Framework
+
 import Chiasma.Native.Parse (resultLines)
 
-paneLine :: String
+paneLine :: Text
 paneLine = "%0 100 100"
 
-tmuxOutput :: String
-tmuxOutput = unlines [
+tmuxOutput :: Text
+tmuxOutput = T.unlines [
   "%begin 123",
   "%end 123",
   "%session-changed $0 0",

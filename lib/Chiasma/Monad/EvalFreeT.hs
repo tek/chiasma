@@ -5,9 +5,11 @@ module Chiasma.Monad.EvalFreeT(
 ) where
 
 import Control.Monad.Error.Class (MonadError(throwError), liftEither)
-import Control.Monad.Trans.Free (FreeT(..), FreeF(..))
 import Control.Monad.Trans.Class (MonadTrans, lift)
+import Control.Monad.Trans.Free (FreeT(..), FreeF(..))
 import Data.Default.Class (Default(def))
+import Data.Text (Text)
+
 import Chiasma.Codec.Decode (TmuxDecodeError)
 import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxThunk(..), TmuxError)
 
@@ -17,7 +19,7 @@ instance Default CmdBuffer where
   def = CmdBuffer def
 
 type CommandExec m =
-  (∀ b. ([String] -> Either TmuxDecodeError b) -> Cmds -> m (Either TmuxError [b]))
+  (∀ b. ([Text] -> Either TmuxDecodeError b) -> Cmds -> m (Either TmuxError [b]))
 
 evalFreeF ::
   (Monad m, MonadTrans t, MonadError TmuxError (t m)) =>

@@ -10,16 +10,21 @@ module Chiasma.Monad.Tmux(
   readRaw,
 ) where
 
-import Prelude hiding (read)
 import Control.Monad.Free (liftF)
 import Control.Monad.Free.Class (MonadFree)
+import Data.Text (Text)
+import qualified Data.Text as T (unlines)
+import Prelude hiding (read)
+
 import Chiasma.Codec (TmuxCodec, TmuxQuery(unQ))
 import qualified Chiasma.Codec as TmuxCodec (TmuxCodec(decode, query))
 import Chiasma.Data.TmuxThunk (TmuxThunk(..), cmd, TmuxError(InvalidOutput))
 
 read :: ∀ a m . (TmuxCodec a, MonadFree TmuxThunk m) => String -> [String] -> m [a]
 read name args =
-  liftF $ Read (cmd name (args ++ ["-F", "'" ++ unQ (TmuxCodec.query @a) ++ "'"])) TmuxCodec.decode id
+  liftF $ Read (cmd name (args ++ formatArgs)) TmuxCodec.decode id
+  where
+    formatArgs = ["-F", "'", unQ (TmuxCodec.query @a), "'"]
 
 readOne :: ∀ a m . (TmuxCodec a, MonadFree TmuxThunk m) => String -> [String] -> m a
 readOne name args = do
@@ -43,9 +48,9 @@ unsafeReadFirst name args = do
     (Just a) -> return a
     Nothing -> liftF $ Failed $ InvalidOutput "no data" (name ++ unwords args)
 
-readRaw :: ∀ m . (MonadFree TmuxThunk m) => String -> [String] -> m [String]
+readRaw :: ∀ m . (MonadFree TmuxThunk m) => String -> [String] -> m [Text]
 readRaw name args =
-  liftF $ Read (cmd name args) (Right . unlines) id
+  liftF $ Read (cmd name args) (Right . T.unlines) id
 
 write :: MonadFree TmuxThunk m => String -> [String] -> m ()
 write name args = liftF $ Write (cmd name args) id

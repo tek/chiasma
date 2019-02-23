@@ -11,6 +11,8 @@ import Data.Attoparsec.ByteString (Parser)
 import Data.ByteString (ByteString)
 import Data.Conduit.Attoparsec (conduitParser)
 import Data.Functor (void)
+import Data.Text (Text)
+import qualified Data.Text as T (pack)
 import Text.Parser.Char (CharParsing, string, newline, anyChar)
 import Text.Parser.Combinators (try, many, manyTill, skipMany, notFollowedBy, choice)
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
@@ -22,13 +24,13 @@ data End =
   deriving (Eq, Show)
 
 data TmuxOutputBlock =
-  Success [String]
+  Success [Text]
   |
-  Error [String]
+  Error [Text]
   deriving (Eq, Show)
 
-tillEol :: (Alternative m, CharParsing m) => m String
-tillEol = manyTill anyChar newline
+tillEol :: (Alternative m, CharParsing m) => m Text
+tillEol = T.pack <$> manyTill anyChar newline
 
 beginLine :: (Alternative m, CharParsing m, Monad m) => m ()
 beginLine = void $ string "%begin" >> tillEol

@@ -5,20 +5,22 @@ module Chiasma.Api.Class(
 
 import Conduit (ConduitT, Void, Flush)
 
-import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.TmuxThunk (Cmds, Cmd, TmuxError)
-import Chiasma.Native.StreamParse (TmuxOutputBlock)
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.IO.Unlift (MonadUnliftIO)
 import Control.Monad.Trans.Except (ExceptT)
+import Data.Text (Text)
+
+import Chiasma.Codec.Decode (TmuxDecodeError)
+import Chiasma.Data.TmuxThunk (Cmds, Cmd, TmuxError)
+import Chiasma.Native.StreamParse (TmuxOutputBlock)
 
 class TmuxApi a where
   runCommands ::
     (MonadIO m, MonadError TmuxError m) =>
     a ->
-    ([String] -> Either TmuxDecodeError b) ->
+    ([Text] -> Either TmuxDecodeError b) ->
     Cmds ->
     m [b]
 

@@ -10,18 +10,24 @@ module Chiasma.Command.Pane(
   sendKeys,
   pipePane,
   sameId,
+  capturePane,
 ) where
 
 import Data.Foldable (traverse_)
-import Data.List (intercalate)
+import Data.List (intercalate, dropWhileEnd)
 import Data.List.Split (splitOn)
+import Data.Text (Text, dropEnd)
 
 import qualified Chiasma.Codec.Data as Codec (Pane(Pane))
 import Chiasma.Data.TmuxId (WindowId, PaneId, formatId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.View (View(View))
-import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, write)
+import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, write, readRaw)
 import Control.Monad.Free.Class (MonadFree)
+
+paneTarget :: PaneId -> [String]
+paneTarget paneId =
+  ["-t", formatId paneId]
 
 sameId :: PaneId -> Codec.Pane -> Bool
 sameId target (Codec.Pane i _ _) = target == i
@@ -40,7 +46,7 @@ firstWindowPane windowId =
 
 closePane :: MonadFree TmuxThunk m => PaneId -> m ()
 closePane paneId =
-  Tmux.write "kill-pane" ["-t", formatId paneId]
+  Tmux.write "kill-pane" (paneTarget paneId)
 
 isPaneIdOpen ::
   MonadFree TmuxThunk m =>
@@ -94,7 +100,7 @@ sendKeys paneId lines' =
   traverse_ send formatted
   where
     formatted = lines' >>= formatLine
-    send line = Tmux.write "send-keys" ["-t", formatId paneId, line]
+    send line = Tmux.write "send-keys" (paneTarget paneId ++ [line])
 
 pipePane ::
   MonadFree TmuxThunk m =>
@@ -102,4 +108,12 @@ pipePane ::
   String ->
   m ()
 pipePane paneId cmd =
-  Tmux.write "pipe-pane" ["-t", formatId paneId, cmd]
+  Tmux.write "pipe-pane" (paneTarget paneId ++ [cmd])
+
+capturePane ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  m [Text]
+capturePane paneId = do
+  lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId ++ ["-p", "-e"])
+  return $ dropEnd 1 <$> dropWhileEnd ("" ==) lines'

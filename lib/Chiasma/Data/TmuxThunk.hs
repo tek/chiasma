@@ -11,12 +11,14 @@ module Chiasma.Data.TmuxThunk(
   cmd,
 ) where
 
+import Data.Text (Text)
+
+import Chiasma.Codec.Decode (TmuxDecodeError)
 import Chiasma.Data.Cmd (CmdName(..), CmdArgs(..), Cmd(..), Cmds(..), cmd)
 import Chiasma.Data.TmuxError (TmuxError(..))
-import Chiasma.Codec.Decode (TmuxDecodeError)
 
 data TmuxThunk next =
-  ∀ a . Read Cmd ([String] -> Either TmuxDecodeError a) ([a] -> next)
+  ∀ a . Read Cmd ([Text] -> Either TmuxDecodeError a) ([a] -> next)
   |
   Write Cmd (() -> next)
   |

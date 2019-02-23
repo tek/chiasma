@@ -11,33 +11,35 @@ module Chiasma.Codec.Decode(
 ) where
 
 import Data.Bifunctor (first, second)
+import Data.Text (Text)
+import qualified Data.Text as T (null, unpack, pack)
+import Data.Text.Read (decimal)
 import GHC.Generics ((:*:)(..), K1(..), M1(..))
+import Text.Parsec.Char (char, digit)
 import Text.ParserCombinators.Parsec (
   GenParser,
   ParseError,
   parse,
   many,
   )
-import Text.Parsec.Char (char, digit)
-import Text.Read (readEither)
 
 import Chiasma.Data.TmuxId (SessionId(..), WindowId(..), PaneId(..), sessionPrefix, windowPrefix, panePrefix)
 
 data TmuxDecodeError =
   ParseFailure String ParseError
   |
-  IntParsingFailure String
+  IntParsingFailure Text
   |
   TooFewFields
   |
-  TooManyFields [String]
+  TooManyFields [Text]
   deriving (Eq, Show)
 
 class TmuxPrimDecode a where
-  primDecode :: String -> Either TmuxDecodeError a
+  primDecode :: Text -> Either TmuxDecodeError a
 
 class TmuxDataDecode f where
-  decode' :: [String] -> Either TmuxDecodeError ([String], f a)
+  decode' :: [Text] -> Either TmuxDecodeError ([Text], f a)
 
 instance (TmuxDataDecode f, TmuxDataDecode g) => TmuxDataDecode (f :*: g) where
   decode' fields = do
@@ -55,9 +57,13 @@ instance TmuxPrimDecode a => (TmuxDataDecode (K1 c a)) where
     return (as, K1 prim)
   decode' [] = Left TooFewFields
 
-readInt :: String -> String -> Either TmuxDecodeError Int
+readInt :: Text -> Text -> Either TmuxDecodeError Int
 readInt input num =
-  first (const $ IntParsingFailure input) $ readEither num
+  first (const $ IntParsingFailure input) parsed
+  where
+    parsed = do
+      (num', rest) <- decimal num
+      if T.null rest then (Right num') else (Left "")
 
 instance TmuxPrimDecode Int where
   primDecode field = readInt field field
@@ -65,10 +71,10 @@ instance TmuxPrimDecode Int where
 idParser :: Char -> GenParser Char st String
 idParser sym = char sym >> many digit
 
-parseId :: (Int -> a) -> Char -> String -> Either TmuxDecodeError a
+parseId :: (Int -> a) -> Char -> Text -> Either TmuxDecodeError a
 parseId cons sym input = do
-  num <- first (ParseFailure "id") $ parse (idParser sym) "none" input
-  i <- readInt input num
+  num <- first (ParseFailure "id") $ parse (idParser sym) "none" (T.unpack input)
+  i <- readInt input (T.pack num)
   return $ cons i
 
 instance TmuxPrimDecode SessionId where
@@ -81,4 +87,4 @@ instance TmuxPrimDecode PaneId where
   primDecode = parseId PaneId panePrefix
 
 instance TmuxPrimDecode [Char] where
-  primDecode = Right
+  primDecode = Right . T.unpack

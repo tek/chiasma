@@ -7,7 +7,9 @@ module Chiasma.Codec(
   TmuxQuery(..),
 ) where
 
+import Data.Text (Text)
 import GHC.Generics (Generic, Rep, to)
+
 import Chiasma.Codec.Decode (TmuxDataDecode(..), TmuxDecodeError(TooManyFields))
 import Chiasma.Codec.Query (TmuxDataQuery(..))
 
@@ -15,7 +17,7 @@ newtype TmuxQuery =
   TmuxQuery { unQ :: String }
   deriving (Eq, Show)
 
-genDecode :: (Generic a, TmuxDataDecode (Rep a)) => [String] -> Either TmuxDecodeError a
+genDecode :: (Generic a, TmuxDataDecode (Rep a)) => [Text] -> Either TmuxDecodeError a
 genDecode fields = do
   (rest, result) <- decode' fields
   case rest of
@@ -23,8 +25,8 @@ genDecode fields = do
     a -> Left $ TooManyFields a
 
 class TmuxCodec a where
-    decode :: [String] -> Either TmuxDecodeError a
-    default decode :: (Generic a, TmuxDataDecode (Rep a)) => [String] -> Either TmuxDecodeError a
+    decode :: [Text] -> Either TmuxDecodeError a
+    default decode :: (Generic a, TmuxDataDecode (Rep a)) => [Text] -> Either TmuxDecodeError a
     decode = genDecode
 
     query :: TmuxQuery

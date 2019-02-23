@@ -3,41 +3,38 @@ module Chiasma.Native.Parse(
   resultLines,
 ) where
 
-import Text.ParserCombinators.Parsec (
-  GenParser,
+import Data.Text (Text)
+import qualified Data.Text as T (pack)
+import Text.Parsec (
   ParseError,
   parse,
   many,
   skipMany,
   manyTill,
-  notFollowedBy,
   try,
   )
 import Text.Parsec.Char (endOfLine, string, anyChar)
+import Text.Parsec.Text (GenParser)
 
-tillEol :: GenParser Char st String
-tillEol = manyTill anyChar endOfLine
+tillEol :: GenParser st Text
+tillEol = T.pack <$> manyTill anyChar endOfLine
 
-beginLine :: GenParser Char st String
+beginLine :: GenParser st Text
 beginLine = string "%begin" >> tillEol
 
-endLine :: GenParser Char st String
+endLine :: GenParser st Text
 endLine = string "%end" >> tillEol
 
-notBeginLine :: GenParser Char st String
-notBeginLine = notFollowedBy (string "%begin") >> tillEol
-
-parseBlock :: GenParser Char st [String]
+parseBlock :: GenParser st [Text]
 parseBlock = do
-  _ <- skipMany notBeginLine
-  _ <- beginLine
+  _ <- manyTill tillEol (try beginLine)
   manyTill tillEol (try endLine)
 
-resultParser :: GenParser Char st [[String]]
+resultParser :: GenParser st [[Text]]
 resultParser = do
   result <- many (try parseBlock)
   skipMany tillEol
   return result
 
-resultLines :: String -> Either ParseError [[String]]
+resultLines :: Text -> Either ParseError [[Text]]
 resultLines = parse resultParser "tmux output"

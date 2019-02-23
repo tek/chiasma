@@ -18,12 +18,13 @@ import Data.Conduit.Process.Typed (
   createSource,
   proc,
   )
+import Text.ParserCombinators.Parsec ()
+
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Data.Conduit (createSinkFlush)
 import Chiasma.Data.TmuxThunk (Cmd(..), CmdName(..), CmdArgs(..))
 import Chiasma.Native.Process (nativeTmuxProcess, socketArg)
 import Chiasma.Native.StreamParse (parseConduit)
-import Text.ParserCombinators.Parsec ()
 
 newtype TmuxNative =
   TmuxNative { tmuxServerSocket :: Maybe FilePath }
