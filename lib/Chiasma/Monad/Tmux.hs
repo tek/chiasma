@@ -13,7 +13,7 @@ module Chiasma.Monad.Tmux(
 import Control.Monad.Free (liftF)
 import Control.Monad.Free.Class (MonadFree)
 import Data.Text (Text)
-import qualified Data.Text as T (unlines)
+import qualified Data.Text as T (unwords)
 import Prelude hiding (read)
 
 import Chiasma.Codec (TmuxCodec, TmuxQuery(unQ))
@@ -50,7 +50,7 @@ unsafeReadFirst name args = do
 
 readRaw :: ∀ m . (MonadFree TmuxThunk m) => String -> [String] -> m [Text]
 readRaw name args =
-  liftF $ Read (cmd name args) (Right . T.unlines) id
+  liftF $ Read (cmd name args) (Right . T.unwords) id
 
 write :: MonadFree TmuxThunk m => String -> [String] -> m ()
 write name args = liftF $ Write (cmd name args) id
