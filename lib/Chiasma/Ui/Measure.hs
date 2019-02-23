@@ -3,17 +3,15 @@ module Chiasma.Ui.Measure(
 ) where
 
 import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as NonEmpty (zip, filter, zipWith, toList)
+import qualified Data.List.NonEmpty as NonEmpty (zip)
 import Data.Maybe (fromMaybe)
 import GHC.Float (int2Float)
 
 import Chiasma.Data.Maybe (orElse)
-import Chiasma.Data.TmuxId (PaneId(..))
 import Chiasma.Ui.Data.Measure (MeasureTree, Measured(..), MeasureTreeSub, MPane(..), MLayout(..))
 import Chiasma.Ui.Data.RenderableTree (RenderableTree, RenderableNode, RLayout(..), Renderable(..), RPane(..))
 import Chiasma.Ui.Data.Tree (Tree(..))
 import qualified Chiasma.Ui.Data.Tree as Tree (Node(..))
-import Chiasma.Ui.Data.View (View(View), Layout(Layout), Pane(Pane))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(minSize, maxSize, fixedSize))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.Measure.Balance (balanceSizes)
@@ -67,7 +65,7 @@ measureSub _ _ _ (Tree.Leaf (Renderable _ _ (RPane paneId))) size =
   Tree.Leaf (Measured size (MPane paneId))
 
 measureLayout :: RenderableTree -> Int -> Int -> Bool -> MeasureTree
-measureLayout (Tree v@(Renderable _ _ (RLayout refId vertical)) sub) width height parentVertical =
+measureLayout (Tree (Renderable _ _ (RLayout refId vertical)) sub) width height parentVertical =
   Tree (Measured sizeInParent (MLayout refId vertical)) measuredSub
   where
     sizeInParent = if parentVertical then height else width

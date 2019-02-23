@@ -3,11 +3,9 @@
 module Chiasma.Ui.Data.Tree where
 
 import Control.Lens (makeClassy)
-import Data.Data (Data)
 import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty)
-import Data.Text.Prettyprint.Doc (Pretty(..), vsep, nest, line, (<>))
-import GHC.Generics (Generic)
+import Data.Text.Prettyprint.Doc (Pretty(..), vsep, nest)
 
 data Tree f l p =
   Tree {
@@ -46,5 +44,5 @@ instance (Foldable f, Pretty l, Pretty p) => Pretty (Tree f l p) where
     nest 2 $ vsep $ pretty l : (pretty <$> toList sub)
 
 instance (Foldable f, Pretty l, Pretty p) => Pretty (Node f l p) where
-  pretty (Sub tree) = pretty tree
+  pretty (Sub tree') = pretty tree'
   pretty (Leaf a) = pretty a

@@ -36,7 +36,7 @@ beginLine = void $ string "%begin" >> tillEol
 endLine :: (Alternative m, CharParsing m, Monad m) => m End
 endLine = do
   end <- choice [EndSuccess <$ string "%end", EndError <$ string "%error"]
-  tillEol
+  _ <- tillEol
   return end
 
 notBeginLine :: (Alternative m, CharParsing m, Monad m) => m ()

@@ -14,7 +14,6 @@ import Control.Monad.Trans.Free (FreeT(..))
 import qualified Data.Conduit.Combinators as Conduit (drop, take)
 import Data.Default.Class (Default(def))
 import Data.Either.Combinators (mapLeft)
-import Data.Foldable (traverse_)
 
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Codec.Decode (TmuxDecodeError)

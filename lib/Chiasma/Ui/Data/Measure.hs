@@ -5,12 +5,11 @@
 module Chiasma.Ui.Data.Measure where
 
 import qualified Data.Text as T (pack)
-import Data.Text.Prettyprint.Doc (Pretty(..), (<+>), Doc, space, emptyDoc)
+import Data.Text.Prettyprint.Doc (Pretty(..), (<+>))
 
 import Chiasma.Data.Text.Pretty (prettyS)
 import Chiasma.Data.TmuxId (PaneId(..))
 import Chiasma.Ui.Data.Tree (NTree, NNode)
-import Chiasma.Ui.Data.View (LayoutView, PaneView)
 import Control.Lens (makeClassy)
 
 data MLayout =
@@ -43,14 +42,14 @@ type MeasureTree = NTree (Measured MLayout) (Measured MPane)
 type MeasureTreeSub = NNode (Measured MLayout) (Measured MPane)
 
 instance Pretty MLayout where
-  pretty (MLayout (PaneId refId) vertical) =
+  pretty (MLayout (PaneId refId) vertical') =
     pretty (T.pack "l –") <+> pretty (T.pack "ref:") <+> pretty refId <+>
-      pretty (T.pack $ if vertical then "v" else "h")
+      pretty (T.pack $ if vertical' then "v" else "h")
 
 instance Pretty MPane where
-  pretty (MPane (PaneId paneId)) =
-    pretty (T.pack "p –") <+> pretty paneId
+  pretty (MPane (PaneId paneId')) =
+    pretty (T.pack "p –") <+> pretty paneId'
 
 instance Pretty a => Pretty (Measured a) where
-  pretty (Measured size a) =
-    pretty a <+> prettyS "size:" <+> pretty size
+  pretty (Measured size' a) =
+    pretty a <+> prettyS "size:" <+> pretty size'

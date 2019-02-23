@@ -2,58 +2,28 @@ module Chiasma.Pack(
   packWindow,
 ) where
 
-import Control.Lens (each, toListOf, mapMOf_)
-import Control.Monad (filterM, when)
-import Control.Monad.Error.Class (MonadError(throwError), liftEither)
+import Control.Lens (each, mapMOf_)
+import Control.Monad (when)
+import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.State.Class (MonadState, gets)
-import Data.Either.Combinators (maybeToRight)
+import Control.Monad.State.Class (MonadState)
 import Data.Foldable (traverse_)
-import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as NonEmpty (head)
-import Data.Maybe (fromMaybe)
 import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, pretty, line, (<>), (<+>))
 
 import qualified Chiasma.Codec.Data as Codec (Window(Window))
-import Chiasma.Command.Pane (isPaneOpen, isPaneIdOpen, movePane, resizePane)
-import Chiasma.Data.Ident (Ident)
-import Chiasma.Data.List (head')
-import Chiasma.Data.Maybe (maybeExcept)
+import Chiasma.Command.Pane (isPaneIdOpen, movePane, resizePane)
 import Chiasma.Data.RenderError (RenderError)
-import qualified Chiasma.Data.RenderError as RenderError (RenderError(Pack))
 import Chiasma.Data.Text.Pretty (prettyS)
-import Chiasma.Data.TmuxId (WindowId, PaneId, WindowId(..))
+import Chiasma.Data.TmuxId (PaneId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
-import qualified Chiasma.Data.View as Tmux (View(View))
 import Chiasma.Data.Views (Views)
 import Chiasma.Data.WindowState (WindowState(..))
-import Chiasma.Lens.Tree (leafByIdent)
-import Chiasma.Ui.Data.Measure (Measured(Measured), MeasureTree, MeasureTreeSub(..), MPane(..), MLayout(..))
+import Chiasma.Ui.Data.Measure (Measured(Measured), MeasureTree, MeasureTreeSub, MPane(..), MLayout(..))
 import Chiasma.Ui.Data.Tree (Tree(Tree), Node(Sub, Leaf))
-import qualified Chiasma.Ui.Data.Tree as Tree (forest, leafData, subTree)
-import qualified Chiasma.Ui.Data.View as Ui (
-  View(View),
-  PaneView,
-  LayoutView,
-  Layout(Layout),
-  Pane(Pane),
-  viewIdent,
-  _leafData,
-  )
+import qualified Chiasma.Ui.Data.Tree as Tree (subTree)
 import Chiasma.Ui.Measure (measureTree)
 import Chiasma.View (viewsLog)
-import qualified Chiasma.View as Views (pane)
-
-isTmuxPaneOpen ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
-  Measured MPane ->
-  m Bool
-isTmuxPaneOpen (Measured _ (MPane paneId)) =
-  isPaneIdOpen paneId
-
-layoutPanes :: NonEmpty MeasureTreeSub -> [Measured MPane]
-layoutPanes = toListOf (each . Tree.leafData)
 
 moveTmuxPane ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
@@ -80,7 +50,7 @@ positionView ::
 positionView vertical refId =
   position
   where
-    position (Sub (Tree (Measured _ (MLayout layoutRefId _)) sub)) =
+    position (Sub (Tree (Measured _ (MLayout layoutRefId _)) _)) =
       packPane refId vertical layoutRefId
     position (Leaf (Measured _ (MPane paneId))) =
       packPane refId vertical paneId
@@ -94,7 +64,7 @@ resizeView ::
   Bool ->
   MeasureTreeSub ->
   m ()
-resizeView vertical (Sub (Tree (Measured size (MLayout refId _)) sub)) = do
+resizeView vertical (Sub (Tree (Measured size (MLayout refId _)) _)) = do
   viewsLog $ prettyS "resizing layout with ref" <+> pretty refId <+> prettyS "to" <+> pretty size <+>
     describeVertical vertical
   resizePane refId vertical size
@@ -118,7 +88,7 @@ packWindow ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   WindowState ->
   m ()
-packWindow (WindowState w@(Codec.Window (WindowId wid) width height) _ _ tree paneId) = do
+packWindow (WindowState (Codec.Window _ width height) _ _ tree _) = do
   let measures = measureTree tree width height
   viewsLog $ pretty (T.pack "measured tree:") <> line <> pretty measures
   packTree measures

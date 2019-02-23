@@ -47,7 +47,7 @@ instance Pretty RPane where
 mayPretty :: String -> Maybe Float -> Doc a
 mayPretty prefix (Just a) =
   space <> prettyS (prefix ++ ":") <+> pretty a
-mayPretty prefix Nothing =
+mayPretty _ Nothing =
   emptyDoc
 
 instance Pretty a => Pretty (Renderable a) where

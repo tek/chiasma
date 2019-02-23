@@ -15,7 +15,6 @@ import Data.Traversable (mapAccumL)
 import GHC.Float (int2Float, float2Int)
 import GHC.Float.RealFracMethods (floorFloatInt)
 
-import Chiasma.Control.IO.Unsafe (unsafeLog)
 import Chiasma.Ui.Measure.Weights (
   normalizeWeights,
   amendAndNormalizeWeights,
@@ -127,13 +126,13 @@ distributeSizes balance =
     maxTotal = sum (catMaybes $ NonEmpty.toList $ balanceMax balance)
 
 roundSizes :: NonEmpty Float -> NonEmpty Int
-roundSizes (head :| tail) =
+roundSizes (head' :| tail') =
   roundedHead + (float2Int surplus) :| roundedTail
   where
-    (surplus, roundedTail) = mapAccumL folder diff0 tail
-    (roundedHead, diff0) = diff head
+    (surplus, roundedTail) = mapAccumL folder diff0 tail'
+    (roundedHead, diff0) = diff head'
     folder z a =
-      (z1, a1)
+      (z + z1, a1)
       where
         (a1, z1) = diff a
     diff a = (floorFloatInt a, a - int2Float (floor a))

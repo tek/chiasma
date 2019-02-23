@@ -21,9 +21,8 @@ import Chiasma.Pack (packWindow)
 import Chiasma.Session (findOrCreateSession, ensureSession)
 import Chiasma.Ui.Data.RenderableTree (RenderableTree)
 import Chiasma.Ui.Data.View (ViewTree)
-import Chiasma.Ui.ViewTree (hasOpenPanes)
 import Chiasma.View (viewsLog)
-import Chiasma.Window (findOrCreateWindow, ensureWindow, principalPane, ensureView, windowState)
+import Chiasma.Window (findOrCreateWindow, ensureWindow, ensureView, windowState)
 
 renderTree ::
   (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>

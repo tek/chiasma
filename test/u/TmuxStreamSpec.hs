@@ -6,6 +6,7 @@ module TmuxStreamSpec(
 
 import Control.Monad.Free.Class (MonadFree)
 import Test.Framework
+
 import Chiasma.Codec.Data (Pane(Pane), Window(Window))
 import Chiasma.Data.TmuxId (WindowId(..), PaneId(..))
 import Chiasma.Data.TmuxThunk (TmuxThunk, TmuxError)
@@ -24,10 +25,10 @@ prog = do
   return (panes1, panes, wins)
 
 p :: Int -> Pane
-p i = Pane (PaneId i) 1000 999
+p i = Pane (PaneId i) 200 50
 
 w :: Int -> Window
-w i = Window (WindowId i) 1000 999
+w i = Window (WindowId i) 200 50
 
 runProg :: TmuxNative -> IO (Either TmuxError ([Pane], [Pane], [Window]))
 runProg api = runTmux api prog

@@ -10,13 +10,11 @@ module Chiasma.Window(
   registerWindowId,
 ) where
 
-import qualified Control.Lens as Lens (each, toListOf, preview)
 import Control.Monad (join)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
 import Control.Monad.State.Class (MonadState, modify, gets)
-import Data.Foldable (traverse_, find)
-import Data.List.NonEmpty (NonEmpty)
+import Data.Foldable (find)
 import qualified Data.List.NonEmpty as NonEmpty (nonEmpty, head)
 import Data.Maybe (fromMaybe, catMaybes)
 import qualified Data.Text as T (pack)
@@ -37,16 +35,15 @@ import Chiasma.Pane (addPane)
 import Chiasma.Ui.Data.RenderableTree (
   Renderable(..),
   RPane(..),
-  RenderablePane,
   RenderableTree,
   RenderableNode,
   RLayout(..),
   )
-import qualified Chiasma.Ui.Data.Tree as Tree (Tree(Tree), Node(Sub, Leaf), leafData)
+import qualified Chiasma.Ui.Data.Tree as Tree (Tree(Tree), Node(Sub, Leaf))
 import Chiasma.Ui.Data.View (ViewTree, Tree(..), ViewTreeSub, TreeSub(..))
 import qualified Chiasma.Ui.Data.View as Ui (View(View), Pane(Pane), Layout(..), PaneView)
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
-import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import Chiasma.Ui.Data.ViewState (ViewState)
 import Chiasma.View (findOrCreateView, viewsLogS, viewsLog)
 import qualified Chiasma.View as Views (window, insertWindow, updateWindow, pane, updatePane, insertPane, paneById)
 
