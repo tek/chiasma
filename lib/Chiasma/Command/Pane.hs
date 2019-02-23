@@ -16,7 +16,7 @@ module Chiasma.Command.Pane(
 import Data.Foldable (traverse_)
 import Data.List (intercalate, dropWhileEnd)
 import Data.List.Split (splitOn)
-import Data.Text (Text, dropEnd)
+import Data.Text (Text)
 
 import qualified Chiasma.Codec.Data as Codec (Pane(Pane))
 import Chiasma.Data.TmuxId (WindowId, PaneId, formatId)
@@ -115,5 +115,5 @@ capturePane ::
   PaneId ->
   m [Text]
 capturePane paneId = do
-  lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId ++ ["-p", "-e"])
-  return $ dropEnd 1 <$> dropWhileEnd ("" ==) lines'
+  lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId ++ ["-p"])
+  return $ dropWhileEnd ("" ==) lines'
