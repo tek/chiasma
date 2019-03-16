@@ -3,26 +3,26 @@ module Chiasma.Native.Api(
   TmuxNative(..),
 ) where
 
-import Conduit (ConduitT, Void, (.|), mapC, Flush)
+import Conduit (ConduitT, Flush, Void, mapC, (.|))
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Trans.Except (ExceptT(ExceptT), runExceptT)
 import Data.ByteString (ByteString)
 import Data.ByteString.Internal (packChars)
 import Data.Conduit.Process.Typed (
   ProcessConfig,
+  createSource,
   getStdin,
   getStdout,
+  proc,
   setStdin,
   setStdout,
   withProcess,
-  createSource,
-  proc,
   )
 import Text.ParserCombinators.Parsec ()
 
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Data.Conduit (createSinkFlush)
-import Chiasma.Data.TmuxThunk (Cmd(..), CmdName(..), CmdArgs(..))
+import Chiasma.Data.TmuxThunk (Cmd(..), CmdArgs(..), CmdName(..))
 import Chiasma.Native.Process (nativeTmuxProcess, socketArg)
 import Chiasma.Native.StreamParse (parseConduit)
 
@@ -40,11 +40,11 @@ tmuxProcessConfig sock =
   setStdin createSinkFlush $ setStdout createSource $ proc "tmux" $ socketArg sock ++ ["-C", "attach"]
 
 instance TmuxApi TmuxNative where
-  runCommands (TmuxNative socket) decode cmds =
-    nativeTmuxProcess socket decode cmds
+  runCommands (TmuxNative socket) =
+    nativeTmuxProcess socket
 
   withTmux (TmuxNative socket) f =
-    ExceptT $ withProcess (tmuxProcessConfig socket) (runExceptT . handler)
+    withProcess (tmuxProcessConfig socket) handler
     where
       handler prc =
         let
