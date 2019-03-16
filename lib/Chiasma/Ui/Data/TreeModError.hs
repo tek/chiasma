@@ -1,9 +1,12 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Chiasma.Ui.Data.TreeModError(
   TreeModError(..),
 ) where
 
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Ui.Data.View (LayoutView, PaneView)
+import Data.DeepPrisms (deepPrisms)
 
 data TreeModError =
   PaneExists PaneView
@@ -20,3 +23,5 @@ data TreeModError =
   |
   NoTrees
   deriving (Eq, Show)
+
+deepPrisms ''TreeModError

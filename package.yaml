@@ -47,6 +47,7 @@ dependencies:
 - random
 - prettyprinter
 - prettyprinter-ansi-terminal
+- cornea
 
 default-extensions:
 - AutoDeriveTypeable

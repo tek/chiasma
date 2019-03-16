@@ -1,8 +1,4 @@
-module Chiasma.Data.Maybe(
-  maybeExcept,
-  findMaybe,
-  orElse,
-) where
+module Chiasma.Data.Maybe where
 
 import Control.Monad.Error.Class (MonadError(throwError))
 import Data.Maybe (mapMaybe)

@@ -1,5 +1,6 @@
 resolver: lts-12.21
 packages:
 - .
+- ../cornea
 extra-deps:
 - posix-pty-0.2.1.1

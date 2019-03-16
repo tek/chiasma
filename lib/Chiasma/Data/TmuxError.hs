@@ -1,7 +1,10 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Chiasma.Data.TmuxError(
   TmuxError(..),
 ) where
 
+import Data.DeepPrisms (deepPrisms)
 import Data.Text (Text)
 import Text.ParserCombinators.Parsec (ParseError)
 
@@ -38,3 +41,5 @@ data TmuxError =
     commandFailedError :: [Text]
   }
   deriving (Eq, Show)
+
+deepPrisms ''TmuxError

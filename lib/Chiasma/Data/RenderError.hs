@@ -1,12 +1,17 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Chiasma.Data.RenderError(
   RenderError(..),
 ) where
 
-import Chiasma.Data.Views (ViewsError)
+import Data.DeepPrisms (deepPrisms)
+
+import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.TmuxThunk (TmuxError)
+import Chiasma.Data.Views (ViewsError)
 
 data RenderError =
-  RenderError String
+  NoPrincipal Ident
   |
   Views ViewsError
   |
@@ -14,3 +19,5 @@ data RenderError =
   |
   Fatal TmuxError
   deriving (Eq, Show)
+
+deepPrisms ''RenderError

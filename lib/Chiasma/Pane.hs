@@ -2,14 +2,15 @@ module Chiasma.Pane(
   addPane,
 ) where
 
-import Control.Monad.State.Class (MonadState, modify)
+import Control.Monad.DeepState (MonadDeepState, modify)
+
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.TmuxId (PaneId)
-import Chiasma.Data.Views (Views)
 import qualified Chiasma.Data.View as Tmux (View(View))
+import Chiasma.Data.Views (Views)
 import qualified Chiasma.View as Views (insertPane)
 
-addPane :: MonadState Views m => Ident -> m (Tmux.View PaneId)
+addPane :: MonadDeepState s Views m => Ident -> m (Tmux.View PaneId)
 addPane ident = do
   modify $ Views.insertPane pane
   return pane

@@ -11,50 +11,52 @@ module Chiasma.Window(
 ) where
 
 import Control.Monad (join)
+import Control.Monad.DeepState (MonadDeepState(get, put), gets, modify)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.State.Class (MonadState, modify, gets)
 import Data.Foldable (find)
-import qualified Data.List.NonEmpty as NonEmpty (nonEmpty, head)
-import Data.Maybe (fromMaybe, catMaybes)
+import qualified Data.List.NonEmpty as NonEmpty (head, nonEmpty)
+import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Text as T (pack)
-import Data.Text.Prettyprint.Doc (pretty, line, (<>), vsep)
+import Data.Text.Prettyprint.Doc (line, pretty, vsep, (<>))
 
-import qualified Chiasma.Codec.Data as Codec (Window(Window, windowId), Pane(Pane, paneId))
-import qualified Chiasma.Command.Pane as Cmd (windowPanes, closePane, firstWindowPane)
-import qualified Chiasma.Command.Window as Cmd (window, newWindow, splitWindow)
-import Chiasma.Data.Ident (Ident, identString)
-import Chiasma.Data.Maybe (maybeExcept, findMaybe, orElse)
-import Chiasma.Data.RenderError (RenderError(RenderError))
-import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
+import qualified Chiasma.Codec.Data as Codec (Pane(Pane, paneId), Window(Window, windowId))
+import qualified Chiasma.Command.Pane as Cmd (closePane, firstWindowPane, windowPanes)
+import qualified Chiasma.Command.Window as Cmd (newWindow, splitWindow, window)
+import Chiasma.Data.Ident (Ident, identString, identify)
+import Chiasma.Data.Maybe (findMaybe, maybeExcept, orElse)
+import Chiasma.Data.RenderError (RenderError)
+import qualified Chiasma.Data.RenderError as RenderError (RenderError(NoPrincipal))
+import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Data.View as Tmux (View(View))
 import Chiasma.Data.Views (Views)
 import Chiasma.Data.WindowState (WindowState(..))
 import Chiasma.Pane (addPane)
 import Chiasma.Ui.Data.RenderableTree (
-  Renderable(..),
-  RPane(..),
-  RenderableTree,
-  RenderableNode,
   RLayout(..),
+  RPane(..),
+  Renderable(..),
+  RenderableNode,
+  RenderableTree,
   )
-import qualified Chiasma.Ui.Data.Tree as Tree (Tree(Tree), Node(Sub, Leaf))
-import Chiasma.Ui.Data.View (ViewTree, Tree(..), ViewTreeSub, TreeSub(..))
-import qualified Chiasma.Ui.Data.View as Ui (View(View), Pane(Pane), Layout(..), PaneView)
+import qualified Chiasma.Ui.Data.Tree as Tree (Node(Sub, Leaf), Tree(Tree))
+import Chiasma.Ui.Data.View (Tree(..), TreeSub(..), ViewTree, ViewTreeSub)
+import qualified Chiasma.Ui.Data.View as Ui (Layout(..), Pane(Pane), PaneView, View(View))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
 import Chiasma.Ui.Data.ViewState (ViewState)
-import Chiasma.View (findOrCreateView, viewsLogS, viewsLog)
-import qualified Chiasma.View as Views (window, insertWindow, updateWindow, pane, updatePane, insertPane, paneById)
+import Chiasma.View (findOrCreateView, viewsLog, viewsLogS)
+import qualified Chiasma.View as Views (insertPane, insertWindow, pane, paneById, updatePane, updateWindow, window)
 
 findOrCreateWindow ::
-  (MonadState Views m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadError RenderError m) =>
   Ident ->
   m (Tmux.View WindowId)
-findOrCreateWindow = findOrCreateView Views.window Views.insertWindow
+findOrCreateWindow =
+  findOrCreateView Views.window Views.insertWindow
 
 registerWindowId ::
-  (MonadState Views m) =>
+  (MonadDeepState s Views m) =>
   Ident ->
   WindowId ->
   m ()
@@ -62,7 +64,7 @@ registerWindowId ident windowId =
   modify $ Views.updateWindow $ Tmux.View ident (Just windowId)
 
 spawnWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
   SessionId ->
   Ident ->
   m Codec.Window
@@ -81,21 +83,18 @@ findPrincipal :: ViewTree -> Maybe Ui.PaneView
 findPrincipal (Tree _ sub) =
   findMaybe findPrincipalSub sub
 
-noPrincipal :: RenderError
-noPrincipal = RenderError "no principal ui pane in layout"
-
 principalPane ::
-  (MonadState Views m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadError RenderError m) =>
   ViewTree ->
   m (Ui.PaneView, Tmux.View PaneId)
 principalPane tree = do
-  uiPane@(Ui.View uiPaneIdent _ _ _) <- maybeExcept noPrincipal $ findPrincipal tree
+  uiPane@(Ui.View uiPaneIdent _ _ _) <- maybeExcept (RenderError.NoPrincipal $ identify tree) $ findPrincipal tree
   existingTmuxPane <- gets $ Views.pane uiPaneIdent
   tmuxPane <- either (const $ addPane uiPaneIdent) return existingTmuxPane
   return (uiPane, tmuxPane)
 
 syncPrincipal ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   WindowId ->
   ViewTree ->
   m ()
@@ -111,7 +110,7 @@ syncPrincipal windowId tree@(Tree (Ui.View layoutIdent _ _ _) _) = do
     _ -> return ()
 
 ensureWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   SessionId ->
   Tmux.View WindowId ->
   Maybe WindowId ->
@@ -123,7 +122,7 @@ ensureWindow sid (Tmux.View ident mayWid) newSessionWid tree = do
   syncPrincipal (Codec.windowId window) tree
   return window
 
-findOrCreatePane :: MonadState Views m => Ident -> m (Tmux.View PaneId)
+findOrCreatePane :: MonadDeepState s Views m => Ident -> m (Tmux.View PaneId)
 findOrCreatePane =
   findOrCreateView Views.pane Views.insertPane
 
@@ -139,7 +138,7 @@ nativePane windowId (Tmux.View _ (Just paneId)) =
 nativePane _ _ = return Nothing
 
 openPane ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
   FilePath ->
   WindowId ->
   m PaneId
@@ -149,7 +148,7 @@ openPane dir windowId = do
   return i
 
 ensurePaneOpen ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
   FilePath ->
   Maybe Codec.Pane ->
   WindowId ->
@@ -158,7 +157,7 @@ ensurePaneOpen dir existing windowId =
   maybe (openPane dir windowId) (return . Codec.paneId) existing
 
 ensurePaneClosed ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
   Maybe Codec.Pane ->
   m ()
 ensurePaneClosed (Just (Codec.Pane i _ _)) = do
@@ -167,7 +166,7 @@ ensurePaneClosed (Just (Codec.Pane i _ _)) = do
 ensurePaneClosed _ = return ()
 
 ensurePane ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   FilePath ->
   WindowId ->
   Ui.PaneView ->
@@ -198,7 +197,7 @@ renderableTree vState geometry vertical sub = do
   return $ Tree.Tree (Renderable vState geometry (RLayout refId vertical)) sub'
 
 ensureView ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   FilePath ->
   WindowId ->
   ViewTree ->
@@ -218,7 +217,7 @@ ensureView cwd windowId =
       ensurePane cwd windowId v
 
 windowState ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Ident ->
   Codec.Window ->
   RenderableTree ->

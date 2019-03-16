@@ -8,8 +8,8 @@ import Control.Monad.Free.Class (MonadFree)
 import Test.Framework
 
 import Chiasma.Codec.Data (Pane(Pane), Window(Window))
-import Chiasma.Data.TmuxId (WindowId(..), PaneId(..))
-import Chiasma.Data.TmuxThunk (TmuxThunk, TmuxError)
+import Chiasma.Data.TmuxId (PaneId(..), WindowId(..))
+import Chiasma.Data.TmuxThunk (TmuxError, TmuxThunk)
 import Chiasma.Monad.Stream (runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (read, write)
 import Chiasma.Native.Api (TmuxNative(..))

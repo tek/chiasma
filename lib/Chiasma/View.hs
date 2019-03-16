@@ -25,18 +25,19 @@ module Chiasma.View(
 ) where
 
 import Control.Lens (Lens', over)
-import qualified Control.Lens as Lens (view, over, set)
-import Control.Monad.State.Class (MonadState, modify, gets)
+import qualified Control.Lens as Lens (over, set, view)
+import Control.Monad.DeepState (MonadDeepState, gets, modify)
 import Data.Either.Combinators (maybeToRight)
 import Data.Foldable (find)
 import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, pretty)
 import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle)
 
-import Chiasma.Data.Ident (Ident, sameIdent, identString)
-import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
+import Chiasma.Data.Ident (Ident, identString, sameIdent)
+import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
 import Chiasma.Data.View (View(View), viewIdent)
-import Chiasma.Data.Views (Views, ViewsError(..), _viewsSessions, _viewsWindows, _viewsPanes, _viewsLog)
+import Chiasma.Data.Views (Views, ViewsError(..))
+import qualified Chiasma.Data.Views as Views (log, panes, sessions, windows)
 import Chiasma.Lens.Where (where1)
 
 sameId :: Eq a => a -> View a -> Bool
@@ -59,34 +60,34 @@ updateView viewsL _ newView =
   Lens.set (viewsL . where1 (sameIdent (viewIdent newView))) newView
 
 session :: Ident -> Views -> Either ViewsError (View SessionId)
-session = view _viewsSessions NoSuchSession
+session = view Views.sessions NoSuchSession
 
 sessionById :: SessionId -> Views -> Maybe (View SessionId)
-sessionById = viewById _viewsSessions
+sessionById = viewById Views.sessions
 
 insertSession :: View SessionId -> Views -> Views
-insertSession = insertView _viewsSessions
+insertSession = insertView Views.sessions
 
 updateSession :: View SessionId -> Views -> Views
-updateSession = updateView _viewsSessions NoSuchSession
+updateSession = updateView Views.sessions NoSuchSession
 
 window :: Ident -> Views -> Either ViewsError (View WindowId)
-window = view _viewsWindows NoSuchWindow
+window = view Views.windows NoSuchWindow
 
 windowById :: WindowId -> Views -> Maybe (View WindowId)
-windowById = viewById _viewsWindows
+windowById = viewById Views.windows
 
 insertWindow :: View WindowId -> Views -> Views
-insertWindow = insertView _viewsWindows
+insertWindow = insertView Views.windows
 
 updateWindow :: View WindowId -> Views -> Views
-updateWindow = updateView _viewsWindows NoSuchWindow
+updateWindow = updateView Views.windows NoSuchWindow
 
 pane :: Ident -> Views -> Either ViewsError (View PaneId)
-pane = view _viewsPanes NoSuchPane
+pane = view Views.panes NoSuchPane
 
 paneById :: PaneId -> Views -> Maybe (View PaneId)
-paneById = viewById _viewsPanes
+paneById = viewById Views.panes
 
 paneId :: Ident -> Views -> Either ViewsError PaneId
 paneId paneIdent views =
@@ -96,15 +97,15 @@ paneId paneIdent views =
     trans _ = Left $ NoPaneId paneIdent
 
 insertPane :: View PaneId -> Views -> Views
-insertPane = insertView _viewsPanes
+insertPane = insertView Views.panes
 
 updatePane :: View PaneId -> Views -> Views
-updatePane = updateView _viewsPanes NoSuchPane
+updatePane = updateView Views.panes NoSuchPane
 
 type Getter a = Ident -> Views -> Either ViewsError (View a)
 type Setter a = View a -> Views -> Views
 
-addView :: (MonadState Views m, Show a) => Setter a -> Ident -> m (View a)
+addView :: (MonadDeepState s Views m, Show a) => Setter a -> Ident -> m (View a)
 addView setter ident = do
   modify $ setter newView
   viewsLogS $ "added tmux view " ++ identString ident
@@ -112,14 +113,18 @@ addView setter ident = do
   where
     newView = View ident Nothing
 
-findOrCreateView :: (MonadState Views m, Show a) => Getter a -> Setter a -> Ident -> m (View a)
+findOrCreateView :: (MonadDeepState s Views m, Show a) => Getter a -> Setter a -> Ident -> m (View a)
 findOrCreateView getter setter ident = do
   existing <- gets $ getter ident
   either (const $ addView setter ident) return existing
 
-viewsLog :: MonadState Views m => Doc AnsiStyle -> m ()
-viewsLog message = modify $ over _viewsLog (message :)
+viewsLog :: MonadDeepState s Views m => Doc AnsiStyle -> m ()
+viewsLog message =
+  modify f
+  where
+    f :: Views -> Views
+    f = over Views.log (message :)
 
-viewsLogS :: MonadState Views m => String -> m ()
+viewsLogS :: MonadDeepState s Views m => String -> m ()
 viewsLogS =
   viewsLog . pretty . T.pack
