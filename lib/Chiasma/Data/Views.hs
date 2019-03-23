@@ -5,6 +5,7 @@
 module Chiasma.Data.Views where
 
 import Data.DeepLenses (deepLenses)
+import Data.DeepPrisms (deepPrisms)
 import Data.Default.Class (Default)
 import Data.Text.Prettyprint.Doc (Doc)
 import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle)
@@ -24,6 +25,8 @@ data ViewsError =
   |
   NoPaneId Ident
   deriving (Eq, Show)
+
+deepPrisms ''ViewsError
 
 data Views =
   Views {
