@@ -1,28 +1,19 @@
-module Chiasma.Command.Pane(
-  windowPanes,
-  closePane,
-  firstWindowPane,
-  panes,
-  isPaneOpen,
-  movePane,
-  isPaneIdOpen,
-  resizePane,
-  sendKeys,
-  pipePane,
-  sameId,
-  capturePane,
-) where
+{-# LANGUAGE DeriveAnyClass #-}
+
+module Chiasma.Command.Pane where
 
 import Data.Foldable (traverse_)
-import Data.List (intercalate, dropWhileEnd)
+import Data.List (dropWhileEnd, intercalate)
 import Data.List.Split (splitOn)
 import Data.Text (Text)
+import GHC.Generics (Generic)
 
+import Chiasma.Codec (TmuxCodec)
 import qualified Chiasma.Codec.Data as Codec (Pane(Pane))
-import Chiasma.Data.TmuxId (WindowId, PaneId, formatId)
+import Chiasma.Data.TmuxId (PaneId, WindowId, formatId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.View (View(View))
-import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, write, readRaw)
+import qualified Chiasma.Monad.Tmux as Tmux (read, readRaw, unsafeReadFirst, write)
 import Control.Monad.Free.Class (MonadFree)
 
 paneTarget :: PaneId -> [String]
@@ -117,3 +108,16 @@ capturePane ::
 capturePane paneId = do
   lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId ++ ["-p"])
   return $ dropWhileEnd ("" ==) lines'
+
+data PanePidCodec =
+  PanePidCodec {
+    paneId :: PaneId,
+    panePid :: Int
+  }
+  deriving (Eq, Show, Generic, TmuxCodec)
+
+panePids ::
+  MonadFree TmuxThunk m =>
+  m [PanePidCodec]
+panePids =
+  Tmux.read "list-panes" ["-a"]

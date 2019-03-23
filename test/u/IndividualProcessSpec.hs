@@ -4,14 +4,16 @@ module IndividualProcessSpec(
   htf_thisModulesTests
 ) where
 
+import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import Test.Framework
+
 import Chiasma.Codec.Data (Pane(Pane), Window(Window))
-import Chiasma.Data.TmuxId (WindowId(..), PaneId(..))
-import Chiasma.Data.TmuxThunk (TmuxError)
-import Chiasma.Monad.IndividualProcess (runTmux, TmuxProg)
+import Chiasma.Data.TmuxError (TmuxError)
+import Chiasma.Data.TmuxId (PaneId(..), WindowId(..))
+import Chiasma.Monad.IndividualProcess (TmuxProg, runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (read, write)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Test.Tmux (tmuxSpec)
-import Test.Framework
 
 prog :: TmuxProg ([Pane], [Pane], [Window])
 prog = do
@@ -29,7 +31,7 @@ w :: Int -> Window
 w i = Window (WindowId i) 200 50
 
 runProg :: TmuxNative -> IO (Either TmuxError ([Pane], [Pane], [Window]))
-runProg api = runTmux api prog
+runProg api = runExceptT $ runTmux api prog
 
 test_individual :: IO ()
 test_individual = do

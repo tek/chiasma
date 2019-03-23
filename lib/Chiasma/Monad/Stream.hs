@@ -1,10 +1,9 @@
-module Chiasma.Monad.Stream(
-  TmuxProg,
-  runTmux,
-) where
+module Chiasma.Monad.Stream where
 
 import Conduit (ConduitT, Flush(..), Void, runConduit, sinkList, yield, yieldMany, (.|))
+import Control.Monad ((<=<))
 import Control.Monad.Catch (MonadThrow)
+import Control.Monad.DeepError (MonadDeepError, hoistEither)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.IO.Unlift (MonadUnliftIO)
@@ -19,8 +18,10 @@ import qualified Data.Text as T (words)
 
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxError, TmuxThunk(..))
-import qualified Chiasma.Data.TmuxThunk as TmuxError (TmuxError(ProcessFailed, DecodingFailed, CommandFailed))
+import Chiasma.Data.Cmd (Cmd(..), Cmds(..))
+import Chiasma.Data.TmuxError (TmuxError)
+import qualified Chiasma.Data.TmuxError as TmuxError (TmuxError(ProcessFailed, DecodingFailed, CommandFailed))
+import Chiasma.Data.TmuxThunk (TmuxThunk(..))
 import Chiasma.Monad.EvalFreeT (evalFreeT)
 import Chiasma.Native.StreamParse (TmuxOutputBlock)
 import qualified Chiasma.Native.StreamParse as TmuxOutputBlock (TmuxOutputBlock(..))
@@ -73,10 +74,18 @@ runTmuxProg prog writeCmd readOutput = do
   runConduit $ readOutput .| Conduit.drop 1
   evalFreeT (executeCommands writeCmd readOutput) def prog
 
-runTmux ::
-  (MonadUnliftIO m, MonadThrow m, TmuxApi api) =>
+runTmuxE ::
+  (MonadIO m, TmuxApi m api) =>
   api ->
   TmuxProg m a ->
   m (Either TmuxError a)
-runTmux api prog =
-  withTmux api $ runTmuxProg prog
+runTmuxE api prog =
+  withTmux api (runTmuxProg prog)
+
+runTmux ::
+  (MonadIO m, MonadDeepError e TmuxError m, TmuxApi m api) =>
+  api ->
+  TmuxProg m a ->
+  m a
+runTmux api =
+  hoistEither <=< runTmuxE api

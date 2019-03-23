@@ -1,28 +1,34 @@
-module Chiasma.Native.Api(
-  TmuxApi(..),
-  TmuxNative(..),
-) where
+{-# LANGUAGE UndecidableInstances #-}
 
+module Chiasma.Native.Api where
+
+import Chiasma.Data.TmuxError (TmuxError)
 import Conduit (ConduitT, Flush, Void, mapC, (.|))
+import Control.Monad.Catch (MonadMask)
+import qualified Control.Monad.Catch as Catch (bracket)
+import Control.Monad.DeepError (MonadDeepError)
 import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT(ExceptT), runExceptT)
 import Data.ByteString (ByteString)
 import Data.ByteString.Internal (packChars)
-import Data.Conduit.Process.Typed (
+import Data.Conduit.Process.Typed (createSource)
+import System.Process.Typed (
+  Process,
   ProcessConfig,
-  createSource,
   getStdin,
   getStdout,
   proc,
   setStdin,
   setStdout,
-  withProcess,
+  startProcess,
+  stopProcess,
   )
 import Text.ParserCombinators.Parsec ()
 
 import Chiasma.Api.Class (TmuxApi(..))
+import Chiasma.Data.Cmd (Cmd(..), CmdArgs(..), CmdName(..))
 import Chiasma.Data.Conduit (createSinkFlush)
-import Chiasma.Data.TmuxThunk (Cmd(..), CmdArgs(..), CmdName(..))
 import Chiasma.Native.Process (nativeTmuxProcess, socketArg)
 import Chiasma.Native.StreamParse (parseConduit)
 
@@ -39,7 +45,13 @@ tmuxProcessConfig ::
 tmuxProcessConfig sock =
   setStdin createSinkFlush $ setStdout createSource $ proc "tmux" $ socketArg sock ++ ["-C", "attach"]
 
-instance TmuxApi TmuxNative where
+withProcess :: (MonadIO m, MonadMask m)
+            => ProcessConfig stdin stdout stderr
+            -> (Process stdin stdout stderr -> m a)
+            -> m a
+withProcess config = Catch.bracket (startProcess config) stopProcess
+
+instance (MonadIO m, MonadDeepError e TmuxError m, MonadMask m) => TmuxApi m TmuxNative where
   runCommands (TmuxNative socket) =
     nativeTmuxProcess socket
 

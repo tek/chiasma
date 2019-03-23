@@ -5,11 +5,13 @@ module TmuxStreamSpec(
 ) where
 
 import Control.Monad.Free.Class (MonadFree)
+import Control.Monad.Trans.Except (runExceptT)
 import Test.Framework
 
 import Chiasma.Codec.Data (Pane(Pane), Window(Window))
+import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Data.TmuxId (PaneId(..), WindowId(..))
-import Chiasma.Data.TmuxThunk (TmuxError, TmuxThunk)
+import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Monad.Stream (runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (read, write)
 import Chiasma.Native.Api (TmuxNative(..))
@@ -31,7 +33,7 @@ w :: Int -> Window
 w i = Window (WindowId i) 200 50
 
 runProg :: TmuxNative -> IO (Either TmuxError ([Pane], [Pane], [Window]))
-runProg api = runTmux api prog
+runProg api = runExceptT @TmuxError $ runTmux api prog
 
 test_streamed :: IO ()
 test_streamed = do

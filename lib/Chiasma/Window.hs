@@ -11,7 +11,7 @@ module Chiasma.Window(
 ) where
 
 import Control.Monad (join)
-import Control.Monad.DeepState (MonadDeepState(get, put), gets, modify)
+import Control.Monad.DeepState (MonadDeepState, gets, modify)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
 import Data.Foldable (find)

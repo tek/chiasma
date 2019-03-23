@@ -8,30 +8,32 @@ module Chiasma.Test.Tmux(
 
 import Control.Concurrent (threadDelay)
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import GHC.IO.Handle (Handle)
 import GHC.Real (fromIntegral)
 import System.FilePath ((</>))
 import System.Posix.IO (fdToHandle)
-import System.Posix.Pty (Pty, resizePty, createPty)
-import qualified System.Posix.Signals as Signal (signalProcess, killProcess)
+import System.Posix.Pty (Pty, createPty, resizePty)
+import qualified System.Posix.Signals as Signal (killProcess, signalProcess)
 import System.Posix.Terminal (openPseudoTerminal)
 import System.Process (getPid)
 import System.Process.Typed (
-  ProcessConfig,
   Process,
+  ProcessConfig,
   StreamSpec,
-  withProcess,
   proc,
+  setStderr,
   setStdin,
   setStdout,
-  setStderr,
-  useHandleClose,
   unsafeProcessHandle,
+  useHandleClose,
+  withProcess,
   )
 import UnliftIO (finally, throwString)
 import UnliftIO.Exception (tryAny)
 import UnliftIO.Temporary (withSystemTempDirectory)
 
+import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Monad.Stream (runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (write)
 import Chiasma.Native.Api (TmuxNative(..))
@@ -41,8 +43,8 @@ import Data.Functor (void)
 data Terminal = Terminal Handle Pty
 
 usleep :: MonadIO f => Double -> f ()
-usleep useconds =
-  liftIO $ threadDelay $ round $ useconds
+usleep =
+  liftIO . threadDelay . round
 
 sleep :: MonadIO f => Double -> f ()
 sleep seconds =
@@ -82,7 +84,7 @@ killPid =
 
 killProcess :: TmuxNative -> Process () () () -> IO ()
 killProcess api prc = do
-  _ <- runTmux api $ Tmux.write "kill-server" []
+  _ <- runExceptT @TmuxError $ runTmux api $ Tmux.write "kill-server" []
   let handle = unsafeProcessHandle prc
   mayPid <- getPid handle
   maybe (return ()) killPid mayPid

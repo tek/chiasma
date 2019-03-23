@@ -4,6 +4,7 @@ module Chiasma.Native.Process(
   socketArg,
 ) where
 
+import Control.Monad.DeepError (MonadDeepError, hoistEither)
 import Control.Monad.Error.Class (MonadError, liftEither)
 import Control.Monad.IO.Class (MonadIO)
 import Data.ByteString.Lazy (ByteString)
@@ -11,14 +12,15 @@ import Data.ByteString.Lazy.Internal (packChars, unpackChars)
 import Data.Either.Combinators (mapLeft)
 import Data.List (intercalate)
 import Data.Text (Text)
-import qualified Data.Text as T (lines, words, pack)
+import qualified Data.Text as T (lines, pack, words)
 import GHC.IO.Exception (ExitCode(ExitSuccess))
-import System.Process.Typed (ProcessConfig, readProcessStdout, proc, setStdin, byteStringInput)
+import System.Process.Typed (ProcessConfig, byteStringInput, proc, readProcessStdout, setStdin)
 
 import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.TmuxThunk (CmdName(..), Cmd(..), CmdArgs(..), Cmds(..), TmuxError(..))
-import qualified Chiasma.Data.TmuxThunk as TmuxError (
-  TmuxError(OutputParsingFailed, NoOutput, ProcessFailed, DecodingFailed)
+import Chiasma.Data.Cmd (Cmd(..), CmdArgs(..), CmdName(..), Cmds(..))
+import Chiasma.Data.TmuxError (TmuxError)
+import qualified Chiasma.Data.TmuxError as TmuxError (
+  TmuxError(OutputParsingFailed, NoOutput, ProcessFailed, DecodingFailed),
   )
 import Chiasma.Native.Parse (resultLines)
 
@@ -48,7 +50,7 @@ formatCmd :: Cmd -> String
 formatCmd (Cmd (CmdName name) (CmdArgs args)) = unwords $ name : args
 
 nativeTmuxProcess ::
-  (MonadIO m, MonadError TmuxError m) =>
+  (MonadIO m, MonadDeepError e TmuxError m) =>
   Maybe FilePath ->
   ([Text] -> Either TmuxDecodeError a) ->
   Cmds ->
@@ -56,4 +58,4 @@ nativeTmuxProcess ::
 nativeTmuxProcess socket decode cmds@(Cmds cmds') = do
   let cmdLines = fmap formatCmd cmds'
   (code, out) <- readProcessStdout $ tmuxProcessConfig socket cmdLines
-  liftEither $ handleProcessOutput cmds code decode $ T.pack $ unpackChars out
+  hoistEither $ handleProcessOutput cmds code decode $ T.pack $ unpackChars out

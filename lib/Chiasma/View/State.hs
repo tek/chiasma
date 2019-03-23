@@ -2,18 +2,18 @@ module Chiasma.View.State(
   paneId,
 ) where
 
-import Chiasma.Data.TmuxId (PaneId)
 import Chiasma.Data.Ident (Ident)
-import Control.Monad.State.Class (MonadState, gets)
-import Control.Monad.Error.Class (MonadError, liftEither)
+import Chiasma.Data.TmuxId (PaneId)
+import Control.Monad.DeepError (MonadDeepError, hoistEither)
+import Control.Monad.DeepState (MonadDeepState, gets)
 
-import qualified Chiasma.View as Views (paneId)
 import Chiasma.Data.Views (Views, ViewsError)
+import qualified Chiasma.View as Views (paneId)
 
 paneId ::
-  (MonadState Views m, MonadError ViewsError m) =>
+  (MonadDeepState s Views m, MonadDeepError e ViewsError m) =>
   Ident ->
   m PaneId
 paneId paneIdent = do
   pid <- gets $ Views.paneId paneIdent
-  liftEither pid
+  hoistEither pid
