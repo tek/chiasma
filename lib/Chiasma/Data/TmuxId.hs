@@ -1,21 +1,14 @@
-module Chiasma.Data.TmuxId(
-  SessionId(..),
-  WindowId(..),
-  PaneId(..),
-  TmuxId(..),
-  sessionPrefix,
-  windowPrefix,
-  panePrefix,
-) where
+module Chiasma.Data.TmuxId where
 
 import Data.Text.Prettyprint.Doc (Pretty(..))
+import GHC.Generics (Generic)
 
 sessionPrefix :: Char
 sessionPrefix = '$'
 
 newtype SessionId =
   SessionId Int
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 instance Pretty SessionId where
   pretty = pretty . formatId
@@ -25,7 +18,7 @@ windowPrefix = '@'
 
 newtype WindowId =
   WindowId Int
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 instance Pretty WindowId where
   pretty = pretty . formatId
@@ -35,12 +28,15 @@ panePrefix = '%'
 
 newtype PaneId =
   PaneId Int
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 instance Pretty PaneId where
   pretty = pretty . formatId
 
-data TmuxIdPrefix a =
+class HasPaneId a where
+  paneId :: a -> PaneId
+
+newtype TmuxIdPrefix a =
   TmuxIdPrefix Char
 
 class TmuxId a where
@@ -50,7 +46,7 @@ class TmuxId a where
   formatId :: a -> String
   formatId a =
     let (TmuxIdPrefix p) = prefix @a
-    in p : (show $ number a)
+    in p : show (number a)
 
 instance TmuxId SessionId where
   prefix = TmuxIdPrefix sessionPrefix

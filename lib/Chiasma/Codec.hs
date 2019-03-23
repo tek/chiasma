@@ -12,6 +12,7 @@ import GHC.Generics (Generic, Rep, to)
 
 import Chiasma.Codec.Decode (TmuxDataDecode(..), TmuxDecodeError(TooManyFields))
 import Chiasma.Codec.Query (TmuxDataQuery(..))
+import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
 
 newtype TmuxQuery =
   TmuxQuery { unQ :: String }
@@ -32,3 +33,7 @@ class TmuxCodec a where
     query :: TmuxQuery
     default query :: (Generic a, TmuxDataQuery (Rep a)) => TmuxQuery
     query = TmuxQuery $ unwords $ query' @(Rep a)
+
+instance TmuxCodec SessionId
+instance TmuxCodec WindowId
+instance TmuxCodec PaneId

@@ -6,7 +6,7 @@ module Chiasma.Data.TmuxThunk where
 import Data.Text (Text)
 
 import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.Cmd (Cmd(..), CmdArgs(..), CmdName(..), Cmds(..), cmd)
+import Chiasma.Data.Cmd (Cmd(..))
 import Chiasma.Data.TmuxError (TmuxError(..))
 
 data TmuxThunk next =

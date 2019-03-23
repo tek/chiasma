@@ -12,18 +12,18 @@ module Chiasma.Codec.Decode(
 
 import Data.Bifunctor (first, second)
 import Data.Text (Text)
-import qualified Data.Text as T (null, unpack, pack)
+import qualified Data.Text as T (null, pack, unpack)
 import Data.Text.Read (decimal)
-import GHC.Generics ((:*:)(..), K1(..), M1(..))
+import GHC.Generics (K1(..), M1(..), (:*:)(..))
 import Text.Parsec.Char (char, digit)
 import Text.ParserCombinators.Parsec (
   GenParser,
   ParseError,
-  parse,
   many,
+  parse,
   )
 
-import Chiasma.Data.TmuxId (SessionId(..), WindowId(..), PaneId(..), sessionPrefix, windowPrefix, panePrefix)
+import Chiasma.Data.TmuxId (PaneId(..), SessionId(..), WindowId(..), panePrefix, sessionPrefix, windowPrefix)
 
 data TmuxDecodeError =
   ParseFailure String ParseError
@@ -63,7 +63,7 @@ readInt input num =
   where
     parsed = do
       (num', rest) <- decimal num
-      if T.null rest then (Right num') else (Left "")
+      if T.null rest then Right num' else Left ""
 
 instance TmuxPrimDecode Int where
   primDecode field = readInt field field
