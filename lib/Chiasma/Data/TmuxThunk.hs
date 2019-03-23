@@ -1,20 +1,12 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-module Chiasma.Data.TmuxThunk(
-  CmdName(..),
-  CmdArgs(..),
-  TmuxThunk(..),
-  TmuxError(..),
-  Cmd(..),
-  Cmds(..),
-  cmd,
-) where
+module Chiasma.Data.TmuxThunk where
 
 import Data.Text (Text)
 
 import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.Cmd (CmdName(..), CmdArgs(..), Cmd(..), Cmds(..), cmd)
+import Chiasma.Data.Cmd (Cmd(..), CmdArgs(..), CmdName(..), Cmds(..), cmd)
 import Chiasma.Data.TmuxError (TmuxError(..))
 
 data TmuxThunk next =

@@ -1,8 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Chiasma.Data.TmuxError(
-  TmuxError(..),
-) where
+module Chiasma.Data.TmuxError where
 
 import Data.DeepPrisms (deepPrisms)
 import Data.Text (Text)

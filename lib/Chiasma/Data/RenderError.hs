@@ -7,7 +7,7 @@ module Chiasma.Data.RenderError(
 import Data.DeepPrisms (deepPrisms)
 
 import Chiasma.Data.Ident (Ident)
-import Chiasma.Data.TmuxThunk (TmuxError)
+import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Data.Views (ViewsError)
 
 data RenderError =

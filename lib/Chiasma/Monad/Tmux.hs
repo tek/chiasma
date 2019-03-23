@@ -18,7 +18,9 @@ import Prelude hiding (read)
 
 import Chiasma.Codec (TmuxCodec, TmuxQuery(unQ))
 import qualified Chiasma.Codec as TmuxCodec (TmuxCodec(decode, query))
-import Chiasma.Data.TmuxThunk (TmuxThunk(..), cmd, TmuxError(InvalidOutput))
+import Chiasma.Data.Cmd (cmd)
+import Chiasma.Data.TmuxError (TmuxError(InvalidOutput))
+import Chiasma.Data.TmuxThunk (TmuxThunk(..))
 
 read :: ∀ a m . (TmuxCodec a, MonadFree TmuxThunk m) => String -> [String] -> m [a]
 read name args =

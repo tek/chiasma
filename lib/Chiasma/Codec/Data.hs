@@ -6,9 +6,10 @@ module Chiasma.Codec.Data(
   Pane(..),
 ) where
 
-import Chiasma.Codec (TmuxCodec)
-import Chiasma.Data.TmuxId (SessionId, WindowId, PaneId)
 import GHC.Generics (Generic)
+
+import Chiasma.Codec (TmuxCodec)
+import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
 
 data Session =
   Session {
@@ -31,4 +32,3 @@ data Pane =
     paneHeight :: Int
   }
   deriving (Eq, Show, Generic, TmuxCodec)
-

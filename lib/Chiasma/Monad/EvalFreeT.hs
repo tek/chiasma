@@ -11,7 +11,9 @@ import Data.Default.Class (Default(def))
 import Data.Text (Text)
 
 import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.TmuxThunk (Cmd(..), Cmds(..), TmuxError, TmuxThunk(..))
+import Chiasma.Data.Cmd (Cmd(..), Cmds(..))
+import Chiasma.Data.TmuxError (TmuxError)
+import Chiasma.Data.TmuxThunk (TmuxThunk(..))
 
 newtype CmdBuffer = CmdBuffer [Cmd]
 
