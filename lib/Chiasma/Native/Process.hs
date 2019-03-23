@@ -5,7 +5,6 @@ module Chiasma.Native.Process(
 ) where
 
 import Control.Monad.DeepError (MonadDeepError, hoistEither)
-import Control.Monad.Error.Class (MonadError, liftEither)
 import Control.Monad.IO.Class (MonadIO)
 import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy.Internal (packChars, unpackChars)

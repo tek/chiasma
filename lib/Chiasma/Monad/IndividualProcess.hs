@@ -6,7 +6,6 @@ module Chiasma.Monad.IndividualProcess(
 import Control.Monad.DeepError (MonadDeepError(throwHoist))
 import Control.Monad.Free (Free(..))
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Data.Default.Class (Default(def))
 
 import Chiasma.Api.Class (TmuxApi(..))

@@ -2,13 +2,8 @@ module Chiasma.Monad.Stream where
 
 import Conduit (ConduitT, Flush(..), Void, runConduit, sinkList, yield, yieldMany, (.|))
 import Control.Monad ((<=<))
-import Control.Monad.Catch (MonadThrow)
 import Control.Monad.DeepError (MonadDeepError, hoistEither)
-import Control.Monad.Error.Class (MonadError)
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.IO.Unlift (MonadUnliftIO)
-import Control.Monad.Trans.Class (MonadTrans, lift)
-import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.Free (FreeT(..))
 import qualified Data.Conduit.Combinators as Conduit (drop, take)
 import Data.Default.Class (Default(def))

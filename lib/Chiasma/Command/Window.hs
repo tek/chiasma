@@ -8,13 +8,13 @@ module Chiasma.Command.Window(
   newSessionWindow,
 ) where
 
+import Chiasma.Codec.Data (Pane, Window(Window))
+import Chiasma.Data.Ident (Ident, identString)
+import Chiasma.Data.TmuxId (SessionId, TmuxId(formatId), WindowId)
+import Chiasma.Data.TmuxThunk (TmuxThunk)
+import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, unsafeReadOne)
 import Control.Monad.Free.Class (MonadFree)
 import Data.Foldable (find)
-import Chiasma.Data.Ident (Ident, identString)
-import Chiasma.Codec.Data (Window(Window), Pane)
-import Chiasma.Data.TmuxId (SessionId, WindowId, TmuxId(formatId))
-import Chiasma.Data.TmuxThunk (TmuxThunk)
-import qualified Chiasma.Monad.Tmux as Tmux (read, readOne, unsafeReadFirst)
 
 sameId :: WindowId -> Window -> Bool
 sameId target (Window i _ _) = target == i
@@ -33,7 +33,7 @@ sessionWindows sid =
 
 newSessionWindow :: MonadFree TmuxThunk m => SessionId -> m Window
 newSessionWindow sid =
-  Tmux.readOne "list-windows" ["-t", formatId sid]
+  Tmux.unsafeReadOne "list-windows" ["-t", formatId sid]
 
 doesWindowExist :: MonadFree TmuxThunk m => WindowId -> m Bool
 doesWindowExist windowId =
@@ -41,7 +41,7 @@ doesWindowExist windowId =
 
 newWindow :: MonadFree TmuxThunk m => SessionId -> Ident -> m Window
 newWindow sid name =
-  Tmux.readOne "new-window" ["-t", formatId sid, "-n", identString name, "-P"]
+  Tmux.unsafeReadOne "new-window" ["-t", formatId sid, "-n", identString name, "-P"]
 
 splitWindow ::
   (MonadFree TmuxThunk m) =>

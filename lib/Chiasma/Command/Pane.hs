@@ -1,16 +1,16 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Chiasma.Command.Pane where
 
-import Data.Foldable (traverse_)
+import Data.Foldable (find, traverse_)
 import Data.List (dropWhileEnd, intercalate)
 import Data.List.Split (splitOn)
 import Data.Text (Text)
-import GHC.Generics (Generic)
 
 import Chiasma.Codec (TmuxCodec)
-import qualified Chiasma.Codec.Data as Codec (Pane(Pane))
-import Chiasma.Data.TmuxId (PaneId, WindowId, formatId)
+import qualified Chiasma.Codec.Data as Codec (Pane)
+import qualified Chiasma.Codec.Data.PaneCoords as Codec (PaneCoords)
+import qualified Chiasma.Codec.Data.PanePid as Codec (PanePid)
+import Chiasma.Data.TmuxId (HasPaneId, PaneId, WindowId, formatId)
+import qualified Chiasma.Data.TmuxId as HasPaneId (paneId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.View (View(View))
 import qualified Chiasma.Monad.Tmux as Tmux (read, readRaw, unsafeReadFirst, write)
@@ -20,12 +20,20 @@ paneTarget :: PaneId -> [String]
 paneTarget paneId =
   ["-t", formatId paneId]
 
-sameId :: PaneId -> Codec.Pane -> Bool
-sameId target (Codec.Pane i _ _) = target == i
+sameId :: HasPaneId a => PaneId -> a -> Bool
+sameId target candidate = target == HasPaneId.paneId candidate
+
+panesAs :: (MonadFree TmuxThunk m, TmuxCodec a) => m [a]
+panesAs =
+  Tmux.read "list-panes" ["-a"]
 
 panes :: MonadFree TmuxThunk m => m [Codec.Pane]
 panes =
-  Tmux.read "list-panes" ["-a"]
+  panesAs
+
+pane :: (MonadFree TmuxThunk m, TmuxCodec a, HasPaneId a) => PaneId -> m (Maybe a)
+pane paneId =
+  find (sameId paneId) <$> Tmux.read "list-panes" ["-t", formatId paneId]
 
 windowPanes :: MonadFree TmuxThunk m => WindowId -> m [Codec.Pane]
 windowPanes windowId =
@@ -109,15 +117,15 @@ capturePane paneId = do
   lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId ++ ["-p"])
   return $ dropWhileEnd ("" ==) lines'
 
-data PanePidCodec =
-  PanePidCodec {
-    paneId :: PaneId,
-    panePid :: Int
-  }
-  deriving (Eq, Show, Generic, TmuxCodec)
-
 panePids ::
   MonadFree TmuxThunk m =>
-  m [PanePidCodec]
+  m [Codec.PanePid]
 panePids =
-  Tmux.read "list-panes" ["-a"]
+  panesAs
+
+paneCoords ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  m (Maybe Codec.PaneCoords)
+paneCoords =
+  pane

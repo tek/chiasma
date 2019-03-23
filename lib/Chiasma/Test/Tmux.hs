@@ -8,7 +8,7 @@ module Chiasma.Test.Tmux(
 
 import Control.Concurrent (threadDelay)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import Control.Monad.Trans.Except (runExceptT)
 import GHC.IO.Handle (Handle)
 import GHC.Real (fromIntegral)
 import System.FilePath ((</>))

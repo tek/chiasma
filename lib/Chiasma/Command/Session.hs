@@ -12,7 +12,7 @@ import Chiasma.Codec.Data (Session(Session))
 import Chiasma.Data.Ident (Ident, identString)
 import Chiasma.Data.TmuxId (SessionId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
-import qualified Chiasma.Monad.Tmux as Tmux (read, readOne, write)
+import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadOne, write)
 
 sameId :: SessionId -> Session -> Bool
 sameId target (Session i) = target == i
@@ -32,7 +32,7 @@ existingSessionId sessionId = do
 
 newSession :: MonadFree TmuxThunk m => Ident -> m Session
 newSession name =
-  Tmux.readOne "new-session" ["-s", identString name, "-P"]
+  Tmux.unsafeReadOne "new-session" ["-s", identString name, "-P"]
 
 activateSession :: MonadFree TmuxThunk m => Int -> m ()
 activateSession sessionId =

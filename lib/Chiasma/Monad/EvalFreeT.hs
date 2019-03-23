@@ -4,8 +4,6 @@ module Chiasma.Monad.EvalFreeT(
   evalFreeT,
 ) where
 
-import Control.Monad.Error.Class (MonadError(throwError), liftEither)
-import Control.Monad.Trans.Class (MonadTrans, lift)
 import Control.Monad.Trans.Free (FreeF(..), FreeT(..))
 import Data.Default.Class (Default(def))
 import Data.Text (Text)

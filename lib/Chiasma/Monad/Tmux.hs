@@ -4,7 +4,7 @@
 module Chiasma.Monad.Tmux(
   read,
   write,
-  readOne,
+  unsafeReadOne,
   readFirst,
   unsafeReadFirst,
   readRaw,
@@ -28,13 +28,13 @@ read name args =
   where
     formatArgs = ["-F", "'", unQ (TmuxCodec.query @a), "'"]
 
-readOne :: ∀ a m . (TmuxCodec a, MonadFree TmuxThunk m) => String -> [String] -> m a
-readOne name args = do
+unsafeReadOne :: ∀ a m . (TmuxCodec a, MonadFree TmuxThunk m) => String -> [String] -> m a
+unsafeReadOne name args = do
   outputs <- read name args
   case outputs of
     [a] -> return a
     [] -> liftF $ Failed $ InvalidOutput "no data" (name ++ unwords args)
-    _ -> liftF $ Failed $ InvalidOutput "multiple outputs for `readOne`" (name ++ unwords args)
+    _ -> liftF $ Failed $ InvalidOutput "multiple outputs for `unsafeReadOne`" (name ++ unwords args)
 
 readFirst :: ∀ a m . (TmuxCodec a, MonadFree TmuxThunk m) => String -> [String] -> m (Maybe a)
 readFirst name args = do
