@@ -4,7 +4,7 @@ module IndividualProcessSpec(
   htf_thisModulesTests
 ) where
 
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import Control.Monad.Trans.Except (runExceptT)
 import Test.Framework
 
 import Chiasma.Codec.Data (Pane(Pane), Window(Window))
