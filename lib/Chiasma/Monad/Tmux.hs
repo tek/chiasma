@@ -1,14 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Chiasma.Monad.Tmux(
-  read,
-  write,
-  unsafeReadOne,
-  readFirst,
-  unsafeReadFirst,
-  readRaw,
-) where
+module Chiasma.Monad.Tmux where
 
 import Control.Monad.Free (liftF)
 import Control.Monad.Free.Class (MonadFree)
@@ -56,3 +49,7 @@ readRaw name args =
 
 write :: MonadFree TmuxThunk m => String -> [String] -> m ()
 write name args = liftF $ Write (cmd name args) id
+
+flush :: MonadFree TmuxThunk m => m ()
+flush =
+  liftF $ Flush id

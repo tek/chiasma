@@ -32,6 +32,9 @@ interpret (TmuxState cmds) api (Free (Read cmd decode next)) = do
   interpret def api (next a)
 interpret (TmuxState cmds) api (Free (Write cmd next)) =
   interpret (TmuxState (cmd : cmds)) api (next ())
+interpret (TmuxState cmds) api (Free (Flush next)) = do
+  _ <- runCommands api (const $ Right ()) (Cmds cmds)
+  interpret def api (next ())
 interpret _ _ (Free (Failed err)) =
   throwHoist err
 

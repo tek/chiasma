@@ -4,7 +4,7 @@ module Chiasma.Native.StreamParse(
   TmuxOutputBlock(..),
 ) where
 
-import Conduit (ConduitT, (.|), mapC)
+import Conduit (ConduitT, mapC, (.|))
 import Control.Applicative (Alternative)
 import Control.Monad.Catch (MonadThrow)
 import Data.Attoparsec.ByteString (Parser)
@@ -13,8 +13,8 @@ import Data.Conduit.Attoparsec (conduitParser)
 import Data.Functor (void)
 import Data.Text (Text)
 import qualified Data.Text as T (pack)
-import Text.Parser.Char (CharParsing, string, newline, anyChar)
-import Text.Parser.Combinators (try, many, manyTill, skipMany, notFollowedBy, choice)
+import Text.Parser.Char (CharParsing, anyChar, newline, string)
+import Text.Parser.Combinators (choice, many, manyTill, notFollowedBy, skipMany, try)
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
 
 data End =

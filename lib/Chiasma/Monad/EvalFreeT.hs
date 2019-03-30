@@ -38,6 +38,10 @@ evalFreeF exec (CmdBuffer cmds) (Free (Read cmd decode next)) = do
     Left err -> return (Left err)
 evalFreeF exec (CmdBuffer cmds) (Free (Write cmd next)) =
   evalFreeT exec (CmdBuffer (cmd : cmds)) (next ())
+evalFreeF exec (CmdBuffer cmds) (Free (Flush next)) =
+  exec (const $ Right ()) (Cmds cmds) >>= \case
+    Right _ -> evalFreeT exec def (next ())
+    Left err -> return (Left err)
 evalFreeF _ _ (Free (Failed err)) =
   return (Left err)
 

@@ -14,6 +14,8 @@ data TmuxThunk next =
   |
   Write Cmd (() -> next)
   |
+  Flush (() -> next)
+  |
   Failed TmuxError
 
 deriving instance Functor TmuxThunk
