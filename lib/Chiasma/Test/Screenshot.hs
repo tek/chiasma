@@ -49,8 +49,7 @@ testScreenshot path pane = do
   current <- takeScreenshot pane
   loadScreenshot path >>= check current
   where
-    check current (Just existing) = do
-      liftIO $ putStrLn existing
+    check current (Just existing) =
       return $ Just (current, Text.lines . Text.pack $ existing)
     check current Nothing =
       Nothing <$ storeScreenshot path current
