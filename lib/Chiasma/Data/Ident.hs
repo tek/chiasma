@@ -1,20 +1,15 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Chiasma.Data.Ident(
-  Ident(..),
-  Identifiable(..),
-  sameIdent,
-  identString,
-  generateIdent,
-) where
+module Chiasma.Data.Ident where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
-import System.Random (randomIO)
-import Data.UUID (UUID, toString)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Data (Data)
+import Data.Text.Prettyprint.Doc (Pretty(..))
+import Data.UUID (UUID, toString)
+import GHC.Generics (Generic)
+import System.Random (randomIO)
 
 data Ident =
   Str String
@@ -24,6 +19,10 @@ data Ident =
 
 class Identifiable a where
   identify :: a -> Ident
+
+instance Pretty Ident where
+  pretty (Str s) = pretty s
+  pretty (Uuid u) = pretty . toString $ u
 
 sameIdent :: Identifiable a => Ident -> a -> Bool
 sameIdent target a =

@@ -1,6 +1,4 @@
-module Chiasma.Data.Text.Pretty(
-  prettyS,
-) where
+module Chiasma.Data.Text.Pretty where
 
 import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, pretty)
