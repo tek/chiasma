@@ -6,6 +6,7 @@ module Chiasma.Data.Ident where
 import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Data (Data)
+import Data.Default.Class (Default(def))
 import Data.Text.Prettyprint.Doc (Pretty(..))
 import Data.UUID (UUID, toString)
 import GHC.Generics (Generic)
@@ -26,6 +27,9 @@ instance Identifiable Ident where
 instance Pretty Ident where
   pretty (Str s) = pretty s
   pretty (Uuid u) = pretty . toString $ u
+
+instance Default Ident where
+  def = Str def
 
 sameIdent ::
   Identifiable a =>
