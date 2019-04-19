@@ -20,6 +20,9 @@ data Ident =
 class Identifiable a where
   identify :: a -> Ident
 
+instance Identifiable Ident where
+  identify = id
+
 instance Pretty Ident where
   pretty (Str s) = pretty s
   pretty (Uuid u) = pretty . toString $ u
