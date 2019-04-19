@@ -3,35 +3,13 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Chiasma.Ui.Data.View(
-  Pane(..),
-  Layout(..),
-  View(..),
-  PaneView,
-  LayoutView,
-  Tree(..),
-  TreeSub(..),
-  ViewTree,
-  ViewTreeSub,
-  consPane,
-  consLayout,
-  _extra,
-  _viewIdent,
-  _viewState,
-  _viewGeometry,
-  _open,
-  _pin,
-  _subTree,
-  _treeData,
-  _treeSubs,
-  _leafData,
-  consLayoutVertical,
-) where
+module Chiasma.Ui.Data.View where
 
 import Control.Lens (
   Index,
   IxValue,
   Ixed(ix),
+  makeClassy,
   makeClassy_,
   )
 import Control.Lens.Plated (Plated)
@@ -49,13 +27,13 @@ import Chiasma.Ui.Lens.Ident (matchIdentP)
 
 data Pane =
   Pane {
-    open :: Bool,
-    pin :: Bool,
-    cwd :: Maybe FilePath
+    _open :: Bool,
+    _pin :: Bool,
+    _cwd :: Maybe FilePath
   }
   deriving (Eq, Show, Data, Generic)
 
-makeClassy_ ''Pane
+makeClassy ''Pane
 
 instance Default Pane where
   def = Pane False False Nothing
@@ -73,14 +51,14 @@ instance Default Layout where
 
 data View a =
   View {
-    viewIdent :: Ident,
-    viewState :: ViewState,
-    viewGeometry :: ViewGeometry,
-    extra :: a
+    _ident :: Ident,
+    _state :: ViewState,
+    _geometry :: ViewGeometry,
+    _extra :: a
   }
   deriving (Eq, Show, Data, Generic)
 
-makeClassy_ ''View
+makeClassy ''View
 
 instance Default a => Default (View a) where
   def = View def def def def
@@ -123,7 +101,7 @@ consLayoutVertical =
   consLayoutAs True
 
 instance Identifiable (View a) where
-  identify = viewIdent
+  identify = _ident
 
 -- split in two so there can be no lone leaves (panes without layout) as type 'Tree'
 data Tree l p =
@@ -143,9 +121,9 @@ instance Bifoldable Tree where
   bifoldMap fl fr (Tree l sub) = mappend (fl l) (foldMap (bifoldMap fl fr) sub)
 
 data TreeSub l p =
-  TreeNode { subTree :: Tree l p }
+  TreeNode { _subTree :: Tree l p }
   |
-  TreeLeaf { leafData :: p }
+  TreeLeaf { _leafData :: p }
   deriving (Eq, Show, Data, Generic)
 
 instance Bifunctor TreeSub where
@@ -162,7 +140,7 @@ instance Bifoldable TreeSub where
 instance (Data l, Data p) => Plated (Tree l p)
 
 makeClassy_ ''Tree
-makeClassy_ ''TreeSub
+makeClassy ''TreeSub
 
 type ViewTree = Tree LayoutView PaneView
 type ViewTreeSub = TreeSub LayoutView PaneView

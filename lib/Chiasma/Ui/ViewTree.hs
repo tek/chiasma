@@ -1,11 +1,12 @@
 module Chiasma.Ui.ViewTree where
 
-import Control.Lens (cosmos, filtered, has, ix, mapMOf, transformM)
+import Control.Lens (anyOf, cosmos, filtered, has, ix, mapMOf, transformM)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import Control.Monad.Trans.Writer (WriterT, runWriterT, tell)
-import Data.Bifunctor (bimap, second)
+import Data.Bifunctor (bimap, first, second)
+import Data.Composition ((.:))
 import Data.Foldable (fold)
 import Data.Functor.Identity (Identity(..))
 import Data.Monoid (Sum(..))
@@ -29,6 +30,9 @@ import Chiasma.Ui.Data.View (
   ViewTree,
   ViewTreeSub,
   )
+import qualified Chiasma.Ui.Data.View as Pane (open)
+import qualified Chiasma.Ui.Data.View as TreeSub (leafData)
+import qualified Chiasma.Ui.Data.View as View (extra)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.Pane (paneSetOpen, paneToggleOpen)
 
@@ -53,8 +57,8 @@ modifyTreeUniqueM f ident tree = do
     0 -> throwError $ LayoutMissing ident
     n -> throwError $ AmbiguousLayout ident n
 
-toggleLayout :: Ident -> ViewTree -> Either TreeModError ViewTree
-toggleLayout ident tree =
+toggleLayout1 :: Ident -> ViewTree -> Either TreeModError ViewTree
+toggleLayout1 ident tree =
   runIdentity $ runExceptT $ modifyTreeUniqueM (Identity . treeToggleOpen) ident tree
 
 modifyPaneUniqueM :: Monad m => (PaneView -> m PaneView) -> Ident -> ViewTree -> ExceptT TreeModError m ViewTree
@@ -100,28 +104,106 @@ depthTraverseTree fn fl =
     recSub (TreeLeaf l) =
       second TreeLeaf $ fl l
 
-openPinnedSubs :: Sum Int -> ViewTree -> (Sum Int, ViewTree)
-openPinnedSubs (Sum 0) t =
-  (Sum 0, t)
-openPinnedSubs (Sum n) (Tree l sub) =
-  (Sum n, Tree l (openPinnedPane <$> sub))
+data ToggleResult =
+  Minimized
+  |
+  Opened
+  |
+  NotFound
+  |
+  Multiple Int
+  deriving (Eq, Show)
+
+instance Semigroup ToggleResult where
+  NotFound <> a = a
+  a <> NotFound = a
+  Multiple a <> Multiple b = Multiple (a + b)
+  Multiple a <> _ = Multiple (a + 1)
+  _ <> Multiple a = Multiple (a + 1)
+  _ <> _ = Multiple 2
+
+instance Monoid ToggleResult where
+  mempty = NotFound
+
+openPinnedSubs :: ToggleResult -> ViewTree -> (ToggleResult, ViewTree)
+openPinnedSubs NotFound t =
+  (NotFound, t)
+openPinnedSubs Opened (Tree l sub) =
+  (Opened, Tree l (openPinnedPane <$> sub))
   where
     openPinnedPane :: ViewTreeSub -> ViewTreeSub
     openPinnedPane (TreeLeaf (View i s g (Pane False True cwd))) =
       TreeLeaf $ View i s g (Pane True True cwd)
     openPinnedPane v =
       v
+openPinnedSubs a t =
+  (a, t)
+
+checkToggleResult ::
+  (Ident -> TreeModError) ->
+  (Ident -> Int -> TreeModError) ->
+  Ident ->
+  ToggleResult ->
+  a ->
+  Either TreeModError a
+checkToggleResult missing ambiguous ident =
+  checkResult
+  where
+    checkResult NotFound result = Left (missing ident)
+    checkResult (Multiple n) result = Left (ambiguous ident n)
+    checkResult _ result = Right result
+
+togglePaneView :: Ident -> PaneView -> (ToggleResult, PaneView)
+togglePaneView ident (View i s g (Pane False p c)) | ident == i =
+  (Opened, View i s g (Pane True p c))
+togglePaneView ident (View i (ViewState minimized) g (Pane True p c)) | ident == i =
+  (Minimized, View i (ViewState (not minimized)) g (Pane False p c))
+togglePaneView _ v =
+  (NotFound, v)
+
+togglePaneNode :: Ident -> ViewTreeSub -> (ToggleResult, ViewTreeSub)
+togglePaneNode ident (TreeLeaf v) =
+  second TreeLeaf (togglePaneView ident v)
+togglePaneNode _ t =
+  (NotFound, t)
 
 togglePane :: Ident -> ViewTree -> Either TreeModError ViewTree
 togglePane ident =
-  uncurry checkResult . depthTraverseTree openPinnedSubs toggle
+  uncurry check . depthTraverseTree openPinnedSubs (togglePaneView ident)
   where
-    checkResult (Sum 1) result = Right result
-    checkResult (Sum 0) result = Left (PaneMissing ident)
-    checkResult (Sum n) result = Left (AmbiguousPane ident n)
-    toggle (View i s g (Pane False p c)) | ident == i =
-      (Sum 1, View i s g (Pane True p c))
-    toggle (View i (ViewState minimized) g (Pane True p c)) | ident == i =
-      (Sum 0, View i (ViewState (not minimized)) g (Pane False p c))
-    toggle v =
-      (Sum 0, v)
+    check = checkToggleResult PaneMissing AmbiguousPane ident
+
+isOpenPaneNode :: ViewTreeSub -> Bool
+isOpenPaneNode =
+  anyOf (TreeSub.leafData . View.extra . Pane.open) id
+
+openPaneView :: PaneView -> (ToggleResult, PaneView)
+openPaneView (View i s g (Pane False p c)) =
+  (Opened, View i s g (Pane True p c))
+openPaneView v =
+  (NotFound, v)
+
+openFirstPaneNode :: ToggleResult -> ViewTreeSub -> (ToggleResult, ViewTreeSub)
+openFirstPaneNode NotFound (TreeLeaf v) =
+  second TreeLeaf (openPaneView v)
+openFirstPaneNode a t =
+  (a, t)
+
+-- TODO recurse when opening pane
+toggleLayoutNode :: Ident -> ToggleResult -> ViewTree -> (ToggleResult, ViewTree)
+toggleLayoutNode ident previous (Tree v@(View i (ViewState minimized) g l) sub) | ident == i =
+  first (previous <>) (if open then toggleMinimized else openPane)
+  where
+    open = any isOpenPaneNode sub
+    toggleMinimized =
+      (Minimized, Tree (View i (ViewState (not minimized)) g l) sub)
+    openPane =
+      second (Tree v) (mapAccumL openFirstPaneNode NotFound sub)
+toggleLayoutNode _ a t =
+  (a, t)
+
+toggleLayout :: Ident -> ViewTree -> Either TreeModError ViewTree
+toggleLayout ident =
+  uncurry check . depthTraverseTree (uncurry openPinnedSubs .: toggleLayoutNode ident) (NotFound,)
+  where
+    check = checkToggleResult LayoutMissing AmbiguousLayout ident

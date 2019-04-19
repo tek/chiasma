@@ -20,14 +20,14 @@ import Chiasma.Ui.Data.View (
   Pane(Pane),
   PaneView,
   Tree(Tree),
-  TreeSub(TreeNode,   TreeLeaf),
-  View(View,   viewIdent),
+  TreeSub(TreeNode, TreeLeaf),
+  View(View),
   ViewTree,
   ViewTreeSub,
-  _viewIdent,
   consLayout,
   consPane,
   )
+import qualified Chiasma.Ui.Data.View as View (_ident, ident)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.ShowTree (showViewTree)
 import Chiasma.Ui.ViewTree (togglePane)
@@ -52,9 +52,9 @@ test_modify :: IO ()
 test_modify = do
   let
     ident = Str "changed"
-    modded = modifyLeafByIdent id1 (Lens.set _viewIdent ident) tree
+    modded = modifyLeafByIdent id1 (Lens.set View.ident ident) tree
   assertEqual Nothing $ leafByIdent ident tree
-  assertEqual (Just ident) $ viewIdent <$> leafByIdent ident modded
+  assertEqual (Just ident) $ View._ident <$> leafByIdent ident modded
 
 failOnPaneIdent :: Ident -> ViewTree -> Maybe ViewTree
 failOnPaneIdent target t@(Tree _ sub) =
@@ -70,7 +70,7 @@ test_monadicModify = do
 
 insertPane :: Ident -> PaneView -> ViewTree -> ViewTree
 insertPane targetLayout pane (Tree l sub) =
-  if viewIdent l == targetLayout then Tree l (TreeLeaf pane : sub) else Tree l sub
+  if View._ident l == targetLayout then Tree l (TreeLeaf pane : sub) else Tree l sub
 
 ensurePaneUnique :: Ident -> ViewTreeSub -> Maybe ViewTreeSub
 ensurePaneUnique paneIdent (TreeLeaf (View ident _ _ _)) | ident == paneIdent = Nothing

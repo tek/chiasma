@@ -15,39 +15,41 @@ extra-source-files:
 - README.md
 
 dependencies:
-- base >= 4.7 && < 5
-- transformers
-- resourcet
-- free
-- mtl
-- process
-- typed-process
-- bytestring
-- unliftio
-- unliftio-core
-- split
-- data-default-class
-- directory
-- filepath
-- unix
-- posix-pty
-- parsec
 - attoparsec
-- parsers
-- either
-- lens
-- uuid
+- base >= 4.7 && < 5
+- bytestring
+- composition
+- composition-extra
 - conduit
 - conduit-extra
-- stm-conduit
-- stm-chans
-- text
-- exceptions
+- cornea
+- data-default-class
 - deepseq
-- random
+- directory
+- either
+- exceptions
+- filepath
+- free
+- lens
+- mtl
+- parsec
+- parsers
+- posix-pty
 - prettyprinter
 - prettyprinter-ansi-terminal
-- cornea
+- process
+- random
+- resourcet
+- split
+- stm-chans
+- stm-conduit
+- text
+- transformers
+- typed-process
+- unix
+- unliftio
+- unliftio-core
+- uuid
 
 default-extensions:
 - AutoDeriveTypeable

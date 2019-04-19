@@ -7,26 +7,26 @@
 
 module Chiasma.Lens.Tree where
 
+import Chiasma.Data.Ident (Ident, Identifiable(..))
+import Chiasma.Ui.Data.View
+import Chiasma.Ui.Lens.Ident (matchIdentP)
 import Control.Lens (
+  Fold,
   Index,
   IxValue,
   Ixed(ix),
   Plated(..),
   Traversal',
-  Fold,
-  makeClassy_,
   cosmos,
-  transform,
-  over,
-  toListOf,
   each,
+  makeClassy_,
+  over,
   preview,
+  toListOf,
+  transform,
   )
-import Data.Foldable (foldrM)
 import Data.Data (Data)
-import Chiasma.Data.Ident (Ident, Identifiable(..))
-import Chiasma.Ui.Data.View
-import Chiasma.Ui.Lens.Ident (matchIdentP)
+import Data.Foldable (foldrM)
 
 newtype NodeIndexTree l p =
   NodeIndexTree {
@@ -66,7 +66,7 @@ type instance IxValue (NodeIndexTree l p) = l
 type instance IxValue (LeafIndexTree l p) = p
 
 leafDataTraversal :: Traversal' (Tree l p) p
-leafDataTraversal = _treeSubs . each . _leafData
+leafDataTraversal = _treeSubs . each . leafData
 
 leafByIdentTraversal :: Identifiable p => Ident -> Traversal' (Tree l p) p
 leafByIdentTraversal ident = leafDataTraversal . matchIdentP ident

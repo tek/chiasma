@@ -22,16 +22,15 @@ import Chiasma.Ui.Data.View (
   PaneView,
   Tree(Tree),
   TreeSub(TreeNode, TreeLeaf),
-  View(View, viewIdent),
+  View(View),
   ViewTree,
   ViewTreeSub,
-  _viewIdent,
   consLayout,
   consPane,
   )
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.ShowTree (showViewTree)
-import Chiasma.Ui.ViewTree (togglePane)
+import Chiasma.Ui.ViewTree (toggleLayout, togglePane)
 
 node :: ViewTreeSub -> View Pane -> ViewTreeSub
 node sub p =
@@ -54,7 +53,7 @@ subtree5 :: ViewTreeSub
 subtree5 = node subtree6 ppane
 
 subtree6 :: ViewTreeSub
-subtree6 = TreeNode $ Tree (consLayout (Str "l6")) [pane "p2"]
+subtree6 = TreeNode $ Tree (consLayout (Str "l")) [pane "p2"]
 
 tree :: ViewTree
 tree =
@@ -62,7 +61,7 @@ tree =
   where
     subtree1 = node subtree2 ppane
     subtree2 = node subtree3 ppane
-    subtree3 = TreeNode $ Tree (consLayout (Str "l3")) [pane "p1"]
+    subtree3 = TreeNode $ Tree (consLayout (Str "l1")) [pane "p1"]
 
 target :: ViewTree
 target =
@@ -70,8 +69,12 @@ target =
   where
     subtree1 = node subtree2 (ppaneWith True)
     subtree2 = node subtree3 (ppaneWith True)
-    subtree3 = TreeNode $ Tree (consLayout (Str "l3")) [TreeLeaf $ View (Str "p1") def def (Pane True False Nothing)]
+    subtree3 = TreeNode $ Tree (consLayout (Str "l1")) [TreeLeaf $ View (Str "p1") def def (Pane True False Nothing)]
 
 test_pinOpen :: IO ()
 test_pinOpen =
   assertEqual target =<< assertRight (togglePane (Str "p1") tree)
+
+test_layoutPinOpen :: IO ()
+test_layoutPinOpen =
+  assertEqual target =<< assertRight (toggleLayout (Str "l1") tree)
