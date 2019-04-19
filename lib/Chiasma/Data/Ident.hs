@@ -27,9 +27,14 @@ instance Pretty Ident where
   pretty (Str s) = pretty s
   pretty (Uuid u) = pretty . toString $ u
 
-sameIdent :: Identifiable a => Ident -> a -> Bool
-sameIdent target a =
-  target == identify a
+sameIdent ::
+  Identifiable a =>
+  Identifiable b =>
+  a ->
+  b ->
+  Bool
+sameIdent target b =
+  identify target == identify b
 
 identString :: Ident -> String
 identString (Str a) = a
