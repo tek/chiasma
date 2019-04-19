@@ -147,10 +147,10 @@ test_twoLayouts =
 treePosition :: ViewTree
 treePosition =
   Tree (consLayout id0) [
-    TreeLeaf (openPane id0 10),
-    TreeLeaf (openPane id1 40),
-    TreeLeaf (openPane id2 20),
-    TreeLeaf (openPane id3 30)
+    TreeLeaf (openPane id0 1),
+    TreeLeaf (openPane id1 4),
+    TreeLeaf (openPane id2 2),
+    TreeLeaf (openPane id3 3)
     ]
   where
     openPane i pos = Ui.View i (ViewState False) def { position = Just pos } (Ui.Pane True False Nothing)
@@ -159,9 +159,9 @@ positionTarget :: [PaneDetail]
 positionTarget =
   [
     PaneDetail { paneId = PaneId 1, paneWidth = 150, paneHeight = 200, paneTop = 0, paneLeft = 0 },
-    PaneDetail { paneId = PaneId 3, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 151 },
-    PaneDetail { paneId = PaneId 4, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 301 },
-    PaneDetail { paneId = PaneId 2, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 451 }
+    PaneDetail { paneId = PaneId 2, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 151 },
+    PaneDetail { paneId = PaneId 3, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 301 },
+    PaneDetail { paneId = PaneId 4, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 451 }
     ]
 
 test_position :: IO ()

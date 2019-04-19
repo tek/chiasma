@@ -13,7 +13,7 @@ import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, line, pretty, (<+>), (<>))
 
 import qualified Chiasma.Codec.Data as Codec (Window(Window))
-import Chiasma.Command.Pane (isPaneIdOpen, movePane, resizePane)
+import Chiasma.Command.Pane (movePane, resizePane)
 import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.Text.Pretty (prettyS)
 import Chiasma.Data.TmuxId (PaneId)

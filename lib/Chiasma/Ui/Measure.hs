@@ -64,21 +64,14 @@ measureSub width height vertical (Tree.Sub tree) size =
 measureSub _ _ _ (Tree.Leaf (Renderable _ _ (RPane paneId))) size =
   Tree.Leaf (Measured size (MPane paneId))
 
-viewPosition :: RenderableNode -> Float
-viewPosition (Tree.Sub (Tree (Renderable _ ViewGeometry { position = pos } _) _)) =
-  fromMaybe 0.5 pos
-viewPosition (Tree.Leaf (Renderable _ ViewGeometry {position = pos} _)) =
-  fromMaybe 0.5 pos
-
 measureLayout :: RenderableTree -> Int -> Int -> Bool -> MeasureTree
 measureLayout (Tree (Renderable _ _ (RLayout refId vertical)) sub) width height parentVertical =
   Tree (Measured sizeInParent (MLayout refId vertical)) measuredSub
   where
-    sortedSub = NonEmpty.sortWith viewPosition sub
     sizeInParent = if parentVertical then height else width
     subTotalSize = if vertical then height else width
-    sizes = measureLayoutViews (int2Float subTotalSize) sortedSub
-    measuredSub = uncurry (measureSub width height vertical) <$> NonEmpty.zip sortedSub sizes
+    sizes = measureLayoutViews (int2Float subTotalSize) sub
+    measuredSub = uncurry (measureSub width height vertical) <$> NonEmpty.zip sub sizes
 
 measureTree :: RenderableTree -> Int -> Int -> MeasureTree
 measureTree tree width height =

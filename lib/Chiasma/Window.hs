@@ -1,20 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Chiasma.Window(
-  findOrCreateWindow,
-  ensureWindow,
-  principalPane,
-  findPrincipal,
-  ensureView,
-  windowState,
-  registerWindowId,
-) where
+module Chiasma.Window where
 
 import Control.Monad (join)
 import Control.Monad.DeepState (MonadDeepState, gets, modify)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
 import Data.Foldable (find)
+import Data.List (sortOn)
 import qualified Data.List.NonEmpty as NonEmpty (head, nonEmpty)
 import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Text as T (pack)
@@ -44,6 +37,7 @@ import qualified Chiasma.Ui.Data.Tree as Tree (Node(Sub, Leaf), Tree(Tree))
 import Chiasma.Ui.Data.View (Tree(..), TreeSub(..), ViewTree, ViewTreeSub)
 import qualified Chiasma.Ui.Data.View as Ui (Layout(..), Pane(Pane), PaneView, View(View))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
+import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry, position))
 import Chiasma.Ui.Data.ViewState (ViewState)
 import Chiasma.View (findOrCreateView, viewsLog, viewsLogS)
 import qualified Chiasma.View as Views (insertPane, insertWindow, pane, paneById, updatePane, updateWindow, window)
@@ -196,6 +190,12 @@ renderableTree vState geometry vertical sub = do
   let refId = refPaneId $ NonEmpty.head sub'
   return $ Tree.Tree (Renderable vState geometry (RLayout refId vertical)) sub'
 
+viewPosition :: ViewTreeSub -> Float
+viewPosition (TreeNode (Tree (Ui.View _ _ ViewGeometry { position = pos } _) _)) =
+  fromMaybe 0.5 pos
+viewPosition (TreeLeaf (Ui.View _ _ ViewGeometry { position = pos } _)) =
+  fromMaybe 0.5 pos
+
 ensureView ::
   (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   FilePath ->
@@ -206,10 +206,12 @@ ensureView cwd windowId =
   ensureTree
   where
     ensureTree (Tree (Ui.View layoutIdent vState geometry (Ui.Layout vertical)) sub) = do
-      ensuredSub <- traverse ensureNode sub
+      ensuredSub <- traverse ensureNode sortedSub
       viewsLog $ pretty (T.pack $ "new sub for layout `" ++ identString layoutIdent ++ "`:") <> line <>
         vsep (pretty <$> ensuredSub)
       return $ renderableTree vState geometry vertical $ catMaybes ensuredSub
+      where
+        sortedSub = sortOn viewPosition sub
     ensureNode (TreeNode t) = do
       newTree <- ensureTree t
       return $ Tree.Sub <$> newTree
