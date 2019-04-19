@@ -8,6 +8,7 @@ import {-@ HTF_TESTS @-} CodecSpec
 import {-@ HTF_TESTS @-} IndividualProcessSpec
 import {-@ HTF_TESTS @-} LensSpec
 import {-@ HTF_TESTS @-} OutputParseSpec
+import {-@ HTF_TESTS @-} PinSpec
 import {-@ HTF_TESTS @-} ProcessSpec
 import {-@ HTF_TESTS @-} RenderSpec
 import {-@ HTF_TESTS @-} StreamParseSpec
