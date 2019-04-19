@@ -10,10 +10,8 @@ import Data.Composition ((.:))
 import Data.Foldable (fold)
 import Data.Functor.Identity (Identity(..))
 import Data.Monoid (Sum(..))
-import Data.Text.Prettyprint.Doc (pretty)
 import Data.Traversable (mapAccumL)
 
-import Chiasma.Control.IO.Unsafe (unsafeLog)
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Lens.Tree (
   LeafIndexTree(..),
@@ -149,8 +147,8 @@ checkToggleResult ::
 checkToggleResult missing ambiguous ident =
   checkResult
   where
-    checkResult NotFound result = Left (missing ident)
-    checkResult (Multiple n) result = Left (ambiguous ident n)
+    checkResult NotFound _ = Left (missing ident)
+    checkResult (Multiple n) _ = Left (ambiguous ident n)
     checkResult _ result = Right result
 
 togglePaneView :: Ident -> PaneView -> (ToggleResult, PaneView)
@@ -192,12 +190,12 @@ openFirstPaneNode a t =
 -- TODO recurse when opening pane
 toggleLayoutNode :: Ident -> ToggleResult -> ViewTree -> (ToggleResult, ViewTree)
 toggleLayoutNode ident previous (Tree v@(View i (ViewState minimized) g l) sub) | ident == i =
-  first (previous <>) (if open then toggleMinimized else openPane)
+  first (previous <>) (if open then toggleMinimized else openPane')
   where
     open = any isOpenPaneNode sub
     toggleMinimized =
       (Minimized, Tree (View i (ViewState (not minimized)) g l) sub)
-    openPane =
+    openPane' =
       second (Tree v) (mapAccumL openFirstPaneNode NotFound sub)
 toggleLayoutNode _ a t =
   (a, t)

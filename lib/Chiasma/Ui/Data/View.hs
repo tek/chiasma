@@ -21,7 +21,7 @@ import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, nest, space, vsep, 
 import GHC.Generics (Generic)
 
 import Chiasma.Data.Ident (Ident, Identifiable(..))
-import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry))
+import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.Lens.Ident (matchIdentP)
 
@@ -71,8 +71,8 @@ instance Pretty Layout where
     if vertical then "▤" else "▥"
 
 instance Pretty Pane where
-  pretty (Pane open pin _) =
-    (if open then "🔓" else "🔒") <+> (if pin then "📌" else emptyDoc)
+  pretty (Pane open' pin' _) =
+    (if open' then "🔓" else "🔒") <+> (if pin' then "📌" else emptyDoc)
 
 prettyView :: Doc a -> Ident -> ViewState -> ViewGeometry -> Doc a
 prettyView sym ident' (ViewState minimized) geo =

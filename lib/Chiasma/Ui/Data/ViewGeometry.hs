@@ -7,7 +7,7 @@ module Chiasma.Ui.Data.ViewGeometry(
 
 import Data.Data (Data)
 import Data.Default.Class (Default)
-import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, nest, space, vsep, (<+>))
+import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, space, (<+>))
 import GHC.Generics (Generic)
 
 data ViewGeometry =

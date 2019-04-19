@@ -48,7 +48,7 @@ plateWrap :: (Data l, Data p) => (Tree l p -> t l p) -> (t l p -> Tree l p) -> T
 plateWrap consWrapper unconsWrapper f wrappedTree =
   consWrapper <$> plate g (unconsWrapper wrappedTree)
   where
-    g tree = unconsWrapper <$> f (consWrapper tree)
+    g tree' = unconsWrapper <$> f (consWrapper tree')
 
 instance (Data l, Data p) => Plated (NodeIndexTree l p) where
   plate = plateWrap NodeIndexTree nitTree
@@ -69,23 +69,23 @@ leafDataTraversal :: Traversal' (Tree l p) p
 leafDataTraversal = _treeSubs . each . leafData
 
 leafByIdentTraversal :: Identifiable p => Ident -> Traversal' (Tree l p) p
-leafByIdentTraversal ident = leafDataTraversal . matchIdentP ident
+leafByIdentTraversal ident' = leafDataTraversal . matchIdentP ident'
 
 instance (Identifiable p, Data l, Data p) => Ixed (LeafIndexTree l p) where
-  ix ident = _litTree . leafByIdentTraversal ident
+  ix ident' = _litTree . leafByIdentTraversal ident'
 
 leavesByIdentRecursive :: (Identifiable p, Data l, Data p) => Ident -> Fold (LeafIndexTree l p) p
-leavesByIdentRecursive ident = cosmos . ix ident
+leavesByIdentRecursive ident' = cosmos . ix ident'
 
 leafByIdent :: (Identifiable p, Data l, Data p) => Ident -> Tree l p -> Maybe p
-leafByIdent ident = preview (leavesByIdentRecursive ident) . LeafIndexTree
+leafByIdent ident' = preview (leavesByIdentRecursive ident') . LeafIndexTree
 
 leavesByIdent :: (Identifiable p, Data l, Data p) => Ident -> Tree l p -> [p]
-leavesByIdent ident = toListOf (leavesByIdentRecursive ident) . LeafIndexTree
+leavesByIdent ident' = toListOf (leavesByIdentRecursive ident') . LeafIndexTree
 
 modifyLeafByIdent :: (Identifiable p, Data l, Data p) => Ident -> (p -> p) -> Tree l p -> Tree l p
-modifyLeafByIdent ident f tree =
-  litTree $ (transform $ over (ix ident) f) (LeafIndexTree tree)
+modifyLeafByIdent ident' f tree' =
+  litTree $ (transform $ over (ix ident') f) (LeafIndexTree tree')
 
 -- subtreesWithLayout :: Traversal' (Tree l p) (l, TreeSub l p)
 subtreesWithLayout :: ∀ l p m. Monad m => ((l, TreeSub l p) -> m (l, TreeSub l p)) -> Tree l p -> m (Tree l p)
