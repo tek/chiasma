@@ -1,7 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -31,20 +29,21 @@ module Chiasma.Ui.Data.View(
 ) where
 
 import Control.Lens (
-  makeClassy_,
   Index,
   IxValue,
   Ixed(ix),
+  makeClassy_,
   )
 import Control.Lens.Plated (Plated)
 import Data.Bifoldable (Bifoldable(bifoldMap))
 import Data.Bifunctor (Bifunctor(first, second))
 import Data.Data (Data)
 import Data.Default.Class (Default(def))
+import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, nest, space, vsep, (<+>))
 import GHC.Generics (Generic)
 
 import Chiasma.Data.Ident (Ident, Identifiable(..))
-import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
+import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.Lens.Ident (matchIdentP)
 
@@ -58,6 +57,9 @@ data Pane =
 
 makeClassy_ ''Pane
 
+instance Default Pane where
+  def = Pane False False Nothing
+
 newtype Layout =
   Layout {
     vertical :: Bool
@@ -65,6 +67,9 @@ newtype Layout =
   deriving (Eq, Show, Data, Generic)
 
 makeClassy_ ''Layout
+
+instance Default Layout where
+  def = Layout True
 
 data View a =
   View {
@@ -77,8 +82,31 @@ data View a =
 
 makeClassy_ ''View
 
+instance Default a => Default (View a) where
+  def = View def def def def
+
 type PaneView = View Pane
 type LayoutView = View Layout
+
+instance Pretty Layout where
+  pretty (Layout vertical) =
+    if vertical then "▤" else "▥"
+
+instance Pretty Pane where
+  pretty (Pane open pin _) =
+    (if open then "🔓" else "🔒") <+> (if pin then "📌" else emptyDoc)
+
+prettyView :: Doc a -> Ident -> ViewState -> ViewGeometry -> Doc a
+prettyView sym ident' (ViewState minimized) geo =
+  sym <+> pretty ident' <+> "⎸" <+> (if minimized then "▂" <> space else emptyDoc) <> pretty geo
+
+instance Pretty (View Pane) where
+  pretty (View ident' st geo a) =
+    prettyView "◳" ident' st geo <> pretty a
+
+instance Pretty (View Layout) where
+  pretty (View ident' st geo a) =
+    prettyView (pretty a) ident' st geo
 
 consPane :: Ident -> PaneView
 consPane ident' = View ident' (ViewState False) def (Pane False False Nothing)
@@ -146,4 +174,14 @@ type instance Index (Tree l p) = Ident
 type instance IxValue (Tree l p) = Tree l p
 
 instance (Identifiable l, Data l, Data p) => Ixed (Tree l p) where
-  ix ident = matchIdentP ident
+  ix = matchIdentP
+
+instance (Pretty l, Pretty p) => Pretty (TreeSub l p) where
+  pretty (TreeNode a) =
+    pretty a
+  pretty (TreeLeaf a) =
+    pretty a
+
+instance (Pretty l, Pretty p) => Pretty (Tree l p) where
+  pretty (Tree l sub) =
+    nest 2 . vsep $ pretty l : (pretty <$> sub)

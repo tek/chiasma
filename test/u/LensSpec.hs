@@ -12,23 +12,22 @@ import qualified Control.Lens as Lens (set)
 import Data.Default.Class (Default(def))
 import Data.Either (isRight)
 import Data.Foldable (traverse_)
+
 import Chiasma.Data.Ident (Ident(Str))
 import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs)
+import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane))
 import Chiasma.Ui.Data.View (
+  Pane(Pane),
+  PaneView,
   Tree(Tree),
-  TreeSub(TreeNode,
-  TreeLeaf),
+  TreeSub(TreeNode,   TreeLeaf),
+  View(View,   viewIdent),
   ViewTree,
-  View(View,
-  viewIdent),
+  ViewTreeSub,
   _viewIdent,
   consLayout,
   consPane,
-  Pane(Pane),
-  PaneView,
-  ViewTreeSub,
   )
-import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.ShowTree (showViewTree)
 import Chiasma.Ui.ViewTree (togglePane)
