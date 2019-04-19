@@ -27,10 +27,10 @@ prog = do
   return (panes1, panes, wins)
 
 p :: Int -> Pane
-p i = Pane (PaneId i) 200 50
+p i = Pane (PaneId i) 600 200
 
 w :: Int -> Window
-w i = Window (WindowId i) 200 50
+w i = Window (WindowId i) 600 200
 
 runProg :: TmuxNative -> IO (Either TmuxError ([Pane], [Pane], [Window]))
 runProg api = runExceptT @TmuxError $ runTmux api prog

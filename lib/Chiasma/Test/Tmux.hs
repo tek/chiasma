@@ -59,10 +59,10 @@ unsafeTerminal = do
   return $ Terminal handle pty
 
 windowWidth :: Int
-windowWidth = 200
+windowWidth = 600
 
 windowHeight :: Int
-windowHeight = 51
+windowHeight = 201
 
 testTmuxProcessConfig :: Bool -> FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
 testTmuxProcessConfig gui socket confFile (Terminal handle pty) = do
