@@ -3,7 +3,7 @@ module Chiasma.Ui.Measure(
 ) where
 
 import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as NonEmpty (sortWith, zip)
+import qualified Data.List.NonEmpty as NonEmpty (zip)
 import Data.Maybe (fromMaybe)
 import GHC.Float (int2Float)
 
@@ -12,7 +12,7 @@ import Chiasma.Ui.Data.Measure (MLayout(..), MPane(..), MeasureTree, MeasureTree
 import Chiasma.Ui.Data.RenderableTree (RLayout(..), RPane(..), Renderable(..), RenderableNode, RenderableTree)
 import Chiasma.Ui.Data.Tree (Tree(..))
 import qualified Chiasma.Ui.Data.Tree as Tree (Node(..))
-import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry, minSize, maxSize, fixedSize, position))
+import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(minSize, maxSize, fixedSize))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.Measure.Balance (balanceSizes)
 import Chiasma.Ui.Measure.Weights (viewWeights)

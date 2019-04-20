@@ -110,6 +110,8 @@ data ToggleResult =
   NotFound
   |
   Multiple Int
+  |
+  Consistent
   deriving (Eq, Show)
 
 instance Semigroup ToggleResult where
@@ -168,6 +170,20 @@ togglePaneNode _ t =
 togglePane :: Ident -> ViewTree -> Either TreeModError ViewTree
 togglePane ident =
   uncurry check . depthTraverseTree openPinnedSubs (togglePaneView ident)
+  where
+    check = checkToggleResult PaneMissing AmbiguousPane ident
+
+ensurePaneViewOpen :: Ident -> PaneView -> (ToggleResult, PaneView)
+ensurePaneViewOpen ident (View i s g (Pane False p c)) | ident == i =
+  (Opened, View i s g (Pane True p c))
+ensurePaneViewOpen ident v@(View i _ _ _) | ident == i =
+  (Consistent, v)
+ensurePaneViewOpen _ v =
+  (NotFound, v)
+
+ensurePaneOpen :: Ident -> ViewTree -> Either TreeModError ViewTree
+ensurePaneOpen ident =
+  uncurry check . depthTraverseTree openPinnedSubs (ensurePaneViewOpen ident)
   where
     check = checkToggleResult PaneMissing AmbiguousPane ident
 
