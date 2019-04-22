@@ -1,6 +1,17 @@
 module Chiasma.Ui.ViewTree where
 
-import Control.Lens (anyOf, cosmos, filtered, has, ix, mapMOf, transformM)
+import Control.Lens (
+  Traversal,
+  Traversal',
+  anyOf,
+  cosmos,
+  filtered,
+  has,
+  ix,
+  mapMOf,
+  over,
+  transformM,
+  )
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, runExceptT)
@@ -102,32 +113,62 @@ depthTraverseTree fn fl =
     recSub (TreeLeaf l) =
       second TreeLeaf $ fl l
 
-data ToggleResult =
+data ToggleStatus =
   Minimized
   |
   Opened
   |
-  NotFound
+  Pristine
   |
   Multiple Int
   |
   Consistent
   deriving (Eq, Show)
 
-instance Semigroup ToggleResult where
-  NotFound <> a = a
-  a <> NotFound = a
+instance Semigroup ToggleStatus where
+  Pristine <> a = a
+  a <> Pristine = a
   Multiple a <> Multiple b = Multiple (a + b)
   Multiple a <> _ = Multiple (a + 1)
   _ <> Multiple a = Multiple (a + 1)
   _ <> _ = Multiple 2
 
-instance Monoid ToggleResult where
+instance Monoid ToggleStatus where
+  mempty = Pristine
+
+data ToggleResult a =
+  Success a
+  |
+  NotFound
+  |
+  Ambiguous Int
+  deriving (Eq, Show, Functor)
+
+instance Semigroup (ToggleResult a) where
+  NotFound <> a = a
+  a <> NotFound = a
+  Ambiguous a <> Ambiguous b = Ambiguous (a + b)
+  Ambiguous a <> _ = Ambiguous (a + 1)
+  _ <> Ambiguous a = Ambiguous (a + 1)
+  _ <> _ = Ambiguous 2
+
+instance Monoid (ToggleResult a) where
   mempty = NotFound
 
-openPinnedSubs :: ToggleResult -> ViewTree -> (ToggleResult, ViewTree)
-openPinnedSubs NotFound t =
-  (NotFound, t)
+instance Applicative ToggleResult where
+  pure = Success
+  (Success f) <*> fa = fmap f fa
+  NotFound <*> _ = NotFound
+  Ambiguous n <*> _ = Ambiguous n
+
+instance Monad ToggleResult where
+    Success a >>= f = f a
+    NotFound >>= _ = NotFound
+    Ambiguous n >>= _ = Ambiguous n
+
+openPinnedSubs :: ToggleStatus -> ViewTree -> (ToggleStatus, ViewTree)
+openPinnedSubs Pristine t =
+  (Pristine, t)
 openPinnedSubs Opened (Tree l sub) =
   (Opened, Tree l (openPinnedPane <$> sub))
   where
@@ -140,71 +181,88 @@ openPinnedSubs a t =
   (a, t)
 
 checkToggleResult ::
-  (Ident -> TreeModError) ->
-  (Ident -> Int -> TreeModError) ->
-  Ident ->
-  ToggleResult ->
+  ToggleStatus ->
   a ->
-  Either TreeModError a
-checkToggleResult missing ambiguous ident =
+  ToggleResult a
+checkToggleResult =
   checkResult
   where
-    checkResult NotFound _ = Left (missing ident)
-    checkResult (Multiple n) _ = Left (ambiguous ident n)
-    checkResult _ result = Right result
+    checkResult Pristine _ = NotFound
+    checkResult (Multiple n) _ = Ambiguous n
+    checkResult _ result = Success result
 
-togglePaneView :: Ident -> PaneView -> (ToggleResult, PaneView)
+togglePaneView :: Ident -> PaneView -> (ToggleStatus, PaneView)
 togglePaneView ident (View i s g (Pane False p c)) | ident == i =
   (Opened, View i s g (Pane True p c))
 togglePaneView ident (View i (ViewState minimized) g (Pane True p c)) | ident == i =
   (Minimized, View i (ViewState (not minimized)) g (Pane False p c))
 togglePaneView _ v =
-  (NotFound, v)
+  (Pristine, v)
 
-togglePaneNode :: Ident -> ViewTreeSub -> (ToggleResult, ViewTreeSub)
+togglePaneNode :: Ident -> ViewTreeSub -> (ToggleStatus, ViewTreeSub)
 togglePaneNode ident (TreeLeaf v) =
   second TreeLeaf (togglePaneView ident v)
 togglePaneNode _ t =
-  (NotFound, t)
+  (Pristine, t)
 
-togglePane :: Ident -> ViewTree -> Either TreeModError ViewTree
+togglePane :: Ident -> ViewTree -> ToggleResult ViewTree
 togglePane ident =
-  uncurry check . depthTraverseTree openPinnedSubs (togglePaneView ident)
-  where
-    check = checkToggleResult PaneMissing AmbiguousPane ident
+  uncurry checkToggleResult . depthTraverseTree openPinnedSubs (togglePaneView ident)
 
-ensurePaneViewOpen :: Ident -> PaneView -> (ToggleResult, PaneView)
+togglePaneOpenTraversal' ::
+  Traversal' a ViewTree ->
+  Ident ->
+  a ->
+  ToggleResult a
+togglePaneOpenTraversal' lens =
+  mapMOf lens . togglePane
+
+ensurePaneViewOpen :: Ident -> PaneView -> (ToggleStatus, PaneView)
 ensurePaneViewOpen ident (View i s g (Pane False p c)) | ident == i =
   (Opened, View i s g (Pane True p c))
 ensurePaneViewOpen ident v@(View i _ _ _) | ident == i =
   (Consistent, v)
 ensurePaneViewOpen _ v =
-  (NotFound, v)
+  (Pristine, v)
 
-ensurePaneOpen :: Ident -> ViewTree -> Either TreeModError ViewTree
+ensurePaneOpen :: Ident -> ViewTree -> ToggleResult ViewTree
 ensurePaneOpen ident =
-  uncurry check . depthTraverseTree openPinnedSubs (ensurePaneViewOpen ident)
-  where
-    check = checkToggleResult PaneMissing AmbiguousPane ident
+  uncurry checkToggleResult . depthTraverseTree openPinnedSubs (ensurePaneViewOpen ident)
+
+ensurePaneOpenTraversal ::
+  Traversal a (ToggleResult a) ViewTree (ToggleResult ViewTree) ->
+  Ident ->
+  a ->
+  ToggleResult a
+ensurePaneOpenTraversal lens =
+  over lens . ensurePaneOpen
+
+ensurePaneOpenTraversal' ::
+  Traversal' a ViewTree ->
+  Ident ->
+  a ->
+  ToggleResult a
+ensurePaneOpenTraversal' lens =
+  mapMOf lens . ensurePaneOpen
 
 isOpenPaneNode :: ViewTreeSub -> Bool
 isOpenPaneNode =
   anyOf (TreeSub.leafData . View.extra . Pane.open) id
 
-openPaneView :: PaneView -> (ToggleResult, PaneView)
+openPaneView :: PaneView -> (ToggleStatus, PaneView)
 openPaneView (View i s g (Pane False p c)) =
   (Opened, View i s g (Pane True p c))
 openPaneView v =
-  (NotFound, v)
+  (Pristine, v)
 
-openFirstPaneNode :: ToggleResult -> ViewTreeSub -> (ToggleResult, ViewTreeSub)
-openFirstPaneNode NotFound (TreeLeaf v) =
+openFirstPaneNode :: ToggleStatus -> ViewTreeSub -> (ToggleStatus, ViewTreeSub)
+openFirstPaneNode Pristine (TreeLeaf v) =
   second TreeLeaf (openPaneView v)
 openFirstPaneNode a t =
   (a, t)
 
 -- TODO recurse when opening pane
-toggleLayoutNode :: Ident -> ToggleResult -> ViewTree -> (ToggleResult, ViewTree)
+toggleLayoutNode :: Ident -> ToggleStatus -> ViewTree -> (ToggleStatus, ViewTree)
 toggleLayoutNode ident previous (Tree v@(View i (ViewState minimized) g l) sub) | ident == i =
   first (previous <>) (if open then toggleMinimized else openPane')
   where
@@ -212,12 +270,18 @@ toggleLayoutNode ident previous (Tree v@(View i (ViewState minimized) g l) sub) 
     toggleMinimized =
       (Minimized, Tree (View i (ViewState (not minimized)) g l) sub)
     openPane' =
-      second (Tree v) (mapAccumL openFirstPaneNode NotFound sub)
+      second (Tree v) (mapAccumL openFirstPaneNode Pristine sub)
 toggleLayoutNode _ a t =
   (a, t)
 
-toggleLayout :: Ident -> ViewTree -> Either TreeModError ViewTree
+toggleLayout :: Ident -> ViewTree -> ToggleResult ViewTree
 toggleLayout ident =
-  uncurry check . depthTraverseTree (uncurry openPinnedSubs .: toggleLayoutNode ident) (NotFound,)
-  where
-    check = checkToggleResult LayoutMissing AmbiguousLayout ident
+  uncurry checkToggleResult . depthTraverseTree (uncurry openPinnedSubs .: toggleLayoutNode ident) (Pristine,)
+
+toggleLayoutOpenTraversal' ::
+  Traversal' a ViewTree ->
+  Ident ->
+  a ->
+  ToggleResult a
+toggleLayoutOpenTraversal' lens =
+  mapMOf lens . toggleLayout
