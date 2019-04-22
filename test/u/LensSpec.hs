@@ -10,12 +10,10 @@ import Test.Framework
 import Control.Lens (transformM)
 import qualified Control.Lens as Lens (set)
 import Data.Default.Class (Default(def))
-import Data.Either (isRight)
 import Data.Foldable (traverse_)
 
 import Chiasma.Data.Ident (Ident(Str))
 import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs)
-import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane))
 import Chiasma.Ui.Data.View (
   Pane(Pane),
   PaneView,
@@ -31,6 +29,7 @@ import qualified Chiasma.Ui.Data.View as View (_ident, ident)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 import Chiasma.Ui.ShowTree (showViewTree)
 import Chiasma.Ui.ViewTree (togglePane)
+import qualified Chiasma.Ui.ViewTree as ToggleResult (ToggleResult(..))
 
 id0, id1, id2, id3, id4 :: Ident
 id0 = Str "0"
@@ -89,6 +88,6 @@ togglePaneTree =
 
 test_togglePane :: IO ()
 test_togglePane = do
-  assertEqual (Left $ AmbiguousPane id0 2) (togglePane id0 togglePaneTree)
-  assertEqual (Left $ PaneMissing id1) (togglePane id1 togglePaneTree)
-  assertBool (isRight $ togglePane id2 togglePaneTree)
+  assertEqual (ToggleResult.Ambiguous 2) (togglePane id0 togglePaneTree)
+  assertEqual ToggleResult.NotFound (togglePane id1 togglePaneTree)
+  assertEqual (ToggleResult.Success (1 :: Int)) (1 <$ togglePane id2 togglePaneTree)

@@ -1,22 +1,17 @@
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 
-module RenderSpec(
-  htf_thisModulesTests,
-) where
+module RenderSpec (htf_thisModulesTests) where
 
 import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.State.Strict (runStateT)
 import Data.Default.Class (Default(def))
-import Data.Either.Combinators (fromRight)
-import Data.Foldable (traverse_)
 import Data.List (sortOn)
 import Test.Framework
 import UnliftIO (throwString)
 import UnliftIO.Directory (getCurrentDirectory)
 
-import qualified Chiasma.Codec.Data as Codec (Pane(..))
 import Chiasma.Codec.Data.PaneDetail (PaneDetail(..))
-import Chiasma.Command.Pane (panes, panesAs)
+import Chiasma.Command.Pane (panesAs)
 import Chiasma.Command.Session (activateSession)
 import Chiasma.Data.Ident (Ident(Str))
 import Chiasma.Data.TmuxError (TmuxError)
@@ -27,13 +22,13 @@ import Chiasma.Data.Views (Views(Views))
 import Chiasma.Monad.Stream (runTmux)
 import Chiasma.Native.Api (TmuxNative(..))
 import Chiasma.Render (render)
-import Chiasma.Test.Tmux (sleep, tmuxGuiSpec, tmuxSpec)
+import Chiasma.Test.Tmux (sleep, tmuxSpec)
 import Chiasma.Ui.Data.View (Tree(..), TreeSub(..), ViewTree, consLayout, consLayoutVertical)
 import qualified Chiasma.Ui.Data.View as Ui (Pane(Pane), View(View))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(..))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
 
-id0, id1, id2 :: Ident
+id0, id1, id2, id3 :: Ident
 id0 = Str "0"
 id1 = Str "1"
 id2 = Str "2"
@@ -82,8 +77,8 @@ treeImbalanced =
 imbalancedTarget :: [PaneDetail]
 imbalancedTarget =
   [
-    PaneDetail { paneId = PaneId 1, paneWidth = 449, paneHeight = 200, paneTop = 0, paneLeft = 0 },
-    PaneDetail { paneId = PaneId 2, paneWidth = 150, paneHeight = 200, paneTop = 0, paneLeft = 450 }
+    PaneDetail { paneId = PaneId 1, paneWidth = 89, paneHeight = 60, paneTop = 0, paneLeft = 0 },
+    PaneDetail { paneId = PaneId 2, paneWidth = 150, paneHeight = 60, paneTop = 0, paneLeft = 90 }
     ]
 
 test_imbalanced :: IO ()
@@ -109,9 +104,9 @@ treeNested =
 nestedTarget :: [PaneDetail]
 nestedTarget =
   [
-    PaneDetail { paneId = PaneId 1, paneWidth = 300, paneHeight = 200, paneTop = 0, paneLeft = 0 },
-    PaneDetail { paneId = PaneId 2, paneWidth = 299, paneHeight = 100, paneTop = 0, paneLeft = 301 },
-    PaneDetail { paneId = PaneId 3, paneWidth = 299, paneHeight = 99, paneTop = 101, paneLeft = 301 }
+    PaneDetail { paneId = PaneId 1, paneWidth = 120, paneHeight = 60, paneTop = 0, paneLeft = 0 },
+    PaneDetail { paneId = PaneId 2, paneWidth = 119, paneHeight = 30, paneTop = 0, paneLeft = 121 },
+    PaneDetail { paneId = PaneId 3, paneWidth = 119, paneHeight = 29, paneTop = 31, paneLeft = 121 }
   ]
 
 test_nested :: IO ()
@@ -136,8 +131,8 @@ treeTwoLayouts =
 twoLayoutsTarget :: [PaneDetail]
 twoLayoutsTarget =
   [
-    PaneDetail { paneId = PaneId 1, paneWidth = 300, paneHeight = 200, paneTop = 0, paneLeft = 0 },
-    PaneDetail { paneId = PaneId 2, paneWidth = 299, paneHeight = 200, paneTop = 0, paneLeft = 301 }
+    PaneDetail { paneId = PaneId 1, paneWidth = 120, paneHeight = 60, paneTop = 0, paneLeft = 0 },
+    PaneDetail { paneId = PaneId 2, paneWidth = 119, paneHeight = 60, paneTop = 0, paneLeft = 121 }
     ]
 
 test_twoLayouts :: IO ()
@@ -158,10 +153,10 @@ treePosition =
 positionTarget :: [PaneDetail]
 positionTarget =
   [
-    PaneDetail { paneId = PaneId 1, paneWidth = 150, paneHeight = 200, paneTop = 0, paneLeft = 0 },
-    PaneDetail { paneId = PaneId 2, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 151 },
-    PaneDetail { paneId = PaneId 3, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 301 },
-    PaneDetail { paneId = PaneId 4, paneWidth = 149, paneHeight = 200, paneTop = 0, paneLeft = 451 }
+    PaneDetail { paneId = PaneId 1, paneWidth = 60, paneHeight = 60, paneTop = 0, paneLeft = 0 },
+    PaneDetail { paneId = PaneId 2, paneWidth = 59, paneHeight = 60, paneTop = 0, paneLeft = 61 },
+    PaneDetail { paneId = PaneId 3, paneWidth = 59, paneHeight = 60, paneTop = 0, paneLeft = 121 },
+    PaneDetail { paneId = PaneId 4, paneWidth = 59, paneHeight = 60, paneTop = 0, paneLeft = 181 }
     ]
 
 test_position :: IO ()

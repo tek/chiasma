@@ -1,36 +1,22 @@
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 
-module PinSpec(
-  htf_thisModulesTests,
-) where
+module PinSpec (htf_thisModulesTests) where
 
-import Control.Lens (transformM)
-import qualified Control.Lens as Lens (set)
 import Data.Default.Class (Default(def))
-import Data.Either (isRight)
-import Data.Either.Combinators (fromRight)
-import Data.Foldable (traverse_)
-import Data.Functor (void)
-import Data.Text.Prettyprint.Doc (Doc, pretty)
 import Test.Framework
 
 import Chiasma.Data.Ident (Ident(Str))
-import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs)
-import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane))
 import Chiasma.Ui.Data.View (
   Pane(Pane),
-  PaneView,
   Tree(Tree),
   TreeSub(TreeNode, TreeLeaf),
   View(View),
   ViewTree,
   ViewTreeSub,
   consLayout,
-  consPane,
   )
-import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
-import Chiasma.Ui.ShowTree (showViewTree)
 import Chiasma.Ui.ViewTree (toggleLayout, togglePane)
+import qualified Chiasma.Ui.ViewTree as ToggleResult (ToggleResult(..))
 
 node :: ViewTreeSub -> View Pane -> ViewTreeSub
 node sub p =
@@ -73,8 +59,8 @@ target =
 
 test_pinOpen :: IO ()
 test_pinOpen =
-  assertEqual target =<< assertRight (togglePane (Str "p1") tree)
+  assertEqual (ToggleResult.Success target) (togglePane (Str "p1") tree)
 
 test_layoutPinOpen :: IO ()
 test_layoutPinOpen =
-  assertEqual target =<< assertRight (toggleLayout (Str "l1") tree)
+  assertEqual (ToggleResult.Success target) (toggleLayout (Str "l1") tree)

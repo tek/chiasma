@@ -1,14 +1,9 @@
-module Chiasma.Test.Tmux(
-  withTestTmux,
-  tmuxSpec,
-  tmuxGuiSpec,
-  sleep,
-  usleep,
-) where
+module Chiasma.Test.Tmux where
 
 import Control.Concurrent (threadDelay)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Trans.Except (runExceptT)
+import Data.Default.Class (Default(def))
 import GHC.IO.Handle (Handle)
 import GHC.Real (fromIntegral)
 import System.FilePath ((</>))
@@ -42,6 +37,18 @@ import Data.Functor (void)
 
 data Terminal = Terminal Handle Pty
 
+data TmuxTestConf =
+  TmuxTestConf {
+    ttcWidth :: Int,
+    ttcHeight :: Int,
+    ttcFontSize :: Int,
+    ttcGui :: Bool
+  }
+  deriving (Eq, Show)
+
+instance Default TmuxTestConf where
+  def = TmuxTestConf 240 61 18 True
+
 usleep :: MonadIO f => Double -> f ()
 usleep =
   liftIO . threadDelay . round
@@ -58,15 +65,13 @@ unsafeTerminal = do
   pty <- maybe (throwString "couldn't spawn pty") return mayPty
   return $ Terminal handle pty
 
-windowWidth :: Int
-windowWidth = 600
+urxvtArgs :: Int -> Int -> Int -> [String]
+urxvtArgs width height fontSize =
+  ["-geometry", show width ++ "x" ++ show height, "-fn", "xft:monospace:size=" ++ show fontSize, "-e", "tmux"]
 
-windowHeight :: Int
-windowHeight = 201
-
-testTmuxProcessConfig :: Bool -> FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
-testTmuxProcessConfig gui socket confFile (Terminal handle pty) = do
-  resizePty pty (windowWidth, windowHeight)
+testTmuxProcessConfig :: TmuxTestConf -> FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
+testTmuxProcessConfig (TmuxTestConf width height fontSize gui) socket confFile (Terminal handle pty) = do
+  resizePty pty (width, height)
   let
     stream :: StreamSpec st ()
     stream = useHandleClose handle
@@ -74,7 +79,7 @@ testTmuxProcessConfig gui socket confFile (Terminal handle pty) = do
     tmuxArgs = ["-S", socket, "-f", confFile]
     prc =
       if gui
-      then proc "urxvt" (["-geometry", show windowWidth ++ "x" ++ show windowHeight, "-e", "tmux"] ++ tmuxArgs)
+      then proc "urxvt" (urxvtArgs width height fontSize ++ tmuxArgs)
       else proc "tmux" tmuxArgs
   return $ stdio prc
 
@@ -98,22 +103,22 @@ runAndKillTmux thunk api prc = do
   sleep 0.2
   finally (thunk api) (killProcess api prc)
 
-withTestTmux :: Bool -> (TmuxNative -> IO a) -> FilePath -> IO a
-withTestTmux gui thunk tempDir = do
+withTestTmux :: TmuxTestConf -> (TmuxNative -> IO a) -> FilePath -> IO a
+withTestTmux tConf thunk tempDir = do
   let socket = tempDir </> "tmux_socket"
   conf <- fixture "u" "tmux.conf"
   terminal <- unsafeTerminal
-  pc <- testTmuxProcessConfig gui socket conf terminal
+  pc <- testTmuxProcessConfig tConf socket conf terminal
   withProcess pc $ runAndKillTmux thunk (TmuxNative $ Just socket)
 
-tmuxSpec' :: Bool -> (TmuxNative -> IO a) -> IO a
-tmuxSpec' gui thunk =
-  withSystemTempDirectory "chiasma-test" $ withTestTmux gui thunk
+tmuxSpec' :: TmuxTestConf -> (TmuxNative -> IO a) -> IO a
+tmuxSpec' conf thunk =
+  withSystemTempDirectory "chiasma-test" $ withTestTmux conf thunk
 
 tmuxSpec :: (TmuxNative -> IO a) -> IO a
 tmuxSpec =
-  tmuxSpec' False
+  tmuxSpec' def { ttcGui = False }
 
 tmuxGuiSpec :: (TmuxNative -> IO a) -> IO a
 tmuxGuiSpec =
-  tmuxSpec' True
+  tmuxSpec' def
