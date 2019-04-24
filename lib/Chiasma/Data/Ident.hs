@@ -7,6 +7,7 @@ import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Data (Data)
 import Data.Default.Class (Default(def))
+import Data.String (IsString(..))
 import Data.Text (Text)
 import qualified Data.Text as Text (pack)
 import Data.Text.Prettyprint.Doc (Pretty(..))
@@ -32,6 +33,9 @@ instance Pretty Ident where
 
 instance Default Ident where
   def = Str def
+
+instance IsString Ident where
+  fromString = Str
 
 sameIdent ::
   Identifiable a =>
