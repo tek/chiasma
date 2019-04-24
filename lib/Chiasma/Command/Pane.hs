@@ -117,6 +117,13 @@ capturePane paneId = do
   lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId ++ ["-p", "-e"])
   return $ dropWhileEnd ("" ==) lines'
 
+panePid ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  m (Maybe Codec.PanePid)
+panePid =
+  pane
+
 panePids ::
   MonadFree TmuxThunk m =>
   m [Codec.PanePid]
