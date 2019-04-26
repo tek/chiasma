@@ -4,9 +4,9 @@ module Chiasma.Pack(
 
 import Control.Lens (each, mapMOf_)
 import Control.Monad (when)
+import Control.Monad.DeepState (MonadDeepState)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.State.Class (MonadState)
 import Data.Foldable (traverse_)
 import qualified Data.List.NonEmpty as NonEmpty (reverse)
 import qualified Data.Text as T (pack)
@@ -27,7 +27,7 @@ import Chiasma.Ui.Measure (measureTree)
 import Chiasma.View (viewsLog)
 
 packPane ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   PaneId ->
   Bool ->
   PaneId ->
@@ -36,7 +36,7 @@ packPane refId vertical paneId =
   when (paneId /= refId) $ movePane paneId refId vertical
 
 positionView ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Bool ->
   PaneId ->
   MeasureTreeSub ->
@@ -54,7 +54,9 @@ describeVertical True = prettyS "vertically"
 describeVertical False = prettyS "horizontally"
 
 resizeView ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  MonadDeepState s Views m =>
+  MonadFree TmuxThunk m =>
+  MonadError RenderError m =>
   Bool ->
   MeasureTreeSub ->
   m ()
@@ -67,7 +69,7 @@ resizeView vertical (Leaf (Measured size (MPane paneId))) = do
   resizePane paneId vertical size
 
 packTree ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   MeasureTree ->
   m ()
 packTree =
@@ -79,7 +81,7 @@ packTree =
       traverse_ (resizeView vertical) sub
 
 packWindow ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   WindowState ->
   m ()
 packWindow (WindowState (Codec.Window _ width height) _ _ tree _) = do

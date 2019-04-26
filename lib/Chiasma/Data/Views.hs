@@ -38,6 +38,7 @@ data Views =
   deriving (Show, Generic, Default)
 
 instance Eq Views where
-  (Views sa wa pa _) == (Views sb wb pb _) = (sa == sb) && (wa == wb) && (pa == pb)
+  (Views sa wa pa _) == (Views sb wb pb _) =
+    (sa == sb) && (wa == wb) && (pa == pb)
 
 deepLenses ''Views

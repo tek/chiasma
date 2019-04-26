@@ -5,12 +5,12 @@ module Chiasma.Render(
   render,
 ) where
 
+import Control.Monad.DeepState (MonadDeepState)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.State.Class (MonadState)
 import Data.Foldable (forM_)
 import qualified Data.Text as T (pack)
-import Data.Text.Prettyprint.Doc (pretty, line, (<>))
+import Data.Text.Prettyprint.Doc (line, pretty, (<>))
 
 import qualified Chiasma.Codec.Data as Codec (Window(Window))
 import Chiasma.Data.Ident (Ident, identString)
@@ -18,14 +18,14 @@ import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.Views (Views)
 import Chiasma.Pack (packWindow)
-import Chiasma.Session (findOrCreateSession, ensureSession)
+import Chiasma.Session (ensureSession, findOrCreateSession)
 import Chiasma.Ui.Data.RenderableTree (RenderableTree)
 import Chiasma.Ui.Data.View (ViewTree)
 import Chiasma.View (viewsLog)
-import Chiasma.Window (findOrCreateWindow, ensureWindow, ensureView, windowState)
+import Chiasma.Window (ensureView, ensureWindow, findOrCreateWindow, windowState)
 
 renderTree ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   Ident ->
   Codec.Window ->
   RenderableTree ->
@@ -36,7 +36,7 @@ renderTree windowIdent window tree = do
   packWindow wState
 
 render ::
-  (MonadState Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
+  (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
   FilePath ->
   Ident ->
   Ident ->

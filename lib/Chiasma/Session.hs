@@ -1,12 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Chiasma.Session(
-  findOrCreateSession,
-  ensureSession,
-) where
+module Chiasma.Session where
 
 import qualified Chiasma.Codec.Data as Codec (Session(Session), Window(Window))
-import Chiasma.Command.Session (newSession, existingSessionId)
+import Chiasma.Command.Session (existingSessionId, newSession)
 import Chiasma.Command.Window (newSessionWindow)
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.TmuxId (SessionId, WindowId)
@@ -17,18 +14,22 @@ import qualified Chiasma.Data.View as Tmux (
   )
 import Chiasma.Data.Views (Views)
 import Chiasma.View (findOrCreateView, viewsLogS)
-import qualified Chiasma.View as Views (session, insertSession, updateSession, updateWindow)
+import qualified Chiasma.View as Views (insertSession, session, updateSession, updateWindow)
 import Control.Monad (join)
+import Control.Monad.DeepState (MonadDeepState, modify)
 import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.State.Class (MonadState, modify)
 import Data.Bifunctor (second)
 
-findOrCreateSession :: MonadState Views m => Ident -> m (Tmux.View SessionId)
+findOrCreateSession ::
+  MonadDeepState s Views m =>
+  Ident ->
+  m (Tmux.View SessionId)
 findOrCreateSession =
   findOrCreateView Views.session Views.insertSession
 
 spawnSession ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
+  MonadDeepState s Views m =>
+  MonadFree TmuxThunk m =>
   Tmux.View SessionId ->
   Tmux.View WindowId ->
   m (SessionId, WindowId)
@@ -41,7 +42,8 @@ spawnSession session' window = do
   return (sid, wid)
 
 ensureSession ::
-  (MonadState Views m, MonadFree TmuxThunk m) =>
+  MonadDeepState s Views m =>
+  MonadFree TmuxThunk m =>
   Tmux.View SessionId ->
   Tmux.View WindowId ->
   m (SessionId, Maybe WindowId)
