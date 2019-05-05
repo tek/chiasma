@@ -2,8 +2,10 @@ module Chiasma.Test.Screenshot where
 
 import Control.Monad.Free.Class (MonadFree)
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import qualified Data.ByteString as ByteString (writeFile)
 import Data.Text (Text)
 import qualified Data.Text as Text (lines, pack, unlines, unpack)
+import qualified Data.Text.Encoding as Text (encodeUtf8)
 import System.FilePath (takeDirectory, (</>))
 import UnliftIO.Directory (createDirectoryIfMissing, doesFileExist)
 
@@ -19,7 +21,7 @@ loadScreenshot path = do
 storeScreenshot :: MonadIO m => FilePath -> [Text] -> m ()
 storeScreenshot path text = do
   createDirectoryIfMissing True (takeDirectory path)
-  liftIO $ writeFile path (Text.unpack . Text.unlines $ text)
+  liftIO $ ByteString.writeFile path (Text.encodeUtf8 . Text.unlines $ text)
 
 takeScreenshot ::
   MonadFree TmuxThunk m =>
