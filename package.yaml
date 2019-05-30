@@ -15,6 +15,7 @@ extra-source-files:
 - README.md
 
 dependencies:
+- aeson
 - attoparsec
 - base >= 4.7 && < 5
 - bytestring
@@ -22,6 +23,7 @@ dependencies:
 - composition-extra
 - conduit
 - conduit-extra
+- containers
 - cornea
 - data-default-class
 - deepseq

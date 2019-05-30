@@ -5,6 +5,7 @@ module Chiasma.Data.Ident where
 
 import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import Data.Aeson (FromJSON, ToJSON(toEncoding), defaultOptions, genericToEncoding)
 import Data.Data (Data)
 import Data.Default.Class (Default(def))
 import Data.String (IsString(..))
@@ -19,7 +20,10 @@ data Ident =
   Str String
   |
   Uuid UUID
-  deriving (Eq, Show, Generic, Data, NFData, Ord)
+  deriving (Eq, Generic, Data, NFData, Ord)
+
+instance Show Ident where
+  show = identString
 
 class Identifiable a where
   identify :: a -> Ident
@@ -36,6 +40,11 @@ instance Default Ident where
 
 instance IsString Ident where
   fromString = Str
+
+instance FromJSON Ident where
+
+instance ToJSON Ident where
+  toEncoding = genericToEncoding defaultOptions
 
 sameIdent ::
   Identifiable a =>

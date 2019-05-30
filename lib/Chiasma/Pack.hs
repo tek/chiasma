@@ -8,7 +8,10 @@ import Control.Monad.DeepState (MonadDeepState)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
 import Data.Foldable (traverse_)
-import qualified Data.List.NonEmpty as NonEmpty (reverse)
+import Data.List (sort)
+import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NonEmpty (reverse, sortWith, toList)
+import qualified Data.Set as Set (fromList, size)
 import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, line, pretty, (<+>), (<>))
 
@@ -44,9 +47,9 @@ positionView ::
 positionView vertical refId =
   position
   where
-    position (Sub (Tree (Measured _ (MLayout layoutRefId _)) _)) =
-      packPane refId vertical layoutRefId
-    position (Leaf (Measured _ (MPane paneId))) =
+    position (Sub (Tree (Measured _ (MLayout layoutRef _ _)) _)) =
+      packPane refId vertical layoutRef
+    position (Leaf (Measured _ (MPane paneId _))) =
       packPane refId vertical paneId
 
 describeVertical :: Bool -> Doc a
@@ -60,13 +63,32 @@ resizeView ::
   Bool ->
   MeasureTreeSub ->
   m ()
-resizeView vertical (Sub (Tree (Measured size (MLayout refId _)) _)) = do
-  viewsLog $ prettyS "resizing layout with ref" <+> pretty refId <+> prettyS "to" <+> pretty size <+>
-    describeVertical vertical
+resizeView vertical (Sub (Tree (Measured size (MLayout refId _ _)) _)) = do
+  viewsLog $ "resizing layout with ref" <+> pretty refId <+> "to" <+> pretty size <+> describeVertical vertical
   resizePane refId vertical size
-resizeView vertical (Leaf (Measured size (MPane paneId))) = do
+resizeView vertical (Leaf (Measured size (MPane paneId _))) = do
   viewsLog $ prettyS "resizing pane" <+> pretty paneId <+> prettyS "to" <+> pretty size <+> describeVertical vertical
   resizePane paneId vertical size
+
+needPositioning ::
+  MonadDeepState s Views m =>
+  NonEmpty MeasureTreeSub ->
+  m Bool
+needPositioning sub = do
+  viewsLog $ "-----------" <+> pretty sub
+  viewsLog $ "-----------" <+> pretty (NonEmpty.sortWith position sub)
+  return $ wrongOrder || wrongDirection
+  where
+    wrongOrder =
+      sort positions /= positions
+    wrongDirection =
+      Set.size (Set.fromList positions) /= (length positions)
+    positions =
+      NonEmpty.toList $ position <$> sub
+    position (Sub (Tree (Measured _ (MLayout _ pos _)) _)) =
+      pos
+    position (Leaf (Measured _ (MPane _ pos))) =
+      pos
 
 packTree ::
   (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
@@ -75,10 +97,16 @@ packTree ::
 packTree =
   pack
   where
-    pack (Tree (Measured _ (MLayout ref vertical)) sub) = do
-      traverse_ (positionView vertical ref) (NonEmpty.reverse sub)
+    pack (Tree (Measured _ (MLayout ref _ vertical)) sub) = do
+      need <- needPos
+      when need runPos
       mapMOf_ (each . Tree.subTree) pack sub
       traverse_ (resizeView vertical) sub
+      where
+        needPos = needPositioning sub
+        runPos = do
+          viewsLog $ "repositioning views" <+> pretty sub
+          traverse_ (positionView vertical ref) (NonEmpty.reverse sub)
 
 packWindow ::
   (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>

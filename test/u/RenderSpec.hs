@@ -54,7 +54,7 @@ runRender tree api = do
   _ <- runExceptT @TmuxError $ runTmux api $ activateSession 0
   _ <- runExceptT @TmuxError $ runTmux api $ activateSession 1
   sleep 1
-  Views _ _ vs2 _ <- renderOnce tree api cwd vs1
+  (Views _ _ vs2 _) <- renderOnce tree api cwd vs1
   sleep 1
   ps <- runExceptT @TmuxError $ runTmux api panesAs
   return (sortOn viewIdent vs2, sortOn paneLeft . drop 1 <$> ps)
@@ -142,21 +142,22 @@ test_twoLayouts =
 treePosition :: ViewTree
 treePosition =
   Tree (consLayout id0) [
-    TreeLeaf (openPane id0 1),
-    TreeLeaf (openPane id1 4),
-    TreeLeaf (openPane id2 2),
-    TreeLeaf (openPane id3 3)
+    TreeLeaf (openPane id0 1 (Just 10)),
+    TreeLeaf (openPane id1 4 (Just 20)),
+    TreeLeaf (openPane id2 2 (Just 30)),
+    TreeLeaf (openPane id3 3 Nothing)
     ]
   where
-    openPane i pos = Ui.View i (ViewState False) def { position = Just pos } (Ui.Pane True False Nothing)
+    openPane i pos size =
+      Ui.View i (ViewState False) def { position = Just pos, fixedSize = size } (Ui.Pane True False Nothing)
 
 positionTarget :: [PaneDetail]
 positionTarget =
   [
-    PaneDetail { paneId = PaneId 1, paneWidth = 60, paneHeight = 60, paneTop = 0, paneLeft = 0 },
-    PaneDetail { paneId = PaneId 2, paneWidth = 59, paneHeight = 60, paneTop = 0, paneLeft = 61 },
-    PaneDetail { paneId = PaneId 3, paneWidth = 59, paneHeight = 60, paneTop = 0, paneLeft = 121 },
-    PaneDetail { paneId = PaneId 4, paneWidth = 59, paneHeight = 60, paneTop = 0, paneLeft = 181 }
+    PaneDetail { paneId = PaneId 1, paneWidth = 10, paneHeight = 60, paneTop = 0, paneLeft = 0 },
+    PaneDetail { paneId = PaneId 2, paneWidth = 30, paneHeight = 60, paneTop = 0, paneLeft = 11 },
+    PaneDetail { paneId = PaneId 3, paneWidth = 177, paneHeight = 60, paneTop = 0, paneLeft = 42 },
+    PaneDetail { paneId = PaneId 4, paneWidth = 20, paneHeight = 60, paneTop = 0, paneLeft = 220 }
     ]
 
 test_position :: IO ()

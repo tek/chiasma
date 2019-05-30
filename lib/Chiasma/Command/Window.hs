@@ -1,20 +1,14 @@
-module Chiasma.Command.Window(
-  windows,
-  window,
-  doesWindowExist,
-  newWindow,
-  sessionWindows,
-  splitWindow,
-  newSessionWindow,
-) where
+module Chiasma.Command.Window where
 
+import Control.Monad.Free.Class (MonadFree)
+import Data.Foldable (find)
+
+import Chiasma.Codec (TmuxCodec)
 import Chiasma.Codec.Data (Pane, Window(Window))
 import Chiasma.Data.Ident (Ident, identString)
 import Chiasma.Data.TmuxId (SessionId, TmuxId(formatId), WindowId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, unsafeReadOne)
-import Control.Monad.Free.Class (MonadFree)
-import Data.Foldable (find)
 
 sameId :: WindowId -> Window -> Bool
 sameId target (Window i _ _) = target == i
@@ -43,10 +37,18 @@ newWindow :: MonadFree TmuxThunk m => SessionId -> Ident -> m Window
 newWindow sid name =
   Tmux.unsafeReadOne "new-window" ["-t", formatId sid, "-n", identString name, "-P"]
 
+splitWindowAs ::
+  (MonadFree TmuxThunk m, TmuxCodec a) =>
+  FilePath ->
+  WindowId ->
+  m a
+splitWindowAs dir windowId =
+  Tmux.unsafeReadFirst "split-window" ["-t", formatId windowId, "-d", "-P", "-c", dir]
+
 splitWindow ::
   (MonadFree TmuxThunk m) =>
   FilePath ->
   WindowId ->
   m Pane
-splitWindow dir windowId =
-  Tmux.unsafeReadFirst "split-window" ["-t", formatId windowId, "-d", "-P", "-c", dir]
+splitWindow =
+  splitWindowAs

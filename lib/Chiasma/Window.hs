@@ -11,11 +11,13 @@ import Data.List (sortOn)
 import qualified Data.List.NonEmpty as NonEmpty (head, nonEmpty)
 import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Text as T (pack)
-import Data.Text.Prettyprint.Doc (line, pretty, vsep, (<>))
+import Data.Text.Prettyprint.Doc (line, pretty, vsep, (<+>), (<>))
 
 import qualified Chiasma.Codec.Data as Codec (Pane(Pane, paneId), Window(Window, windowId))
-import qualified Chiasma.Command.Pane as Cmd (closePane, firstWindowPane, windowPanes)
-import qualified Chiasma.Command.Window as Cmd (newWindow, splitWindow, window)
+import qualified Chiasma.Codec.Data.PaneDetail as Codec (PaneDetail(PaneDetail))
+import qualified Chiasma.Codec.Data.PaneDetail as PaneDetail (PaneDetail(..))
+import qualified Chiasma.Command.Pane as Cmd (closePane, firstWindowPane, windowPanesAs)
+import qualified Chiasma.Command.Window as Cmd (newWindow, splitWindowAs, window)
 import Chiasma.Data.Ident (Ident, identString, identify)
 import Chiasma.Data.Maybe (findMaybe, maybeExcept, orElse)
 import Chiasma.Data.RenderError (RenderError)
@@ -36,7 +38,6 @@ import Chiasma.Ui.Data.RenderableTree (
 import qualified Chiasma.Ui.Data.Tree as Tree (Node(Sub, Leaf), Tree(Tree))
 import Chiasma.Ui.Data.View (Tree(..), TreeSub(..), ViewTree, ViewTreeSub)
 import qualified Chiasma.Ui.Data.View as Ui (Layout(..), Pane(Pane), PaneView, View(View))
-import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry, position))
 import Chiasma.Ui.Data.ViewState (ViewState)
 import Chiasma.View (findOrCreateView, viewsLog, viewsLogS)
@@ -98,8 +99,8 @@ syncPrincipal windowId tree@(Tree (Ui.View layoutIdent _ _ _) _) = do
   case existing of
     Nothing -> do
       (_, Tmux.View paneIdent _) <- principalPane tree
-      viewsLogS $ "setting principal of layout " ++ identString layoutIdent ++ " to pane " ++ identString paneIdent ++
-        "/" ++ show paneId
+      viewsLog $ "setting principal of layout" <+> pretty layoutIdent <+> " to pane " <+> pretty paneIdent <+> "/" <+>
+        pretty paneId
       modify $ Views.updatePane (Tmux.View paneIdent (Just paneId))
     _ -> return ()
 
@@ -124,37 +125,39 @@ nativePane ::
   MonadFree TmuxThunk m =>
   WindowId ->
   Tmux.View PaneId ->
-  m (Maybe Codec.Pane)
+  m (Maybe Codec.PaneDetail)
 nativePane windowId (Tmux.View _ (Just paneId)) =
-  find sameId <$> Cmd.windowPanes windowId
+  find sameId <$> Cmd.windowPanesAs windowId
   where
-    sameId (Codec.Pane i _ _) = i == paneId
+    sameId (Codec.PaneDetail i _ _ _ _) = i == paneId
 nativePane _ _ = return Nothing
 
 openPane ::
   (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
   FilePath ->
   WindowId ->
-  m PaneId
+  m Codec.PaneDetail
 openPane dir windowId = do
-  (Codec.Pane i _ _) <- Cmd.splitWindow dir windowId
-  viewsLogS $ "opened pane " ++ show i ++ " in window " ++ show windowId
-  return i
+  detail <- Cmd.splitWindowAs dir windowId
+  viewsLogS $ "opened pane " ++ show (PaneDetail.paneId detail) ++ " in window " ++ show windowId
+  return detail
 
 ensurePaneOpen ::
   (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
   FilePath ->
-  Maybe Codec.Pane ->
+  Maybe Codec.PaneDetail ->
   WindowId ->
-  m PaneId
-ensurePaneOpen dir existing windowId =
-  maybe (openPane dir windowId) (return . Codec.paneId) existing
+  m Codec.PaneDetail
+ensurePaneOpen _ (Just detail) _ =
+  return detail
+ensurePaneOpen dir Nothing windowId =
+  openPane dir windowId
 
 ensurePaneClosed ::
   (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
-  Maybe Codec.Pane ->
+  Maybe Codec.PaneDetail ->
   m ()
-ensurePaneClosed (Just (Codec.Pane i _ _)) = do
+ensurePaneClosed (Just (Codec.PaneDetail i _ _ _ _)) = do
   viewsLogS $ "closing pane " ++ show i
   Cmd.closePane i
 ensurePaneClosed _ = return ()
@@ -168,16 +171,19 @@ ensurePane ::
 ensurePane cwd windowId (Ui.View paneIdent vState geometry (Ui.Pane open _ customDir)) = do
   tmuxPane <- findOrCreatePane paneIdent
   existingPane <- nativePane windowId tmuxPane
-  let dir = fromMaybe cwd customDir
-  updatedId <-
+  updatedPane <-
     if open then Just <$> ensurePaneOpen dir existingPane windowId
     else Nothing <$ ensurePaneClosed existingPane
-  modify $ Views.updatePane (Tmux.View paneIdent updatedId)
-  return $ Tree.Leaf . Renderable vState geometry . RPane <$> updatedId
+  modify $ Views.updatePane (Tmux.View paneIdent (PaneDetail.paneId <$> updatedPane))
+  return $ cons <$> updatedPane
+  where
+    dir = fromMaybe cwd customDir
+    cons (Codec.PaneDetail i _ _ top left) =
+      Tree.Leaf . Renderable vState geometry $ RPane i top left
 
-refPaneId :: RenderableNode -> PaneId
-refPaneId (Tree.Sub (Tree.Tree (Renderable _ _ (RLayout refId _)) _)) = refId
-refPaneId (Tree.Leaf (Renderable _ _ (RPane paneId))) = paneId
+refPane :: RenderableNode -> RPane
+refPane (Tree.Sub (Tree.Tree (Renderable _ _ (RLayout ref _)) _)) = ref
+refPane (Tree.Leaf (Renderable _ _ pane)) = pane
 
 renderableTree ::
   ViewState ->
@@ -187,8 +193,7 @@ renderableTree ::
   Maybe RenderableTree
 renderableTree vState geometry vertical sub = do
   sub' <- NonEmpty.nonEmpty sub
-  let refId = refPaneId $ NonEmpty.head sub'
-  return $ Tree.Tree (Renderable vState geometry (RLayout refId vertical)) sub'
+  return $ Tree.Tree (Renderable vState geometry (RLayout (refPane $ NonEmpty.head sub') vertical)) sub'
 
 viewPosition :: ViewTreeSub -> Float
 viewPosition (TreeNode (Tree (Ui.View _ _ ViewGeometry { position = pos } _) _)) =

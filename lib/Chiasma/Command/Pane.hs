@@ -35,9 +35,13 @@ pane :: (MonadFree TmuxThunk m, TmuxCodec a, HasPaneId a) => PaneId -> m (Maybe 
 pane paneId =
   find (sameId paneId) <$> Tmux.read "list-panes" ["-t", formatId paneId]
 
-windowPanes :: MonadFree TmuxThunk m => WindowId -> m [Codec.Pane]
-windowPanes windowId =
+windowPanesAs :: (MonadFree TmuxThunk m, TmuxCodec a) => WindowId -> m [a]
+windowPanesAs windowId =
   Tmux.read "list-panes" ["-t", formatId windowId]
+
+windowPanes :: MonadFree TmuxThunk m => WindowId -> m [Codec.Pane]
+windowPanes =
+  windowPanesAs
 
 firstWindowPane :: MonadFree TmuxThunk m => WindowId -> m Codec.Pane
 firstWindowPane windowId =
