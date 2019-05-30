@@ -1,6 +1,8 @@
 resolver: lts-12.21
 packages:
 - .
-- ../cornea
+# - ../cornea
 extra-deps:
 - posix-pty-0.2.1.1
+- github: tek/cornea
+  commit: 90ce914ac80f4ea38c7963046857e5a14e07432c
