@@ -32,6 +32,7 @@ import Chiasma.Native.StreamParse (parseConduit)
 
 newtype TmuxNative =
   TmuxNative { tmuxServerSocket :: Maybe FilePath }
+  deriving Show
 
 formatCmd :: Cmd -> ByteString
 formatCmd (Cmd (CmdName name) (CmdArgs args)) = packChars . unwords $ name : args ++ ["\n"]
