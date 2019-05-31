@@ -6,6 +6,7 @@ import Control.Monad.Trans.Except (runExceptT)
 import Data.Default.Class (Default(def))
 import GHC.IO.Handle (Handle)
 import GHC.Real (fromIntegral)
+import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 import System.Posix.IO (fdToHandle)
 import System.Posix.Pty (Pty, createPty, resizePty)
@@ -71,12 +72,14 @@ urxvtArgs width height fontSize =
 
 testTmuxProcessConfig :: TmuxTestConf -> FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
 testTmuxProcessConfig (TmuxTestConf width height fontSize gui) socket confFile (Terminal handle pty) = do
+  confFileExists <- doesFileExist confFile
   resizePty pty (width, height)
   let
     stream :: StreamSpec st ()
     stream = useHandleClose handle
     stdio = setStdin stream . setStdout stream . setStderr stream
-    tmuxArgs = ["-S", socket, "-f", confFile]
+    tmuxArgs = ["-S", socket, "-f", confFileArg]
+    confFileArg = if confFileExists then confFile else "/dev/null"
     prc =
       if gui
       then proc "urxvt" (urxvtArgs width height fontSize ++ tmuxArgs)
