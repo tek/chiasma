@@ -10,9 +10,10 @@ import Data.Data (Data)
 import Data.Default.Class (Default(def))
 import Data.String (IsString(..))
 import Data.Text (Text)
-import qualified Data.Text as Text (pack)
+import qualified Data.Text as Text (pack, unpack)
 import Data.Text.Prettyprint.Doc (Pretty(..))
-import Data.UUID (UUID, toString)
+import Data.UUID (UUID)
+import qualified Data.UUID as UUID (fromText, toString, toText)
 import GHC.Generics (Generic)
 import System.Random (randomIO)
 
@@ -33,7 +34,7 @@ instance Identifiable Ident where
 
 instance Pretty Ident where
   pretty (Str s) = pretty s
-  pretty (Uuid u) = pretty . toString $ u
+  pretty (Uuid u) = pretty . UUID.toString $ u
 
 instance Default Ident where
   def = Str def
@@ -57,11 +58,15 @@ sameIdent target b =
 
 identString :: Ident -> String
 identString (Str a) = a
-identString (Uuid a) = toString a
+identString (Uuid a) = UUID.toString a
 
 identText :: Ident -> Text
 identText (Str a) = Text.pack a
-identText (Uuid a) = Text.pack $ toString a
+identText (Uuid a) = UUID.toText a
 
 generateIdent :: MonadIO m => m Ident
 generateIdent = liftIO $ Uuid <$> randomIO
+
+parseIdent :: Text -> Ident
+parseIdent text =
+  maybe (Str (Text.unpack text)) Uuid (UUID.fromText text)
