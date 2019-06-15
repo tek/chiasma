@@ -1,14 +1,6 @@
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Chiasma.Codec.Decode(
-  TmuxDecodeError(..),
-  TmuxPrimDecode(..),
-  TmuxDataDecode(..),
-  idParser,
-  parseId,
-  readInt,
-) where
+module Chiasma.Codec.Decode where
 
 import Data.Bifunctor (first, second)
 import Data.Text (Text)
@@ -29,6 +21,8 @@ data TmuxDecodeError =
   ParseFailure String ParseError
   |
   IntParsingFailure Text
+  |
+  BoolParsingFailure Text
   |
   TooFewFields
   |
@@ -67,6 +61,17 @@ readInt input num =
 
 instance TmuxPrimDecode Int where
   primDecode field = readInt field field
+
+instance TmuxPrimDecode Bool where
+  primDecode field =
+    convert =<< readInt field field
+    where
+      convert 0 =
+        Right False
+      convert 1 =
+        Right True
+      convert i =
+        Left (BoolParsingFailure $ "got non-bool `" <> T.pack (show field) <> "`")
 
 idParser :: Char -> GenParser Char st String
 idParser sym = char sym >> many digit
