@@ -8,7 +8,7 @@ sessionPrefix = '$'
 
 newtype SessionId =
   SessionId Int
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Num)
 
 instance Pretty SessionId where
   pretty = pretty . formatId
@@ -18,7 +18,7 @@ windowPrefix = '@'
 
 newtype WindowId =
   WindowId Int
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Num)
 
 instance Pretty WindowId where
   pretty = pretty . formatId
@@ -28,7 +28,7 @@ panePrefix = '%'
 
 newtype PaneId =
   PaneId Int
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Num)
 
 instance Pretty PaneId where
   pretty = pretty . formatId
