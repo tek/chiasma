@@ -1,28 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Chiasma.View(
-  findOrCreateView,
-  view,
-  insertView,
-  updateView,
-  session,
-  insertSession,
-  updateSession,
-  window,
-  insertWindow,
-  updateWindow,
-  pane,
-  insertPane,
-  updatePane,
-  sameId,
-  viewById,
-  sessionById,
-  windowById,
-  paneById,
-  viewsLog,
-  paneId,
-  viewsLogS,
-) where
+module Chiasma.View where
 
 import Control.Lens (Lens', over)
 import qualified Control.Lens as Lens (over, set, view)

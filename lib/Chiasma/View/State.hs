@@ -1,6 +1,4 @@
-module Chiasma.View.State(
-  paneId,
-) where
+module Chiasma.View.State where
 
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.TmuxId (PaneId)

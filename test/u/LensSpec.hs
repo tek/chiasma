@@ -75,12 +75,18 @@ ensurePaneUnique :: Ident -> ViewTreeSub -> Maybe ViewTreeSub
 ensurePaneUnique paneIdent (TreeLeaf (View ident _ _ _)) | ident == paneIdent = Nothing
 ensurePaneUnique _ n = Just n
 
+subtreesTarget :: ViewTree
+subtreesTarget =
+  Tree (consLayout id0) [subtree, TreeLeaf (consPane id2)]
+  where
+    subtree = TreeNode $ Tree (consLayout id2) [TreeLeaf $ consPane id4, subtree2]
+    subtree2 = TreeNode $ Tree (consLayout id3) [subtree3]
+    subtree3 = TreeNode $ Tree (consLayout id4) [TreeLeaf openPane]
+    openPane = View id1 (ViewState False) def (Pane True False Nothing)
+
 test_subtrees :: IO ()
 test_subtrees =
-  traverse_ putStrLn $ showVt $ treesAndSubs (Just . insertPane id2 (consPane id4)) (ensurePaneUnique id4) tree
-  where
-    showVt (Just vt) = showViewTree vt
-    showVt Nothing = ["no result"]
+  assertEqual (Just subtreesTarget) $ treesAndSubs (Just . insertPane id2 (consPane id4)) (ensurePaneUnique id4) tree
 
 togglePaneTree :: ViewTree
 togglePaneTree =

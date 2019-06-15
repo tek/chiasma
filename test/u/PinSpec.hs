@@ -22,11 +22,20 @@ node :: ViewTreeSub -> View Pane -> ViewTreeSub
 node sub p =
   TreeNode $ Tree (consLayout (Str "l")) [sub, TreeLeaf p]
 
+paneWith :: Bool -> String -> ViewTreeSub
+paneWith open i = TreeLeaf $ View (Str i) def def (Pane open False Nothing)
+
 pane :: String -> ViewTreeSub
-pane i = TreeLeaf $ View (Str i) def def def
+pane =
+  paneWith False
+
+ppaneWithIdent :: String -> Bool -> View Pane
+ppaneWithIdent name open =
+  View (Str name) def def (Pane open True Nothing)
 
 ppaneWith :: Bool -> View Pane
-ppaneWith pin = View (Str "pin") def def (Pane pin True Nothing)
+ppaneWith =
+  ppaneWithIdent "pin"
 
 ppane :: View Pane
 ppane =
@@ -57,10 +66,26 @@ target =
     subtree2 = node subtree3 (ppaneWith True)
     subtree3 = TreeNode $ Tree (consLayout (Str "l1")) [TreeLeaf $ View (Str "p1") def def (Pane True False Nothing)]
 
-test_pinOpen :: IO ()
-test_pinOpen =
+test_pinOpenNonpinned :: IO ()
+test_pinOpenNonpinned =
   assertEqual (ToggleResult.Success target) (togglePane (Str "p1") tree)
 
-test_layoutPinOpen :: IO ()
-test_layoutPinOpen =
+test_layoutPinOpenNonpinned :: IO ()
+test_layoutPinOpenNonpinned =
   assertEqual (ToggleResult.Success target) (toggleLayout (Str "l1") tree)
+
+pinnedTree :: ViewTree
+pinnedTree =
+  Tree (consLayout (Str "root")) [pane "left", subtree]
+  where
+    subtree = TreeNode $ Tree (consLayout (Str "l1")) [pane "p2", TreeLeaf $ ppaneWithIdent "p1" False]
+
+pinnedTarget :: ViewTree
+pinnedTarget =
+  Tree (consLayout (Str "root")) [pane "left", subtree]
+  where
+    subtree = TreeNode $ Tree (consLayout (Str "l1")) [paneWith False "p2", TreeLeaf $ ppaneWithIdent "p1" True]
+
+test_pinOpenPinned :: IO ()
+test_pinOpenPinned =
+  assertEqual (ToggleResult.Success pinnedTarget) (toggleLayout (Str "l1") pinnedTree)

@@ -101,17 +101,17 @@ depthTraverseTree ::
   (PaneView -> (a, PaneView)) ->
   ViewTree ->
   (a, ViewTree)
-depthTraverseTree fn fl =
+depthTraverseTree transformNode transformLeaf =
   rec
   where
     rec :: ViewTree -> (a, ViewTree)
     rec (Tree l sub) =
-      uncurry fn . bimap fold (Tree l) . unzip $ (recSub <$> sub)
+      uncurry transformNode . bimap fold (Tree l) . unzip $ (recSub <$> sub)
     recSub :: ViewTreeSub -> (a, ViewTreeSub)
     recSub (TreeNode t) =
       second TreeNode $ rec t
     recSub (TreeLeaf l) =
-      second TreeLeaf $ fl l
+      second TreeLeaf $ transformLeaf l
 
 data ToggleStatus =
   Minimized
@@ -245,9 +245,33 @@ ensurePaneOpenTraversal' ::
 ensurePaneOpenTraversal' lens =
   mapMOf lens . ensurePaneOpen
 
+skipFold ::
+  Traversable t =>
+  (a -> (ToggleStatus, a)) ->
+  ToggleStatus ->
+  t a ->
+  (ToggleStatus, t a)
+skipFold f =
+  mapAccumL skipper
+  where
+    skipper Pristine a =
+      f a
+    skipper status a =
+      (status, a)
+
 isOpenPaneNode :: ViewTreeSub -> Bool
 isOpenPaneNode =
   anyOf (TreeSub.leafData . View.extra . Pane.open) id
+
+openPinnedPaneView :: PaneView -> (ToggleStatus, PaneView)
+openPinnedPaneView (View i s g (Pane False True c)) =
+  (Opened, View i s g (Pane True True c))
+openPinnedPaneView v =
+  (Pristine, v)
+
+openFirstPinnedPaneNode :: ViewTreeSub -> (ToggleStatus, ViewTreeSub)
+openFirstPinnedPaneNode (TreeLeaf v) =
+  second TreeLeaf (openPinnedPaneView v)
 
 openPaneView :: PaneView -> (ToggleStatus, PaneView)
 openPaneView (View i s g (Pane False p c)) =
@@ -255,22 +279,29 @@ openPaneView (View i s g (Pane False p c)) =
 openPaneView v =
   (Pristine, v)
 
-openFirstPaneNode :: ToggleStatus -> ViewTreeSub -> (ToggleStatus, ViewTreeSub)
-openFirstPaneNode Pristine (TreeLeaf v) =
+openFirstPaneNode :: ViewTreeSub -> (ToggleStatus, ViewTreeSub)
+openFirstPaneNode (TreeLeaf v) =
   second TreeLeaf (openPaneView v)
-openFirstPaneNode a t =
-  (a, t)
 
 -- TODO recurse when opening pane
 toggleLayoutNode :: Ident -> ToggleStatus -> ViewTree -> (ToggleStatus, ViewTree)
 toggleLayoutNode ident previous (Tree v@(View i (ViewState minimized) g l) sub) | ident == i =
   first (previous <>) (if open then toggleMinimized else openPane')
   where
-    open = any isOpenPaneNode sub
+    open =
+      any isOpenPaneNode sub
     toggleMinimized =
       (Minimized, Tree (View i (ViewState (not minimized)) g l) sub)
     openPane' =
-      second (Tree v) (mapAccumL openFirstPaneNode Pristine sub)
+      second (Tree v) ((uncurry regularIfPristine) openFirstPinned)
+    openFirstPinned =
+      skipFold openFirstPinnedPaneNode Pristine sub
+    openFirstRegular =
+      skipFold openFirstPaneNode Pristine sub
+    regularIfPristine Pristine a =
+      openFirstRegular
+    regularIfPristine status a =
+      (status, a)
 toggleLayoutNode _ a t =
   (a, t)
 
