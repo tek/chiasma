@@ -140,3 +140,10 @@ paneCoords ::
   m (Maybe Codec.PaneCoords)
 paneCoords =
   pane
+
+selectPane ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  m ()
+selectPane paneId =
+  Tmux.write "select-pane" (paneTarget paneId)
