@@ -2,10 +2,8 @@
 
 module Chiasma.Ui.Data.Measure where
 
-import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Pretty(..), (<+>))
 
-import Chiasma.Data.Text.Pretty (prettyS)
 import Chiasma.Data.TmuxId (PaneId(..))
 import Chiasma.Ui.Data.Tree (NNode, NTree)
 import Control.Lens (makeClassy)

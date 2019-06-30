@@ -1,6 +1,5 @@
 module Chiasma.Ui.Data.RenderableTree where
 
-import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, space, (<+>))
 
 import Chiasma.Data.Text.Pretty (prettyS)

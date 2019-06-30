@@ -1,6 +1,4 @@
-module Chiasma.Pane(
-  addPane,
-) where
+module Chiasma.Pane where
 
 import Control.Monad.DeepState (MonadDeepState, modify)
 

@@ -1,5 +1,6 @@
 module Chiasma.Command.Pane where
 
+import Control.Monad (when)
 import Data.Foldable (find, traverse_)
 import Data.List (dropWhileEnd, intercalate)
 import Data.List.Split (splitOn)
@@ -8,6 +9,7 @@ import Data.Text (Text)
 import Chiasma.Codec (TmuxCodec)
 import qualified Chiasma.Codec.Data as Codec (Pane)
 import qualified Chiasma.Codec.Data.PaneCoords as Codec (PaneCoords)
+import qualified Chiasma.Codec.Data.PaneMode as Codec (PaneMode(PaneMode))
 import qualified Chiasma.Codec.Data.PanePid as Codec (PanePid)
 import Chiasma.Data.TmuxId (HasPaneId, PaneId, WindowId, formatId)
 import qualified Chiasma.Data.TmuxId as HasPaneId (paneId)
@@ -147,3 +149,27 @@ selectPane ::
   m ()
 selectPane paneId =
   Tmux.write "select-pane" (paneTarget paneId)
+
+copyMode ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  m ()
+copyMode =
+  Tmux.write "copy-mode" . paneTarget
+
+paneMode ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  m (Maybe Codec.PaneMode)
+paneMode =
+  pane
+
+quitCopyMode ::
+  MonadFree TmuxThunk m =>
+  PaneId ->
+  m ()
+quitCopyMode paneId =
+  traverse_ check =<< pane paneId
+  where
+    check (Codec.PaneMode _ mode) =
+      when (mode == "copy-mode") (sendKeys paneId ["C-c"])

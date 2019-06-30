@@ -13,7 +13,6 @@ import {-@ HTF_TESTS @-} ProcessSpec
 import {-@ HTF_TESTS @-} RenderSpec
 import {-@ HTF_TESTS @-} StreamParseSpec
 import {-@ HTF_TESTS @-} TmuxStreamSpec
-import {-@ HTF_TESTS @-} ToggleSpec
 
 main :: IO ()
 main = htfMain htf_importedTests

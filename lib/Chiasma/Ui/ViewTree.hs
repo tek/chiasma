@@ -272,6 +272,8 @@ openPinnedPaneView v =
 openFirstPinnedPaneNode :: ViewTreeSub -> (ToggleStatus, ViewTreeSub)
 openFirstPinnedPaneNode (TreeLeaf v) =
   second TreeLeaf (openPinnedPaneView v)
+openFirstPinnedPaneNode a =
+  (Pristine, a)
 
 openPaneView :: PaneView -> (ToggleStatus, PaneView)
 openPaneView (View i s g (Pane False p c)) =
@@ -282,6 +284,8 @@ openPaneView v =
 openFirstPaneNode :: ViewTreeSub -> (ToggleStatus, ViewTreeSub)
 openFirstPaneNode (TreeLeaf v) =
   second TreeLeaf (openPaneView v)
+openFirstPaneNode a =
+  (Pristine, a)
 
 -- TODO recurse when opening pane
 toggleLayoutNode :: Ident -> ToggleStatus -> ViewTree -> (ToggleStatus, ViewTree)
@@ -293,12 +297,12 @@ toggleLayoutNode ident previous (Tree v@(View i (ViewState minimized) g l) sub) 
     toggleMinimized =
       (Minimized, Tree (View i (ViewState (not minimized)) g l) sub)
     openPane' =
-      second (Tree v) ((uncurry regularIfPristine) openFirstPinned)
+      second (Tree v) (uncurry regularIfPristine openFirstPinned)
     openFirstPinned =
       skipFold openFirstPinnedPaneNode Pristine sub
     openFirstRegular =
       skipFold openFirstPaneNode Pristine sub
-    regularIfPristine Pristine a =
+    regularIfPristine Pristine _ =
       openFirstRegular
     regularIfPristine status a =
       (status, a)

@@ -70,7 +70,7 @@ instance TmuxPrimDecode Bool where
         Right False
       convert 1 =
         Right True
-      convert i =
+      convert _ =
         Left (BoolParsingFailure $ "got non-bool `" <> T.pack (show field) <> "`")
 
 idParser :: Char -> GenParser Char st String
