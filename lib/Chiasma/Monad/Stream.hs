@@ -1,5 +1,6 @@
 module Chiasma.Monad.Stream where
 
+import Chiasma.Control.IO.Unsafe (unsafeLog)
 import Conduit (ConduitT, Flush(..), Void, runConduit, sinkList, yield, yieldMany, (.|))
 import Control.Monad ((<=<))
 import Control.Monad.DeepError (MonadDeepError, hoistEither)
@@ -9,7 +10,7 @@ import qualified Data.Conduit.Combinators as Conduit (drop, take)
 import Data.Default.Class (Default(def))
 import Data.Either.Combinators (mapLeft)
 import Data.Text (Text)
-import qualified Data.Text as T (words)
+import qualified Data.Text as T (splitOn, stripStart, words)
 
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Codec.Decode (TmuxDecodeError)
@@ -43,7 +44,8 @@ handleProcessOutput cmds decode output = do
     validate (Left err) _ = Left err
     validate _ (TmuxOutputBlock.Success a) = Right a
     validate _ (TmuxOutputBlock.Error a) = Left $ TmuxError.CommandFailed cmds a
-    decode' outputLine = mapLeft (TmuxError.DecodingFailed cmds outputLine) $ decode $ T.words outputLine
+    decode' outputLine =
+      mapLeft (TmuxError.DecodingFailed cmds outputLine) . decode . T.splitOn " " $ outputLine
 
 executeCommands ::
   MonadIO m =>

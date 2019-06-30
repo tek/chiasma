@@ -12,7 +12,7 @@ import Data.ByteString (ByteString)
 import Data.Conduit.Attoparsec (conduitParser)
 import Data.Functor (void)
 import Data.Text (Text)
-import qualified Data.Text as T (pack)
+import qualified Data.Text as T (drop, dropEnd, pack, take)
 import Text.Parser.Char (CharParsing, anyChar, newline, string)
 import Text.Parser.Combinators (choice, many, manyTill, notFollowedBy, skipMany, try)
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
@@ -44,6 +44,8 @@ endLine = do
 notBeginLine :: (Alternative m, CharParsing m, Monad m) => m ()
 notBeginLine = void $ notFollowedBy (string "%begin") >> tillEol
 
+-- |Parse a sequence of lines between a %start and a %end line.
+-- Tmux pads output lines with a single space on both sides, so strip those if the leading one is present.
 parseBlock :: (Alternative m, CharParsing m, Monad m, LookAheadParsing m) => m TmuxOutputBlock
 parseBlock = do
   _ <- skipMany notBeginLine
@@ -51,8 +53,13 @@ parseBlock = do
   dataLines <- manyTill tillEol $ try $ lookAhead endLine
   end <- endLine
   return $ case end of
-    EndSuccess -> Success dataLines
-    EndError -> Error dataLines
+    EndSuccess -> Success (trim <$> dataLines)
+    EndError -> Error (trim <$> dataLines)
+  where
+    trim text =
+      if T.take 1 text == " "
+      then T.drop 1 . T.dropEnd 1 $ text
+      else text
 
 parseBlocks :: (Alternative m, CharParsing m, Monad m, LookAheadParsing m) => m [TmuxOutputBlock]
 parseBlocks = do
