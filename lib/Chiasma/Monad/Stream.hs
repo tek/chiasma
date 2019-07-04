@@ -1,6 +1,5 @@
 module Chiasma.Monad.Stream where
 
-import Chiasma.Control.IO.Unsafe (unsafeLog)
 import Conduit (ConduitT, Flush(..), Void, runConduit, sinkList, yield, yieldMany, (.|))
 import Control.Monad ((<=<))
 import Control.Monad.DeepError (MonadDeepError, hoistEither)
@@ -10,7 +9,6 @@ import qualified Data.Conduit.Combinators as Conduit (drop, take)
 import Data.Default.Class (Default(def))
 import Data.Either.Combinators (mapLeft)
 import Data.Text (Text)
-import qualified Data.Text as T (splitOn, stripStart, words)
 
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Codec.Decode (TmuxDecodeError)
@@ -32,7 +30,7 @@ type ReadOutput m =
 
 handleProcessOutput ::
   Cmds ->
-  ([Text] -> Either TmuxDecodeError a) ->
+  (Text -> Either TmuxDecodeError a) ->
   [TmuxOutputBlock] ->
   Either TmuxError [a]
 handleProcessOutput cs@(Cmds cmds) _ output | length output < length cmds =
@@ -45,13 +43,13 @@ handleProcessOutput cmds decode output = do
     validate _ (TmuxOutputBlock.Success a) = Right a
     validate _ (TmuxOutputBlock.Error a) = Left $ TmuxError.CommandFailed cmds a
     decode' outputLine =
-      mapLeft (TmuxError.DecodingFailed cmds outputLine) . decode . T.splitOn " " $ outputLine
+      mapLeft (TmuxError.DecodingFailed cmds outputLine) . decode $ outputLine
 
 executeCommands ::
   MonadIO m =>
   WriteCmd m ->
   ReadOutput m ->
-  ([Text] -> Either TmuxDecodeError a) ->
+  (Text -> Either TmuxDecodeError a) ->
   Cmds ->
   m (Either TmuxError [a])
 executeCommands writeCmd readOutput decode cs@(Cmds cmds) = do

@@ -12,7 +12,7 @@ import Data.ByteString (ByteString)
 import Data.Conduit.Attoparsec (conduitParser)
 import Data.Functor (void)
 import Data.Text (Text)
-import qualified Data.Text as T (drop, dropEnd, pack, take)
+import qualified Data.Text as T (pack)
 import Text.Parser.Char (CharParsing, anyChar, newline, string)
 import Text.Parser.Combinators (choice, many, manyTill, notFollowedBy, skipMany, try)
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
@@ -53,13 +53,8 @@ parseBlock = do
   dataLines <- manyTill tillEol $ try $ lookAhead endLine
   end <- endLine
   return $ case end of
-    EndSuccess -> Success (trim <$> dataLines)
-    EndError -> Error (trim <$> dataLines)
-  where
-    trim text =
-      if T.take 1 text == " "
-      then T.drop 1 . T.dropEnd 1 $ text
-      else text
+    EndSuccess -> Success dataLines
+    EndError -> Error dataLines
 
 parseBlocks :: (Alternative m, CharParsing m, Monad m, LookAheadParsing m) => m [TmuxOutputBlock]
 parseBlocks = do

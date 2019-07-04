@@ -10,7 +10,7 @@ import Chiasma.Data.Cmd (Cmd(..))
 import Chiasma.Data.TmuxError (TmuxError(..))
 
 data TmuxThunk next =
-  ∀ a . Read Cmd ([Text] -> Either TmuxDecodeError a) ([a] -> next)
+  ∀ a . Read Cmd (Text -> Either TmuxDecodeError a) ([a] -> next)
   |
   Write Cmd (() -> next)
   |

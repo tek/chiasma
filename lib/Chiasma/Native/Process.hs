@@ -11,7 +11,7 @@ import Data.ByteString.Lazy.Internal (packChars, unpackChars)
 import Data.Either.Combinators (mapLeft)
 import Data.List (intercalate)
 import Data.Text (Text)
-import qualified Data.Text as T (lines, pack, words)
+import qualified Data.Text as T (lines, pack)
 import GHC.IO.Exception (ExitCode(ExitSuccess))
 import System.Process.Typed (ProcessConfig, byteStringInput, proc, readProcessStdout, setStdin)
 
@@ -34,14 +34,14 @@ tmuxProcessConfig :: Maybe FilePath -> [String] -> ProcessConfig () () ()
 tmuxProcessConfig socket cmds =
   setStdin (byteStringInput $ cmdBytes cmds) $ proc "tmux" $ socketArg socket ++ ["-C", "attach"]
 
-handleProcessOutput :: Cmds -> ExitCode -> ([Text] -> Either TmuxDecodeError a) -> Text -> Either TmuxError [a]
+handleProcessOutput :: Cmds -> ExitCode -> (Text -> Either TmuxDecodeError a) -> Text -> Either TmuxError [a]
 handleProcessOutput cmds ExitSuccess decode out = do
   outputs <- mapLeft (TmuxError.OutputParsingFailed cmds (T.lines out)) $ resultLines out
   case reverse outputs of
     output : _ -> traverse decode' output
     _ -> Left $ TmuxError.NoOutput cmds
   where
-    decode' = mapLeft (TmuxError.DecodingFailed cmds out) . decode . T.words
+    decode' = mapLeft (TmuxError.DecodingFailed cmds out) . decode
 handleProcessOutput cmds _ _ out =
   Left $ TmuxError.ProcessFailed cmds out
 
@@ -51,7 +51,7 @@ formatCmd (Cmd (CmdName name) (CmdArgs args)) = unwords $ name : args
 nativeTmuxProcess ::
   (MonadIO m, MonadDeepError e TmuxError m) =>
   Maybe FilePath ->
-  ([Text] -> Either TmuxDecodeError a) ->
+  (Text -> Either TmuxDecodeError a) ->
   Cmds ->
   m [a]
 nativeTmuxProcess socket decode cmds@(Cmds cmds') = do

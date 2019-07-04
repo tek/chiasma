@@ -19,7 +19,7 @@ instance TmuxCodec Dat
 
 test_decode :: IO ()
 test_decode =
-  assertEqual (Right $ Dat (PaneId 1) (WindowId 2)) $ decode ["%1", "@2"]
+  assertEqual (Right $ Dat (PaneId 1) (WindowId 2)) $ decode " %1 @2 "
 
 test_query :: IO ()
 test_query =

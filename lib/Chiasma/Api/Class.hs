@@ -10,7 +10,7 @@ import Chiasma.Native.StreamParse (TmuxOutputBlock)
 class TmuxApi m a where
   runCommands ::
     a ->
-    ([Text] -> Either TmuxDecodeError b) ->
+    (Text -> Either TmuxDecodeError b) ->
     Cmds ->
     m [b]
 

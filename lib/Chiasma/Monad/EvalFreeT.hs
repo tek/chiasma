@@ -1,8 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Chiasma.Monad.EvalFreeT(
-  evalFreeT,
-) where
+module Chiasma.Monad.EvalFreeT where
 
 import Control.Monad.Trans.Free (FreeF(..), FreeT(..))
 import Data.Default.Class (Default(def))
@@ -19,7 +17,7 @@ instance Default CmdBuffer where
   def = CmdBuffer def
 
 type CommandExec m =
-  (∀ b. ([Text] -> Either TmuxDecodeError b) -> Cmds -> m (Either TmuxError [b]))
+  (∀ b. (Text -> Either TmuxDecodeError b) -> Cmds -> m (Either TmuxError [b]))
 
 evalFreeF ::
   Monad m =>
