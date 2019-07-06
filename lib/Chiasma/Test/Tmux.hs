@@ -19,7 +19,7 @@ import System.Process.Typed (
   setStdout,
   unsafeProcessHandle,
   useHandleClose,
-  withProcess,
+  withProcessWait,
   )
 import UnliftIO (finally, throwString)
 import UnliftIO.Exception (tryAny)
@@ -108,7 +108,7 @@ withTestTmux tConf thunk tempDir = do
   conf <- fixture "u" "tmux.conf"
   terminal <- unsafeTerminal
   pc <- testTmuxProcessConfig tConf socket conf terminal
-  withProcess pc $ runAndKillTmux thunk (TmuxNative $ Just socket)
+  withProcessWait pc $ runAndKillTmux thunk (TmuxNative $ Just socket)
 
 tmuxSpec' :: TmuxTestConf -> (TmuxNative -> IO a) -> IO a
 tmuxSpec' conf thunk =

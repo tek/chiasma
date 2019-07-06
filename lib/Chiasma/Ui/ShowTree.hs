@@ -38,4 +38,4 @@ showViewTree :: ViewTree -> [Text]
 showViewTree = showTree . formatViewTree
 
 printViewTree :: MonadIO m => ViewTree -> m ()
-printViewTree = liftIO . traverse_ putStrLn . showViewTree
+printViewTree = liftIO . traverse_ putStrLn . fmap toString . showViewTree

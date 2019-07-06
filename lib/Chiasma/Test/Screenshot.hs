@@ -12,9 +12,8 @@ import Chiasma.Data.TmuxId (PaneId(PaneId))
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 
 loadScreenshot :: MonadIO m => FilePath -> m (Maybe Text)
-loadScreenshot path = do
-  exists <- doesFileExist path
-  if exists then Just <$> liftIO (readFile path) else return Nothing
+loadScreenshot path =
+  ifM (doesFileExist path) (Just . toText <$> liftIO (readFile path)) (pure Nothing)
 
 storeScreenshot :: MonadIO m => FilePath -> [Text] -> m ()
 storeScreenshot path text = do
