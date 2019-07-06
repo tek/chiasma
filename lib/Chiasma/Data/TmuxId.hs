@@ -1,7 +1,6 @@
 module Chiasma.Data.TmuxId where
 
 import Data.Text.Prettyprint.Doc (Pretty(..))
-import GHC.Generics (Generic)
 
 sessionPrefix :: Char
 sessionPrefix = '$'
@@ -43,10 +42,11 @@ class TmuxId a where
   prefix :: TmuxIdPrefix a
   number :: a -> Int
 
-  formatId :: a -> String
+  formatId :: a -> Text
   formatId a =
-    let (TmuxIdPrefix p) = prefix @a
-    in p : show (number a)
+    toText (p : show (number a))
+    where
+      (TmuxIdPrefix p) = prefix @a
 
 instance TmuxId SessionId where
   prefix = TmuxIdPrefix sessionPrefix

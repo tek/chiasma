@@ -1,11 +1,7 @@
 module Chiasma.Test.Tmux where
 
 import Control.Concurrent (threadDelay)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Except (runExceptT)
-import Data.Default.Class (Default(def))
 import GHC.IO.Handle (Handle)
-import GHC.Real (fromIntegral)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 import System.Posix.IO (fdToHandle)
@@ -66,9 +62,9 @@ unsafeTerminal = do
   pty <- maybe (throwString "couldn't spawn pty") return mayPty
   return $ Terminal handle pty
 
-urxvtArgs :: Int -> Int -> Int -> [String]
+urxvtArgs :: Int -> Int -> Int -> [Text]
 urxvtArgs width height fontSize =
-  ["-geometry", show width ++ "x" ++ show height, "-fn", "xft:monospace:size=" ++ show fontSize, "-e", "tmux"]
+  ["-geometry", show width <> "x" <> show height, "-fn", "xft:monospace:size=" <> show fontSize, "-e", "tmux"]
 
 testTmuxProcessConfig :: TmuxTestConf -> FilePath -> FilePath -> Terminal -> IO (ProcessConfig () () ())
 testTmuxProcessConfig (TmuxTestConf width height fontSize gui) socket confFile (Terminal handle pty) = do
@@ -78,12 +74,12 @@ testTmuxProcessConfig (TmuxTestConf width height fontSize gui) socket confFile (
     stream :: StreamSpec st ()
     stream = useHandleClose handle
     stdio = setStdin stream . setStdout stream . setStderr stream
-    tmuxArgs = ["-S", socket, "-f", confFileArg]
+    tmuxArgs = ["-S", toText socket, "-f", toText confFileArg]
     confFileArg = if confFileExists then confFile else "/dev/null"
     prc =
       if gui
-      then proc "urxvt" (urxvtArgs width height fontSize ++ tmuxArgs)
-      else proc "tmux" tmuxArgs
+      then proc "urxvt" (toString <$> urxvtArgs width height fontSize ++ tmuxArgs)
+      else proc "tmux" (toString <$> tmuxArgs)
   return $ stdio prc
 
 killPid :: Integral a => a -> IO ()

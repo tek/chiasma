@@ -1,12 +1,6 @@
-module Chiasma.Monad.IndividualProcess(
-  TmuxProg,
-  runTmux,
-) where
+module Chiasma.Monad.IndividualProcess where
 
-import Control.Monad.DeepError (MonadDeepError(throwHoist))
 import Control.Monad.Free (Free(..))
-import Control.Monad.IO.Class (MonadIO)
-import Data.Default.Class (Default(def))
 
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Data.Cmd (Cmd(..), Cmds(..))

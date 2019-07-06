@@ -1,14 +1,9 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Chiasma.Ui.Data.ViewGeometry(
-  ViewGeometry(..),
-) where
+module Chiasma.Ui.Data.ViewGeometry where
 
 import Data.Data (Data)
-import Data.Default.Class (Default)
 import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, space, (<+>))
-import GHC.Generics (Generic)
 
 data ViewGeometry =
   ViewGeometry {
@@ -21,7 +16,7 @@ data ViewGeometry =
   }
   deriving (Eq, Show, Data, Generic, Default)
 
-mayPretty :: String -> Maybe Float -> Doc a
+mayPretty :: Text -> Maybe Float -> Doc a
 mayPretty prefix (Just a) =
   space <> pretty prefix <> ":" <+> pretty a
 mayPretty _ Nothing =

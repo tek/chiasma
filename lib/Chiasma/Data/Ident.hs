@@ -1,30 +1,24 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
 module Chiasma.Data.Ident where
 
 import Control.DeepSeq (NFData)
-import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Aeson (FromJSON, ToJSON(toEncoding), defaultOptions, genericToEncoding)
 import Data.Data (Data)
-import Data.Default.Class (Default(def))
-import Data.String (IsString(..))
-import Data.Text (Text)
-import qualified Data.Text as Text (pack, unpack)
 import Data.Text.Prettyprint.Doc (Pretty(..))
 import Data.UUID (UUID)
-import qualified Data.UUID as UUID (fromText, toString, toText)
-import GHC.Generics (Generic)
+import qualified Data.UUID as UUID (fromText, toText, toText)
 import System.Random (randomIO)
+import qualified Text.Show as Show
 
 data Ident =
-  Str String
+  Str Text
   |
   Uuid UUID
   deriving (Eq, Generic, Data, NFData, Ord)
 
 instance Show Ident where
-  show = identString
+  show = toString . identText
 
 class Identifiable a where
   identify :: a -> Ident
@@ -34,13 +28,13 @@ instance Identifiable Ident where
 
 instance Pretty Ident where
   pretty (Str s) = pretty s
-  pretty (Uuid u) = pretty . UUID.toString $ u
+  pretty (Uuid u) = pretty . UUID.toText $ u
 
 instance Default Ident where
-  def = Str def
+  def = Str ""
 
 instance IsString Ident where
-  fromString = Str
+  fromString = Str . toText
 
 instance FromJSON Ident where
 
@@ -56,12 +50,8 @@ sameIdent ::
 sameIdent target b =
   identify target == identify b
 
-identString :: Ident -> String
-identString (Str a) = a
-identString (Uuid a) = UUID.toString a
-
 identText :: Ident -> Text
-identText (Str a) = Text.pack a
+identText (Str a) = a
 identText (Uuid a) = UUID.toText a
 
 generateIdent :: MonadIO m => m Ident
@@ -69,4 +59,4 @@ generateIdent = liftIO $ Uuid <$> randomIO
 
 parseIdent :: Text -> Ident
 parseIdent text =
-  maybe (Str (Text.unpack text)) Uuid (UUID.fromText text)
+  maybe (Str text) Uuid (UUID.fromText text)

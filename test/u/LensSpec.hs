@@ -1,16 +1,11 @@
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
-{-# LANGUAGE RankNTypes #-}
 
-module LensSpec(
-  htf_thisModulesTests,
-) where
+module LensSpec (htf_thisModulesTests) where
 
 import Test.Framework
 
 import Control.Lens (transformM)
 import qualified Control.Lens as Lens (set)
-import Data.Default.Class (Default(def))
-import Data.Foldable (traverse_)
 
 import Chiasma.Data.Ident (Ident(Str))
 import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs)
@@ -27,7 +22,6 @@ import Chiasma.Ui.Data.View (
   )
 import qualified Chiasma.Ui.Data.View as View (_ident, ident)
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
-import Chiasma.Ui.ShowTree (showViewTree)
 import Chiasma.Ui.ViewTree (togglePane)
 import qualified Chiasma.Ui.ViewTree as ToggleResult (ToggleResult(..))
 
@@ -42,10 +36,12 @@ tree :: ViewTree
 tree =
   Tree (consLayout id0) [subtree, TreeLeaf (consPane id2)]
   where
-    subtree = TreeNode $ Tree (consLayout id2) [subtree2]
-    subtree2 = TreeNode $ Tree (consLayout id3) [subtree3]
-    subtree3 = TreeNode $ Tree (consLayout id4) [TreeLeaf openPane]
+    subtree = st id2 subtree2
+    subtree2 = st id3 subtree3
+    subtree3 = st id4 (TreeLeaf openPane)
     openPane = View id1 (ViewState False) def (Pane True False Nothing)
+    st i s =
+      TreeNode $ Tree (consLayout i) [s]
 
 test_modify :: IO ()
 test_modify = do

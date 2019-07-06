@@ -7,11 +7,11 @@ module Chiasma.Data.Cmd(
 ) where
 
 newtype CmdName =
-  CmdName String
+  CmdName Text
   deriving (Eq, Show)
 
 newtype CmdArgs =
-  CmdArgs [String]
+  CmdArgs [Text]
   deriving (Eq, Show)
 
 data Cmd =
@@ -22,5 +22,5 @@ newtype Cmds =
   Cmds [Cmd]
   deriving (Eq, Show)
 
-cmd :: String -> [String] -> Cmd
+cmd :: Text -> [Text] -> Cmd
 cmd name args = Cmd (CmdName name) (CmdArgs args)

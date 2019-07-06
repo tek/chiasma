@@ -1,8 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE TypeFamilies #-}
-
 module Chiasma.Ui.Data.View where
 
 import Control.Lens (
@@ -16,9 +11,8 @@ import Control.Lens.Plated (Plated)
 import Data.Bifoldable (Bifoldable(bifoldMap))
 import Data.Bifunctor (Bifunctor(first, second))
 import Data.Data (Data)
-import Data.Default.Class (Default(def))
 import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, nest, space, vsep, (<+>))
-import GHC.Generics (Generic)
+import Prelude hiding (state)
 
 import Chiasma.Data.Ident (Ident, Identifiable(..))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)

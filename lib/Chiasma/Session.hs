@@ -2,23 +2,18 @@
 
 module Chiasma.Session where
 
+import Control.Monad.Free.Class (MonadFree)
+
 import qualified Chiasma.Codec.Data as Codec (Session(Session), Window(Window))
 import Chiasma.Command.Session (existingSessionId, newSession)
 import Chiasma.Command.Window (newSessionWindow)
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.TmuxId (SessionId, WindowId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
-import qualified Chiasma.Data.View as Tmux (
-  View(viewId, viewIdent),
-  setViewId,
-  )
+import qualified Chiasma.Data.View as Tmux (View(viewId, viewIdent), setViewId)
 import Chiasma.Data.Views (Views)
 import Chiasma.View (findOrCreateView, viewsLogS)
 import qualified Chiasma.View as Views (insertSession, session, updateSession, updateWindow)
-import Control.Monad (join)
-import Control.Monad.DeepState (MonadDeepState, modify)
-import Control.Monad.Free.Class (MonadFree)
-import Data.Bifunctor (second)
 
 findOrCreateSession ::
   MonadDeepState s Views m =>
@@ -38,7 +33,7 @@ spawnSession session' window = do
   modify $ Views.updateSession $ Tmux.setViewId sid session'
   Codec.Window wid _ _ <- newSessionWindow sid
   modify $ Views.updateWindow $ Tmux.setViewId wid window
-  viewsLogS $ "spawned session " ++ show session' ++ " with id " ++ show sid ++ " and window id " ++ show wid
+  viewsLogS $ "spawned session " <> show session' <> " with id " <> show sid <> " and window id " <> show wid
   return (sid, wid)
 
 ensureSession ::

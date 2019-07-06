@@ -1,19 +1,17 @@
-module Chiasma.Native.Parse(
-  resultParser,
-  resultLines,
-) where
+module Chiasma.Native.Parse where
 
 import Data.Text (Text)
 import qualified Data.Text as T (pack)
+import Prelude hiding (many)
 import Text.Parsec (
   ParseError,
-  parse,
   many,
-  skipMany,
   manyTill,
+  parse,
+  skipMany,
   try,
   )
-import Text.Parsec.Char (endOfLine, string, anyChar)
+import Text.Parsec.Char (anyChar, endOfLine, string)
 import Text.Parsec.Text (GenParser)
 
 tillEol :: GenParser st Text
@@ -31,10 +29,8 @@ parseBlock = do
   manyTill tillEol (try endLine)
 
 resultParser :: GenParser st [[Text]]
-resultParser = do
-  result <- many (try parseBlock)
-  skipMany tillEol
-  return result
+resultParser =
+  many (try parseBlock) <* skipMany tillEol
 
 resultLines :: Text -> Either ParseError [[Text]]
 resultLines = parse resultParser "tmux output"

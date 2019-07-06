@@ -1,17 +1,14 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TypeOperators #-}
 
-module Chiasma.Codec.Query(
-  TmuxDataQuery(..),
-) where
+module Chiasma.Codec.Query where
 
-import GHC.Generics ((:*:), D1, C1, S1, Selector, selName)
-import GHC.Unicode (isUpper, toLower)
+import Data.Char (isUpper, toLower)
+import qualified Data.Text as Text (concatMap, singleton)
+import GHC.Generics (C1, D1, S1, Selector, selName, (:*:))
 
 class TmuxDataQuery f where
-  query' :: [String]
+  query' :: [Text]
 
 instance TmuxDataQuery f => (TmuxDataQuery (D1 c f)) where
   query' = query' @f
@@ -20,20 +17,21 @@ instance TmuxDataQuery f => (TmuxDataQuery (C1 c f)) where
   query' = query' @f
 
 instance (TmuxDataQuery f, TmuxDataQuery g) => TmuxDataQuery (f :*: g) where
-  query' = query' @f ++ query' @g
+  query' = query' @f <> query' @g
 
-trans :: Char -> String
-trans a | isUpper a = ['_', toLower a]
-trans a = [a]
+trans :: Char -> Text
+trans a | isUpper a = toText ['_', toLower a]
+trans a = Text.singleton a
 
-snakeCase :: String -> String
-snakeCase = (>>= trans)
+snakeCase :: Text -> Text
+snakeCase =
+  Text.concatMap trans
 
-formatQuery :: String -> String
-formatQuery q = "#{" ++ snakeCase q ++ "}"
+formatQuery :: Text -> Text
+formatQuery q = "#{" <> snakeCase q <> "}"
 
 instance Selector s => (TmuxDataQuery (S1 s f)) where
   query' =
-    [formatQuery query]
+    [formatQuery (toText query)]
     where
       query = selName (undefined :: t s f p)

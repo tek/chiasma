@@ -2,15 +2,10 @@
 
 module Chiasma.Window where
 
-import Control.Monad (join)
-import Control.Monad.DeepState (MonadDeepState, gets, modify)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
-import Data.Foldable (find)
 import Data.List (sortOn)
 import qualified Data.List.NonEmpty as NonEmpty (head, nonEmpty)
-import Data.Maybe (catMaybes, fromMaybe)
-import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (line, pretty, vsep, (<+>), (<>))
 
 import qualified Chiasma.Codec.Data as Codec (Pane(Pane, paneId), Window(Window, windowId))
@@ -18,7 +13,7 @@ import qualified Chiasma.Codec.Data.PaneDetail as Codec (PaneDetail(PaneDetail))
 import qualified Chiasma.Codec.Data.PaneDetail as PaneDetail (PaneDetail(..))
 import qualified Chiasma.Command.Pane as Cmd (closePane, firstWindowPane, windowPanesAs)
 import qualified Chiasma.Command.Window as Cmd (newWindow, splitWindowAs, window)
-import Chiasma.Data.Ident (Ident, identString, identify)
+import Chiasma.Data.Ident (Ident, identText, identify)
 import Chiasma.Data.Maybe (findMaybe, maybeExcept, orElse)
 import Chiasma.Data.RenderError (RenderError)
 import qualified Chiasma.Data.RenderError as RenderError (RenderError(NoPrincipal))
@@ -66,7 +61,7 @@ spawnWindow ::
 spawnWindow sid ident = do
   win@(Codec.Window windowId _ _) <- Cmd.newWindow sid ident
   registerWindowId ident windowId
-  viewsLogS $ "spawned window in session " ++ show sid ++ " with id " ++ show windowId
+  viewsLogS $ "spawned window in session " <> show sid <> " with id " <> show windowId
   return win
 
 findPrincipalSub :: ViewTreeSub -> Maybe Ui.PaneView
@@ -139,7 +134,7 @@ openPane ::
   m Codec.PaneDetail
 openPane dir windowId = do
   detail <- Cmd.splitWindowAs dir windowId
-  viewsLogS $ "opened pane " ++ show (PaneDetail.paneId detail) ++ " in window " ++ show windowId
+  viewsLogS $ "opened pane " <> show (PaneDetail.paneId detail) <> " in window " <> show windowId
   return detail
 
 ensurePaneOpen ::
@@ -158,7 +153,7 @@ ensurePaneClosed ::
   Maybe Codec.PaneDetail ->
   m ()
 ensurePaneClosed (Just (Codec.PaneDetail i _ _ _ _)) = do
-  viewsLogS $ "closing pane " ++ show i
+  viewsLogS $ "closing pane " <> show i
   Cmd.closePane i
 ensurePaneClosed _ = return ()
 
@@ -212,7 +207,7 @@ ensureView cwd windowId =
   where
     ensureTree (Tree (Ui.View layoutIdent vState geometry (Ui.Layout vertical)) sub) = do
       ensuredSub <- traverse ensureNode sortedSub
-      viewsLog $ pretty (T.pack $ "new sub for layout `" ++ identString layoutIdent ++ "`:") <> line <>
+      viewsLog $ pretty ("new sub for layout `" <> identText layoutIdent <> "`:") <> line <>
         vsep (pretty <$> ensuredSub)
       return $ renderableTree vState geometry vertical $ catMaybes ensuredSub
       where

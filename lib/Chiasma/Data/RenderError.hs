@@ -15,7 +15,7 @@ data RenderError =
   |
   Views ViewsError
   |
-  Pack String
+  Pack Text
   |
   Fatal TmuxError
   deriving (Eq, Show)

@@ -4,7 +4,6 @@ module RenderSpec (htf_thisModulesTests) where
 
 import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.State.Strict (runStateT)
-import Data.Default.Class (Default(def))
 import Data.List (sortOn)
 import Test.Framework
 import UnliftIO (throwString)

@@ -4,14 +4,10 @@ module Chiasma.View where
 
 import Control.Lens (Lens', over)
 import qualified Control.Lens as Lens (over, set, view)
-import Control.Monad.DeepState (MonadDeepState, gets, modify)
-import Data.Either.Combinators (maybeToRight)
-import Data.Foldable (find)
-import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, pretty)
 import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle)
 
-import Chiasma.Data.Ident (Ident, identString, sameIdent)
+import Chiasma.Data.Ident (Ident, identText, sameIdent)
 import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
 import Chiasma.Data.View (View(View), viewIdent)
 import Chiasma.Data.Views (Views, ViewsError(..))
@@ -86,7 +82,7 @@ type Setter a = View a -> Views -> Views
 addView :: (MonadDeepState s Views m, Show a) => Setter a -> Ident -> m (View a)
 addView setter ident = do
   modify $ setter newView
-  viewsLogS $ "added tmux view " ++ identString ident
+  viewsLogS $ "added tmux view " <> identText ident
   return newView
   where
     newView = View ident Nothing
@@ -103,6 +99,6 @@ viewsLog message =
     f :: Views -> Views
     f = over Views.log (message :)
 
-viewsLogS :: MonadDeepState s Views m => String -> m ()
+viewsLogS :: MonadDeepState s Views m => Text -> m ()
 viewsLogS =
-  viewsLog . pretty . T.pack
+  viewsLog . pretty

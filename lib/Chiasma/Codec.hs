@@ -2,8 +2,7 @@
 
 module Chiasma.Codec where
 
-import Data.Text (Text)
-import qualified Data.Text as T (drop, dropEnd, splitOn, take, takeEnd)
+import qualified Data.Text as Text (drop, dropEnd, splitOn, take, takeEnd, unwords)
 import GHC.Generics (Generic, Rep, to)
 
 import Chiasma.Codec.Decode (TmuxDataDecode(..), TmuxDecodeError(TooManyFields))
@@ -11,19 +10,19 @@ import Chiasma.Codec.Query (TmuxDataQuery(..))
 import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
 
 newtype TmuxQuery =
-  TmuxQuery { unQ :: String }
+  TmuxQuery { unQ :: Text }
   deriving (Eq, Show)
 
 genDecode :: (Generic a, TmuxDataDecode (Rep a)) => Text -> Either TmuxDecodeError a
 genDecode fields = do
-  (rest, result) <- decode' (T.splitOn " " . trim $ fields)
+  (rest, result) <- decode' (Text.splitOn " " . trim $ fields)
   case rest of
     [] -> return $ to result
     a -> Left $ TooManyFields a
   where
     trim text =
-      if T.take 1 text == " " && T.takeEnd 1 text == " "
-      then T.drop 1 . T.dropEnd 1 $ text
+      if Text.take 1 text == " " && Text.takeEnd 1 text == " "
+      then Text.drop 1 . Text.dropEnd 1 $ text
       else text
 
 class TmuxCodec a where
@@ -33,7 +32,7 @@ class TmuxCodec a where
 
     query :: TmuxQuery
     default query :: (Generic a, TmuxDataQuery (Rep a)) => TmuxQuery
-    query = TmuxQuery $ unwords $ query' @(Rep a)
+    query = TmuxQuery $ Text.unwords $ query' @(Rep a)
 
 instance TmuxCodec SessionId
 instance TmuxCodec WindowId

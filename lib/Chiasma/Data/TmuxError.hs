@@ -30,8 +30,8 @@ data TmuxError =
   }
   |
   InvalidOutput {
-    invalidOutputReason :: String,
-    invalidOutputCommand :: String
+    invalidOutputReason :: Text,
+    invalidOutputCommand :: Text
   }
   |
   CommandFailed {

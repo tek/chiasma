@@ -1,18 +1,9 @@
-module Chiasma.Native.Process(
-  tmuxProcessConfig,
-  nativeTmuxProcess,
-  socketArg,
-) where
+module Chiasma.Native.Process where
 
-import Control.Monad.DeepError (MonadDeepError, hoistEither)
-import Control.Monad.IO.Class (MonadIO)
-import Data.ByteString.Lazy (ByteString)
-import Data.ByteString.Lazy.Internal (packChars, unpackChars)
-import Data.Either.Combinators (mapLeft)
-import Data.List (intercalate)
-import Data.Text (Text)
-import qualified Data.Text as T (lines, pack)
-import GHC.IO.Exception (ExitCode(ExitSuccess))
+import qualified Data.ByteString.Lazy as Lazy (ByteString)
+import Data.ByteString.Lazy.Internal (unpackChars)
+import qualified Data.Text as Text (intercalate, lines, pack, unwords)
+import System.Exit (ExitCode(ExitSuccess))
 import System.Process.Typed (ProcessConfig, byteStringInput, proc, readProcessStdout, setStdin)
 
 import Chiasma.Codec.Decode (TmuxDecodeError)
@@ -23,20 +14,25 @@ import qualified Chiasma.Data.TmuxError as TmuxError (
   )
 import Chiasma.Native.Parse (resultLines)
 
-cmdBytes :: [String] -> ByteString
-cmdBytes cmds = packChars $ intercalate "\n" $ reverse $ "" : cmds
+cmdBytes :: [Text] -> Lazy.ByteString
+cmdBytes cmds = encodeUtf8 $ Text.intercalate "\n" $ reverse $ "" : cmds
 
-socketArg :: Maybe FilePath -> [String]
-socketArg (Just socket) = ["-S", socket]
+socketArg :: Maybe FilePath -> [Text]
+socketArg (Just socket) = ["-S", toText socket]
 socketArg Nothing = []
 
-tmuxProcessConfig :: Maybe FilePath -> [String] -> ProcessConfig () () ()
+tmuxProcessConfig :: Maybe FilePath -> [Text] -> ProcessConfig () () ()
 tmuxProcessConfig socket cmds =
-  setStdin (byteStringInput $ cmdBytes cmds) $ proc "tmux" $ socketArg socket ++ ["-C", "attach"]
+  cons args
+  where
+  cons =
+    setStdin (byteStringInput $ cmdBytes cmds) . proc "tmux"
+  args =
+    toString <$> (socketArg socket <> ["-C", "attach"])
 
 handleProcessOutput :: Cmds -> ExitCode -> (Text -> Either TmuxDecodeError a) -> Text -> Either TmuxError [a]
 handleProcessOutput cmds ExitSuccess decode out = do
-  outputs <- mapLeft (TmuxError.OutputParsingFailed cmds (T.lines out)) $ resultLines out
+  outputs <- mapLeft (TmuxError.OutputParsingFailed cmds (Text.lines out)) $ resultLines out
   case reverse outputs of
     output : _ -> traverse decode' output
     _ -> Left $ TmuxError.NoOutput cmds
@@ -45,8 +41,9 @@ handleProcessOutput cmds ExitSuccess decode out = do
 handleProcessOutput cmds _ _ out =
   Left $ TmuxError.ProcessFailed cmds out
 
-formatCmd :: Cmd -> String
-formatCmd (Cmd (CmdName name) (CmdArgs args)) = unwords $ name : args
+formatCmd :: Cmd -> Text
+formatCmd (Cmd (CmdName name) (CmdArgs args)) =
+  Text.unwords $ name : args
 
 nativeTmuxProcess ::
   (MonadIO m, MonadDeepError e TmuxError m) =>
@@ -57,4 +54,4 @@ nativeTmuxProcess ::
 nativeTmuxProcess socket decode cmds@(Cmds cmds') = do
   let cmdLines = fmap formatCmd cmds'
   (code, out) <- readProcessStdout $ tmuxProcessConfig socket cmdLines
-  hoistEither $ handleProcessOutput cmds code decode $ T.pack $ unpackChars out
+  hoistEither $ handleProcessOutput cmds code decode $ Text.pack $ unpackChars out

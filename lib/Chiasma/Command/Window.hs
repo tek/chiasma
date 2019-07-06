@@ -5,7 +5,7 @@ import Data.Foldable (find)
 
 import Chiasma.Codec (TmuxCodec)
 import Chiasma.Codec.Data (Pane, Window(Window))
-import Chiasma.Data.Ident (Ident, identString)
+import Chiasma.Data.Ident (Ident, identText)
 import Chiasma.Data.TmuxId (SessionId, TmuxId(formatId), WindowId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, unsafeReadOne)
@@ -35,7 +35,7 @@ doesWindowExist windowId =
 
 newWindow :: MonadFree TmuxThunk m => SessionId -> Ident -> m Window
 newWindow sid name =
-  Tmux.unsafeReadOne "new-window" ["-t", formatId sid, "-n", identString name, "-P"]
+  Tmux.unsafeReadOne "new-window" ["-t", formatId sid, "-n", identText name, "-P"]
 
 splitWindowAs ::
   (MonadFree TmuxThunk m, TmuxCodec a) =>
@@ -43,7 +43,7 @@ splitWindowAs ::
   WindowId ->
   m a
 splitWindowAs dir windowId =
-  Tmux.unsafeReadFirst "split-window" ["-t", formatId windowId, "-d", "-P", "-c", dir]
+  Tmux.unsafeReadFirst "split-window" ["-t", formatId windowId, "-d", "-P", "-c", toText dir]
 
 splitWindow ::
   (MonadFree TmuxThunk m) =>

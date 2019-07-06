@@ -1,23 +1,21 @@
-module Chiasma.Ui.Measure.Balance(
-  balanceSizes,
-  Balance(..),
-) where
+module Chiasma.Ui.Measure.Balance where
 
+import Data.List (zipWith3)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NonEmpty (
-  zip,
   filter,
-  zipWith,
   toList,
+  zip,
+  zipWith,
   )
-import Data.Maybe (catMaybes, isNothing, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isNothing)
 import Data.Traversable (mapAccumL)
-import GHC.Float (int2Float, float2Int)
+import GHC.Float (float2Int, int2Float)
 import GHC.Float.RealFracMethods (floorFloatInt)
 
 import Chiasma.Ui.Measure.Weights (
-  normalizeWeights,
   amendAndNormalizeWeights,
+  normalizeWeights,
   )
 
 zipWith3NE :: (a -> b -> c -> d)  ->  NonEmpty a -> NonEmpty b -> NonEmpty c -> NonEmpty d

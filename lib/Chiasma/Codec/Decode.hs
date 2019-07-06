@@ -2,11 +2,10 @@
 
 module Chiasma.Codec.Decode where
 
-import Data.Bifunctor (first, second)
-import Data.Text (Text)
-import qualified Data.Text as T (null, pack, unpack)
+import qualified Data.Text as Text (null, unpack)
 import Data.Text.Read (decimal)
 import GHC.Generics (K1(..), M1(..), (:*:)(..))
+import Prelude hiding (many)
 import Text.Parsec.Char (char, digit)
 import Text.ParserCombinators.Parsec (
   GenParser,
@@ -18,7 +17,7 @@ import Text.ParserCombinators.Parsec (
 import Chiasma.Data.TmuxId (PaneId(..), SessionId(..), WindowId(..), panePrefix, sessionPrefix, windowPrefix)
 
 data TmuxDecodeError =
-  ParseFailure String ParseError
+  ParseFailure Text ParseError
   |
   IntParsingFailure Text
   |
@@ -57,7 +56,7 @@ readInt input num =
   where
     parsed = do
       (num', rest) <- decimal num
-      if T.null rest then Right num' else Left ""
+      if Text.null rest then Right num' else Left ""
 
 instance TmuxPrimDecode Int where
   primDecode field = readInt field field
@@ -71,15 +70,16 @@ instance TmuxPrimDecode Bool where
       convert 1 =
         Right True
       convert _ =
-        Left (BoolParsingFailure $ "got non-bool `" <> T.pack (show field) <> "`")
+        Left (BoolParsingFailure $ "got non-bool `" <> show field <> "`")
 
-idParser :: Char -> GenParser Char st String
-idParser sym = char sym >> many digit
+idParser :: Char -> GenParser Char st Text
+idParser sym =
+  char sym *> (toText <$> many digit)
 
 parseId :: (Int -> a) -> Char -> Text -> Either TmuxDecodeError a
 parseId cons sym input = do
-  num <- first (ParseFailure "id") $ parse (idParser sym) "none" (T.unpack input)
-  i <- readInt input (T.pack num)
+  num <- first (ParseFailure "id") $ parse (idParser sym) "none" (Text.unpack input)
+  i <- readInt input num
   return $ cons i
 
 instance TmuxPrimDecode SessionId where
@@ -92,4 +92,7 @@ instance TmuxPrimDecode PaneId where
   primDecode = parseId PaneId panePrefix
 
 instance TmuxPrimDecode [Char] where
-  primDecode = Right . T.unpack
+  primDecode = Right . toString
+
+instance TmuxPrimDecode Text where
+  primDecode = Right

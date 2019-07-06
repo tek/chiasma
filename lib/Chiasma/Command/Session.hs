@@ -1,15 +1,9 @@
-module Chiasma.Command.Session(
-  sessions,
-  doesSessionExist,
-  newSession,
-  existingSessionId,
-  activateSession,
-) where
+module Chiasma.Command.Session where
 
 import Control.Monad.Free.Class (MonadFree)
 
 import Chiasma.Codec.Data (Session(Session))
-import Chiasma.Data.Ident (Ident, identString)
+import Chiasma.Data.Ident (Ident, identText)
 import Chiasma.Data.TmuxId (SessionId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadOne, write)
@@ -32,8 +26,8 @@ existingSessionId sessionId = do
 
 newSession :: MonadFree TmuxThunk m => Ident -> m Session
 newSession name =
-  Tmux.unsafeReadOne "new-session" ["-s", identString name, "-P"]
+  Tmux.unsafeReadOne "new-session" ["-s", identText name, "-P"]
 
 activateSession :: MonadFree TmuxThunk m => Int -> m ()
 activateSession sessionId =
-  Tmux.write "send-keys" ["-t", "%1", "'tmux switch-client -t \\$" ++ show sessionId ++ "'", "enter"]
+  Tmux.write "send-keys" ["-t", "%1", "'tmux switch-client -t \\$" <> show sessionId <> "'", "enter"]

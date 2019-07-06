@@ -6,11 +6,8 @@ import Chiasma.Data.TmuxError (TmuxError)
 import Conduit (ConduitT, Flush, Void, mapC, (.|))
 import Control.Monad.Catch (MonadMask)
 import qualified Control.Monad.Catch as Catch (bracket)
-import Control.Monad.DeepError (MonadDeepError)
-import Control.Monad.IO.Class (MonadIO)
-import Data.ByteString (ByteString)
-import Data.ByteString.Internal (packChars)
 import Data.Conduit.Process.Typed (createSource)
+import qualified Data.Text as Text (unwords)
 import System.Process.Typed (
   Process,
   ProcessConfig,
@@ -35,14 +32,20 @@ newtype TmuxNative =
   deriving Show
 
 formatCmd :: Cmd -> ByteString
-formatCmd (Cmd (CmdName name) (CmdArgs args)) = packChars . unwords $ name : args ++ ["\n"]
+formatCmd (Cmd (CmdName name) (CmdArgs args)) =
+  encodeUtf8 . Text.unwords $ name : args ++ ["\n"]
 
 tmuxProcessConfig ::
   MonadIO m =>
   Maybe FilePath ->
   ProcessConfig (ConduitT (Flush ByteString) Void m ()) (ConduitT () ByteString m ()) ()
 tmuxProcessConfig sock =
-  setStdin createSinkFlush $ setStdout createSource $ proc "tmux" $ socketArg sock ++ ["-C", "attach"]
+  cons args
+  where
+    cons =
+      setStdin createSinkFlush . setStdout createSource . proc "tmux"
+    args =
+      toString <$> (socketArg sock ++ ["-C", "attach"])
 
 withProcess :: (MonadIO m, MonadMask m)
             => ProcessConfig stdin stdout stderr
@@ -59,6 +62,6 @@ instance (MonadIO m, MonadDeepError e TmuxError m, MonadMask m) => TmuxApi m Tmu
     where
       handler prc =
         let
-          stdin = mapC (fmap formatCmd) .| getStdin prc
-          stdout = getStdout prc .| parseConduit
-        in f stdin stdout
+          stdin' = mapC (fmap formatCmd) .| getStdin prc
+          stdout' = getStdout prc .| parseConduit
+        in f stdin' stdout'

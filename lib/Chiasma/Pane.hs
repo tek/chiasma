@@ -1,7 +1,5 @@
 module Chiasma.Pane where
 
-import Control.Monad.DeepState (MonadDeepState, modify)
-
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.TmuxId (PaneId)
 import qualified Chiasma.Data.View as Tmux (View(View))

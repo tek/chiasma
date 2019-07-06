@@ -11,7 +11,7 @@ import qualified Chiasma.Data.TmuxId as HasPaneId (HasPaneId(paneId))
 data PaneMode =
   PaneMode {
     paneId :: PaneId,
-    paneMode :: String
+    paneMode :: Text
   }
   deriving (Eq, Show, Generic, TmuxCodec)
 

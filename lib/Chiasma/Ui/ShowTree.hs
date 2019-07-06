@@ -1,49 +1,40 @@
-module Chiasma.Ui.ShowTree(
-  formatViewTree,
-  showTree,
-  showViewTree,
-  printViewTree,
-) where
+module Chiasma.Ui.ShowTree where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.Bifunctor (bimap)
-import Data.Foldable (traverse_)
-import Chiasma.Data.Ident (identString)
+import Chiasma.Data.Ident (identText)
 import Chiasma.Ui.Data.View (
-  Tree(Tree),
-  TreeSub(TreeNode,
-  TreeLeaf),
-  ViewTree,
-  PaneView,
   LayoutView,
-  View(View),
   Pane(Pane),
+  PaneView,
+  Tree(Tree),
+  TreeSub(TreeNode, TreeLeaf),
+  View(View),
+  ViewTree,
   )
 
-formatLayout :: LayoutView -> String
-formatLayout (View ident _ _ _) = "l: " ++ identString ident
+formatLayout :: LayoutView -> Text
+formatLayout (View ident _ _ _) = "l: " <> identText ident
 
-formatPane :: PaneView -> String
+formatPane :: PaneView -> Text
 formatPane (View ident _ _ (Pane open _ _)) =
-  "p: " ++ identString ident ++ openFrag
+  "p: " <> identText ident <> openFrag
   where
-    openFrag = " " ++ if open then "open" else "closed"
+    openFrag = " " <> if open then "open" else "closed"
 
-formatViewTree :: ViewTree -> Tree String String
+formatViewTree :: ViewTree -> Tree Text Text
 formatViewTree = bimap formatLayout formatPane
 
-indent :: [String] -> [String]
-indent = fmap (" " ++)
+indent :: [Text] -> [Text]
+indent = fmap (" " <>)
 
-showTreeSub :: TreeSub String String -> [String]
+showTreeSub :: TreeSub Text Text -> [Text]
 showTreeSub (TreeNode tree) = showTree tree
 showTreeSub (TreeLeaf pane) = [pane]
 
-showTree :: Tree String String -> [String]
+showTree :: Tree Text Text -> [Text]
 showTree (Tree l sub) =
   l : indent (sub >>= showTreeSub)
 
-showViewTree :: ViewTree -> [String]
+showViewTree :: ViewTree -> [Text]
 showViewTree = showTree . formatViewTree
 
 printViewTree :: MonadIO m => ViewTree -> m ()

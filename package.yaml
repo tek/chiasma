@@ -17,7 +17,7 @@ extra-source-files:
 dependencies:
 - aeson
 - attoparsec
-- base >= 4.7 && < 5
+- base-noprelude >= 4.7 && < 5
 - bytestring
 - composition
 - composition-extra
@@ -25,7 +25,7 @@ dependencies:
 - conduit-extra
 - containers
 - cornea
-- data-default-class
+- data-default
 - deepseq
 - directory
 - either
@@ -41,6 +41,7 @@ dependencies:
 - prettyprinter-ansi-terminal
 - process
 - random
+- relude
 - resourcet
 - split
 - stm-chans
@@ -88,6 +89,7 @@ default-extensions:
 - RecordWildCards
 - ScopedTypeVariables
 - StandaloneDeriving
+- TemplateHaskell
 - TupleSections
 - TypeApplications
 - TypeFamilies
@@ -97,6 +99,8 @@ default-extensions:
 
 library:
   source-dirs: lib
+  other-modules:
+  - Prelude
 
 tests:
   chiasma-unit:

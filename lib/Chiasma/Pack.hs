@@ -1,24 +1,17 @@
-module Chiasma.Pack(
-  packWindow,
-) where
+module Chiasma.Pack where
 
 import Control.Lens (each, mapMOf_)
-import Control.Monad (when)
-import Control.Monad.DeepState (MonadDeepState)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
-import Data.Foldable (traverse_)
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as NonEmpty (reverse, sortWith, toList)
+import qualified Data.List.NonEmpty as NonEmpty (reverse, toList)
 import qualified Data.Set as Set (fromList, size)
-import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (Doc, line, pretty, (<+>), (<>))
 
 import qualified Chiasma.Codec.Data as Codec (Window(Window))
 import Chiasma.Command.Pane (movePane, resizePane)
 import Chiasma.Data.RenderError (RenderError)
-import Chiasma.Data.Text.Pretty (prettyS)
 import Chiasma.Data.TmuxId (PaneId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.Views (Views)
@@ -53,8 +46,8 @@ positionView vertical refId =
       packPane refId vertical paneId
 
 describeVertical :: Bool -> Doc a
-describeVertical True = prettyS "vertically"
-describeVertical False = prettyS "horizontally"
+describeVertical True = "vertically"
+describeVertical False = "horizontally"
 
 resizeView ::
   MonadDeepState s Views m =>
@@ -67,22 +60,19 @@ resizeView vertical (Sub (Tree (Measured size (MLayout refId _ _)) _)) = do
   viewsLog $ "resizing layout with ref" <+> pretty refId <+> "to" <+> pretty size <+> describeVertical vertical
   resizePane refId vertical size
 resizeView vertical (Leaf (Measured size (MPane paneId _))) = do
-  viewsLog $ prettyS "resizing pane" <+> pretty paneId <+> prettyS "to" <+> pretty size <+> describeVertical vertical
+  viewsLog $ "resizing pane" <+> pretty paneId <+> "to" <+> pretty size <+> describeVertical vertical
   resizePane paneId vertical size
 
 needPositioning ::
-  MonadDeepState s Views m =>
   NonEmpty MeasureTreeSub ->
-  m Bool
-needPositioning sub = do
-  viewsLog $ "-----------" <+> pretty sub
-  viewsLog $ "-----------" <+> pretty (NonEmpty.sortWith position sub)
-  return $ wrongOrder || wrongDirection
+  Bool
+needPositioning sub =
+  wrongOrder || wrongDirection
   where
     wrongOrder =
       sort positions /= positions
     wrongDirection =
-      Set.size (Set.fromList positions) /= (length positions)
+      Set.size (Set.fromList positions) /= length positions
     positions =
       NonEmpty.toList $ position <$> sub
     position (Sub (Tree (Measured _ (MLayout _ pos _)) _)) =
@@ -98,8 +88,7 @@ packTree =
   pack
   where
     pack (Tree (Measured _ (MLayout ref _ vertical)) sub) = do
-      need <- needPos
-      when need runPos
+      when needPos runPos
       mapMOf_ (each . Tree.subTree) pack sub
       traverse_ (resizeView vertical) sub
       where
@@ -114,5 +103,5 @@ packWindow ::
   m ()
 packWindow (WindowState (Codec.Window _ width height) _ _ tree _) = do
   let measures = measureTree tree width height
-  viewsLog $ pretty (T.pack "measured tree:") <> line <> pretty measures
+  viewsLog $ "measured tree:" <> line <> pretty measures
   packTree measures

@@ -1,14 +1,9 @@
 module Chiasma.Monad.Stream where
 
 import Conduit (ConduitT, Flush(..), Void, runConduit, sinkList, yield, yieldMany, (.|))
-import Control.Monad ((<=<))
-import Control.Monad.DeepError (MonadDeepError, hoistEither)
-import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Trans.Free (FreeT(..))
 import qualified Data.Conduit.Combinators as Conduit (drop, take)
-import Data.Default.Class (Default(def))
 import Data.Either.Combinators (mapLeft)
-import Data.Text (Text)
 
 import Chiasma.Api.Class (TmuxApi(..))
 import Chiasma.Codec.Decode (TmuxDecodeError)

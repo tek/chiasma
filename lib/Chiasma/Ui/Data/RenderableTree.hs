@@ -2,7 +2,6 @@ module Chiasma.Ui.Data.RenderableTree where
 
 import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, space, (<+>))
 
-import Chiasma.Data.Text.Pretty (prettyS)
 import Chiasma.Data.TmuxId (PaneId(..))
 import Chiasma.Ui.Data.Tree (NNode, NTree)
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry))
@@ -44,9 +43,9 @@ instance Pretty RPane where
   pretty (RPane (PaneId paneId) top left) =
     "p –" <+> pretty paneId <+> pretty top <+> pretty left
 
-mayPretty :: String -> Maybe Float -> Doc a
+mayPretty :: Text -> Maybe Float -> Doc a
 mayPretty prefix (Just a) =
-  space <> prettyS (prefix ++ ":") <+> pretty a
+  space <> pretty (prefix <> ":") <+> pretty a
 mayPretty _ Nothing =
   emptyDoc
 

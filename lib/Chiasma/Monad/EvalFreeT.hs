@@ -1,10 +1,6 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Chiasma.Monad.EvalFreeT where
 
 import Control.Monad.Trans.Free (FreeF(..), FreeT(..))
-import Data.Default.Class (Default(def))
-import Data.Text (Text)
 
 import Chiasma.Codec.Decode (TmuxDecodeError)
 import Chiasma.Data.Cmd (Cmd(..), Cmds(..))

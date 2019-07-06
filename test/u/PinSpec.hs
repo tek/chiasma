@@ -2,7 +2,6 @@
 
 module PinSpec (htf_thisModulesTests) where
 
-import Data.Default.Class (Default(def))
 import Test.Framework
 
 import Chiasma.Data.Ident (Ident(Str))
@@ -20,16 +19,16 @@ import qualified Chiasma.Ui.ViewTree as ToggleResult (ToggleResult(..))
 
 node :: ViewTreeSub -> View Pane -> ViewTreeSub
 node sub p =
-  TreeNode $ Tree (consLayout (Str "l")) [sub, TreeLeaf p]
+  TreeNode $ Tree (consLayout "l") [sub, TreeLeaf p]
 
-paneWith :: Bool -> String -> ViewTreeSub
+paneWith :: Bool -> Text -> ViewTreeSub
 paneWith open i = TreeLeaf $ View (Str i) def def (Pane open False Nothing)
 
-pane :: String -> ViewTreeSub
+pane :: Text -> ViewTreeSub
 pane =
   paneWith False
 
-ppaneWithIdent :: String -> Bool -> View Pane
+ppaneWithIdent :: Text -> Bool -> View Pane
 ppaneWithIdent name open =
   View (Str name) def def (Pane open True Nothing)
 

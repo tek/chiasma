@@ -1,10 +1,8 @@
 module Chiasma.Test.Screenshot where
 
 import Control.Monad.Free.Class (MonadFree)
-import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.ByteString as ByteString (writeFile)
-import Data.Text (Text)
-import qualified Data.Text as Text (lines, pack, unlines)
+import qualified Data.Text as Text (lines, unlines)
 import qualified Data.Text.Encoding as Text (encodeUtf8)
 import System.FilePath (takeDirectory, (</>))
 import UnliftIO.Directory (createDirectoryIfMissing, doesFileExist)
@@ -13,7 +11,7 @@ import Chiasma.Command.Pane (capturePane)
 import Chiasma.Data.TmuxId (PaneId(PaneId))
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 
-loadScreenshot :: MonadIO m => FilePath -> m (Maybe String)
+loadScreenshot :: MonadIO m => FilePath -> m (Maybe Text)
 loadScreenshot path = do
   exists <- doesFileExist path
   if exists then Just <$> liftIO (readFile path) else return Nothing
@@ -52,7 +50,7 @@ testScreenshot path pane = do
   loadScreenshot path >>= check current
   where
     check current (Just existing) =
-      return $ Just (current, Text.lines . Text.pack $ existing)
+      return $ Just (current, Text.lines existing)
     check current Nothing =
       Nothing <$ storeScreenshot path current
 
@@ -61,10 +59,10 @@ screenshot ::
   MonadIO m =>
   Bool ->
   FilePath ->
-  String ->
+  Text ->
   Int ->
   m (Maybe ([Text], [Text]))
 screenshot record storage name paneId =
   if record then Nothing <$ recordScreenshot path paneId else testScreenshot path paneId
   where
-    path = storage </> name
+    path = storage </> toString name

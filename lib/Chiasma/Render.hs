@@ -1,19 +1,12 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+module Chiasma.Render where
 
-module Chiasma.Render(
-  render,
-) where
-
-import Control.Monad.DeepState (MonadDeepState)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Free.Class (MonadFree)
 import Data.Foldable (forM_)
-import qualified Data.Text as T (pack)
 import Data.Text.Prettyprint.Doc (line, pretty, (<>))
 
 import qualified Chiasma.Codec.Data as Codec (Window(Window))
-import Chiasma.Data.Ident (Ident, identString)
+import Chiasma.Data.Ident (Ident, identText)
 import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.Views (Views)
@@ -31,7 +24,7 @@ renderTree ::
   RenderableTree ->
   m ()
 renderTree windowIdent window tree = do
-  viewsLog $ pretty (T.pack $ "rendering tree in window " ++ identString windowIdent ++ ":") <> line <> pretty tree
+  viewsLog $ pretty ("rendering tree in window " <> identText windowIdent <> ":") <> line <> pretty tree
   wState <- windowState windowIdent window tree
   packWindow wState
 
