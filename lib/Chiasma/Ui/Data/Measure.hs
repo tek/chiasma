@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Chiasma.Ui.Data.Measure where
 
 import Data.Text.Prettyprint.Doc (Pretty(..), (<+>))
@@ -11,7 +9,8 @@ import Control.Lens (makeClassy)
 data MPane =
   MPane {
     _paneId :: PaneId,
-    _position :: Int
+    _mainPosition :: Int,
+    _offPosition :: Int
   }
   deriving (Eq, Show)
 
@@ -20,7 +19,8 @@ makeClassy ''MPane
 data MLayout =
   MLayout {
     _reference :: PaneId,
-    _lPosition :: Int,
+    _lMainPosition :: Int,
+    _lOffPosition :: Int,
     _vertical :: Bool
   }
   deriving (Eq, Show)
@@ -40,12 +40,13 @@ type MeasureTree = NTree (Measured MLayout) (Measured MPane)
 type MeasureTreeSub = NNode (Measured MLayout) (Measured MPane)
 
 instance Pretty MLayout where
-  pretty (MLayout (PaneId refId) pos vertical') =
-    "l –" <+> "ref:" <+> pretty refId <+> "pos:" <+> pretty pos <+> if vertical' then "v" else "h"
+  pretty (MLayout (PaneId refId) mainPos offPos vertical') =
+    "l –" <+> "ref:" <+> pretty refId <+> "pos:" <+> pretty mainPos <+> "(" <> pretty offPos <> ")" <+>
+      if vertical' then "v" else "h"
 
 instance Pretty MPane where
-  pretty (MPane (PaneId paneId') pos) =
-    "p –" <+> pretty paneId' <+> "pos:" <+> pretty pos
+  pretty (MPane (PaneId paneId') mainPos offPos) =
+    "p –" <+> pretty paneId' <+> "pos:" <+> pretty mainPos <+> "(" <> pretty offPos <> ")"
 
 instance Pretty a => Pretty (Measured a) where
   pretty (Measured size' a) =

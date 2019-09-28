@@ -40,9 +40,9 @@ positionView ::
 positionView vertical refId =
   position
   where
-    position (Sub (Tree (Measured _ (MLayout layoutRef _ _)) _)) =
+    position (Sub (Tree (Measured _ (MLayout layoutRef _ _ _)) _)) =
       packPane refId vertical layoutRef
-    position (Leaf (Measured _ (MPane paneId _))) =
+    position (Leaf (Measured _ (MPane paneId _ _))) =
       packPane refId vertical paneId
 
 describeVertical :: Bool -> Doc a
@@ -56,10 +56,10 @@ resizeView ::
   Bool ->
   MeasureTreeSub ->
   m ()
-resizeView vertical (Sub (Tree (Measured size (MLayout refId _ _)) _)) = do
+resizeView vertical (Sub (Tree (Measured size (MLayout refId _ _ _)) _)) = do
   viewsLog $ "resizing layout with ref" <+> pretty refId <+> "to" <+> pretty size <+> describeVertical vertical
   resizePane refId vertical size
-resizeView vertical (Leaf (Measured size (MPane paneId _))) = do
+resizeView vertical (Leaf (Measured size (MPane paneId _ _))) = do
   viewsLog $ "resizing pane" <+> pretty paneId <+> "to" <+> pretty size <+> describeVertical vertical
   resizePane paneId vertical size
 
@@ -67,18 +67,26 @@ needPositioning ::
   NonEmpty MeasureTreeSub ->
   Bool
 needPositioning sub =
-  wrongOrder || wrongDirection
+  wrongOrder || wrongDirection || unaligned
   where
     wrongOrder =
       sort positions /= positions
     wrongDirection =
       Set.size (Set.fromList positions) /= length positions
+    unaligned =
+      Set.size (Set.fromList offPositions) > 1
     positions =
       NonEmpty.toList $ position <$> sub
-    position (Sub (Tree (Measured _ (MLayout _ pos _)) _)) =
-      pos
-    position (Leaf (Measured _ (MPane _ pos))) =
-      pos
+    position (Sub (Tree (Measured _ (MLayout _ mainPos _ _)) _)) =
+      mainPos
+    position (Leaf (Measured _ (MPane _ mainPos _))) =
+      mainPos
+    offPositions =
+      NonEmpty.toList $ position <$> sub
+    offPosition (Sub (Tree (Measured _ (MLayout _ _ offPos _)) _)) =
+      offPos
+    offPosition (Leaf (Measured _ (MPane _ _ offPos))) =
+      offPos
 
 packTree ::
   (MonadDeepState s Views m, MonadFree TmuxThunk m, MonadError RenderError m) =>
@@ -87,7 +95,7 @@ packTree ::
 packTree =
   pack
   where
-    pack (Tree (Measured _ (MLayout ref _ vertical)) sub) = do
+    pack (Tree (Measured _ (MLayout ref _ _ vertical)) sub) = do
       when needPos runPos
       mapMOf_ (each . Tree.subTree) pack sub
       traverse_ (resizeView vertical) sub

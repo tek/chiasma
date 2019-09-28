@@ -26,6 +26,8 @@ import Chiasma.Ui.Data.View (Tree(..), TreeSub(..), ViewTree, consLayout, consLa
 import qualified Chiasma.Ui.Data.View as Ui (Pane(Pane), View(View))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(..))
 import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import Chiasma.Ui.ViewTree (togglePane)
+import qualified Chiasma.Ui.ViewTree as ToggleResult (ToggleResult(Success))
 
 id0, id1, id2, id3 :: Ident
 id0 = Str "0"
@@ -46,14 +48,18 @@ renderOnce tree api cwd vs = do
   r <- runExceptT $ runStateT (runTmux api $ render cwd id1 id1 tree) vs
   either (throwString . show) (return . snd) r
 
-runRender :: ViewTree -> TmuxNative -> IO ([Tmux.View PaneId], Either TmuxError [PaneDetail])
-runRender tree api = do
+safeRender :: Views -> ViewTree -> TmuxNative -> IO Views
+safeRender vs tree api = do
   cwd <- getCurrentDirectory
-  vs1 <- renderOnce tree api cwd views
+  vs1 <- renderOnce tree api cwd vs
   _ <- runExceptT @TmuxError $ runTmux api $ activateSession 0
   _ <- runExceptT @TmuxError $ runTmux api $ activateSession 1
   sleep 1
-  (Views _ _ vs2 _) <- renderOnce tree api cwd vs1
+  renderOnce tree api cwd vs1
+
+runRender :: ViewTree -> TmuxNative -> IO ([Tmux.View PaneId], Either TmuxError [PaneDetail])
+runRender tree api = do
+  (Views _ _ vs2 _) <- safeRender views tree api
   sleep 1
   ps <- runExceptT @TmuxError $ runTmux api panesAs
   return (sortOn viewIdent vs2, sortOn paneLeft . drop 1 <$> ps)
@@ -162,3 +168,42 @@ positionTarget =
 test_position :: IO ()
 test_position =
   renderSpec treePosition positionTarget
+
+treeSuccessiveOpen :: ViewTree
+treeSuccessiveOpen =
+  Tree (consLayout id0) [
+    TreeNode $ Tree (consLayoutVertical id1) [
+      TreeLeaf (pane id0 True False)
+      ],
+    TreeNode $ Tree (consLayoutVertical id2) [
+      TreeLeaf (pane id1 False True),
+      TreeLeaf (pane id2 False False)
+      ]
+    ]
+  where
+    pane i open pin =
+      Ui.View i (ViewState False) def (Ui.Pane open pin Nothing)
+
+successiveOpenTarget :: [PaneDetail]
+successiveOpenTarget =
+  [
+    PaneDetail { paneId = PaneId 1, paneWidth = 120, paneHeight = 60, paneTop = 0, paneLeft = 0 },
+    PaneDetail { paneId = PaneId 2, paneWidth = 119, paneHeight = 30, paneTop = 0, paneLeft = 121 },
+    PaneDetail { paneId = PaneId 3, paneWidth = 119, paneHeight = 29, paneTop = 31, paneLeft = 121 }
+    ]
+
+test_successiveOpen :: IO ()
+test_successiveOpen = do
+  ps <- tmuxSpec $ \ api -> do
+    vs1 <- safeRender views treeSuccessiveOpen api
+    sleep 0.2
+    vs2 <- safeRender vs1 tree1 api
+    sleep 0.2
+    _ <- safeRender vs2 tree2 api
+    sleep 0.2
+    runExceptT @TmuxError $ runTmux api panesAs
+  ps1 <- assertRight (sortOn paneId . drop 1 <$> ps)
+  assertEqual successiveOpenTarget ps1
+  where
+    (ToggleResult.Success tree2) = togglePane id2 tree1
+    (ToggleResult.Success tree1) = togglePane id1 treeSuccessiveOpen

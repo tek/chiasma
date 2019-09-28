@@ -62,13 +62,15 @@ measureSub width height vertical (Tree.Sub tree) size =
   where
     (newWidth, newHeight) = if vertical then (width, size) else (size, height)
 measureSub _ _ vertical (Tree.Leaf (Renderable _ _ (RPane paneId top left))) size =
-  Tree.Leaf (Measured size (MPane paneId (if vertical then top else left)))
+  Tree.Leaf (Measured size (MPane paneId (if vertical then top else left) (if vertical then left else top)))
 
 measureLayout :: RenderableTree -> Int -> Int -> Bool -> MeasureTree
 measureLayout (Tree (Renderable _ _ (RLayout (RPane refId refTop refLeft) vertical)) sub) width height parentVertical =
-  Tree (Measured sizeInParent (MLayout refId (if parentVertical then refTop else refLeft) vertical)) measuredSub
+  Tree (Measured sizeInParent (MLayout refId mainPos offPos vertical)) measuredSub
   where
     sizeInParent = if parentVertical then height else width
+    mainPos = if parentVertical then refTop else refLeft
+    offPos = if parentVertical then refLeft else refTop
     subTotalSize = if vertical then height else width
     sizes = measureLayoutViews (int2Float subTotalSize) sub
     measuredSub = uncurry (measureSub width height vertical) <$> NonEmpty.zip sub sizes

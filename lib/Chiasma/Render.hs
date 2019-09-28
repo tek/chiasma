@@ -40,5 +40,4 @@ render cwd sessionIdent windowIdent tree = do
   initialWindow <- findOrCreateWindow windowIdent
   (sid, newSessionWid) <- ensureSession initialSession initialWindow
   window@(Codec.Window windowId _ _) <- ensureWindow sid initialWindow newSessionWid tree
-  renderableTree <- ensureView cwd windowId tree
-  forM_ renderableTree $ renderTree windowIdent window
+  traverse_ (renderTree windowIdent window) =<< ensureView cwd windowId tree

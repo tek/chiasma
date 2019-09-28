@@ -27,7 +27,7 @@ panePrefix = '%'
 
 newtype PaneId =
   PaneId Int
-  deriving (Eq, Show, Generic, Num)
+  deriving (Eq, Show, Generic, Num, Ord)
 
 instance Pretty PaneId where
   pretty = pretty . formatId

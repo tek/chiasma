@@ -1,15 +1,8 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
+module Chiasma.Data.View where
 
-module Chiasma.Data.View(
-  View(..),
-  setViewId,
-) where
-
-import qualified Control.Lens as Lens (set)
-import Control.Lens (makeClassy_)
 import Chiasma.Data.Ident (Ident, Identifiable(..))
+import Control.Lens (makeClassy_)
+import qualified Control.Lens as Lens (set)
 
 data View a =
   View {
