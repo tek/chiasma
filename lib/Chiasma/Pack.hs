@@ -82,7 +82,7 @@ needPositioning sub =
     position (Leaf (Measured _ (MPane _ mainPos _))) =
       mainPos
     offPositions =
-      NonEmpty.toList $ position <$> sub
+      NonEmpty.toList $ offPosition <$> sub
     offPosition (Sub (Tree (Measured _ (MLayout _ _ offPos _)) _)) =
       offPos
     offPosition (Leaf (Measured _ (MPane _ _ offPos))) =
