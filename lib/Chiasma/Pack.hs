@@ -74,7 +74,7 @@ needPositioning sub =
     wrongDirection =
       Set.size (Set.fromList positions) /= length positions
     unaligned =
-      Set.size (Set.fromList offPositions) > 1
+      length sub > 1 && Set.size (Set.fromList offPositions) > 1
     positions =
       NonEmpty.toList $ position <$> sub
     position (Sub (Tree (Measured _ (MLayout _ mainPos _ _)) _)) =
