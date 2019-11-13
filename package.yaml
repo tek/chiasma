@@ -1,5 +1,5 @@
 name: chiasma
-version: 0.1.0.0
+version: 0.1.0.1
 github: "tek/chiasma-hs"
 synopsis: tmux api
 description: Please see the README on GitHub at <https://github.com/tek/chiasma-hs>
