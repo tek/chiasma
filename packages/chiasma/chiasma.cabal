@@ -172,6 +172,8 @@ library
     , filepath
     , free ==5.1.*
     , lens ==4.*
+    , lifted-base
+    , monad-control
     , mtl
     , parsec
     , parsers ==0.12.*
@@ -185,6 +187,7 @@ library
     , split ==0.2.*
     , stm-chans ==3.0.*
     , stm-conduit ==4.0.*
+    , temporary
     , text
     , transformers
     , typed-process ==0.2.*
@@ -287,6 +290,8 @@ test-suite chiasma-integration
     , free ==5.1.*
     , hedgehog
     , lens ==4.*
+    , lifted-base
+    , monad-control
     , mtl
     , parsec
     , parsers ==0.12.*
@@ -302,6 +307,7 @@ test-suite chiasma-integration
     , stm-conduit ==4.0.*
     , tasty
     , tasty-hedgehog
+    , temporary
     , text
     , transformers
     , typed-process ==0.2.*
@@ -407,6 +413,8 @@ test-suite chiasma-unit
     , free ==5.1.*
     , hedgehog
     , lens ==4.*
+    , lifted-base
+    , monad-control
     , mtl
     , parsec
     , parsers ==0.12.*
@@ -422,6 +430,7 @@ test-suite chiasma-unit
     , stm-conduit ==4.0.*
     , tasty
     , tasty-hedgehog
+    , temporary
     , text
     , transformers
     , typed-process ==0.2.*

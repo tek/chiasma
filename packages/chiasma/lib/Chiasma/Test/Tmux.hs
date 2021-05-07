@@ -5,8 +5,12 @@ import Chiasma.Monad.Stream (runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (write)
 import Chiasma.Native.Api (TmuxNative(..))
 import Control.Concurrent (threadDelay)
-import System.Directory (doesFileExist)
+import Control.Exception.Lifted (bracket, finally, ioError)
+import Control.Monad.Trans.Control (MonadBaseControl)
+import System.Directory (doesFileExist, removeDirectoryRecursive)
 import System.FilePath ((</>))
+import System.IO.Error (userError)
+import System.IO.Temp (createTempDirectory, getCanonicalTemporaryDirectory)
 import System.Posix.IO (fdToHandle)
 import System.Posix.Pty (Pty, createPty, resizePty)
 import qualified System.Posix.Signals as Signal (killProcess, signalProcess)
@@ -16,17 +20,17 @@ import System.Process.Typed (
   Process,
   ProcessConfig,
   StreamSpec,
+  waitExitCode,
   proc,
   setStderr,
   setStdin,
   setStdout,
+  startProcess,
+  stopProcess,
   unsafeProcessHandle,
   useHandleClose,
-  withProcessWait,
   )
-import UnliftIO (finally, throwString)
 import UnliftIO.Exception (tryAny)
-import UnliftIO.Temporary (withSystemTempDirectory)
 
 import Chiasma.Test.File (fixture)
 
@@ -57,7 +61,7 @@ unsafeTerminal = do
   (_, slave) <- openPseudoTerminal
   mayPty <- createPty slave
   handle <- fdToHandle slave
-  pty <- maybe (throwString "couldn't spawn pty") return mayPty
+  pty <- maybe (ioError (userError "couldn't spawn pty")) return mayPty
   return $ Terminal handle pty
 
 urxvtArgs :: Int -> Int -> Int -> [Text]
@@ -95,27 +99,65 @@ killProcess api prc = do
 -- if the first tmux control mode process from a TmuxProg runs before urxvt has started the server,
 -- it will not use the test tmux.conf
 -- maybe start tmux first, then urxvt?
-runAndKillTmux :: (TmuxNative -> IO a) -> TmuxNative -> Process () () () -> IO a
+runAndKillTmux ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  (TmuxNative -> m a) ->
+  TmuxNative ->
+  Process () () () ->
+  m a
 runAndKillTmux thunk api prc = do
-  sleep 0.2
-  finally (thunk api) (killProcess api prc)
+  liftIO (sleep 0.2)
+  finally (thunk api) (liftIO (killProcess api prc))
 
-withTestTmux :: TmuxTestConf -> (TmuxNative -> IO a) -> FilePath -> IO a
+withProcessWait ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  ProcessConfig stdin stdout stderr ->
+  (Process stdin stdout stderr -> m a) ->
+  m a
+withProcessWait config f =
+  bracket (startProcess config) stopProcess \ p -> f p <* waitExitCode p
+
+withTestTmux ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  TmuxTestConf ->
+  (TmuxNative -> m a) ->
+  FilePath ->
+  m a
 withTestTmux tConf thunk tempDir = do
   let socket = tempDir </> "tmux_socket"
   conf <- fixture "u" "tmux.conf"
-  terminal <- unsafeTerminal
-  pc <- testTmuxProcessConfig tConf socket conf terminal
+  terminal <- liftIO unsafeTerminal
+  pc <- liftIO $ testTmuxProcessConfig tConf socket conf terminal
   withProcessWait pc $ runAndKillTmux thunk (TmuxNative $ Just socket)
 
-tmuxSpec' :: TmuxTestConf -> (TmuxNative -> IO a) -> IO a
-tmuxSpec' conf thunk =
-  withSystemTempDirectory "chiasma-test" $ withTestTmux conf thunk
+tmuxSpec' ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  TmuxTestConf ->
+  (TmuxNative -> m a) ->
+  m a
+tmuxSpec' conf thunk = do
+  targetDir <- liftIO getCanonicalTemporaryDirectory
+  bracket
+    (liftIO (createTempDirectory targetDir "chiasma-test"))
+    (liftIO . removeDirectoryRecursive)
+    (withTestTmux conf thunk)
 
-tmuxSpec :: (TmuxNative -> IO a) -> IO a
+tmuxSpec ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  (TmuxNative -> m a) ->
+  m a
 tmuxSpec =
   tmuxSpec' def { ttcGui = False }
 
-tmuxGuiSpec :: (TmuxNative -> IO a) -> IO a
+tmuxGuiSpec ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  (TmuxNative -> m a) ->
+  m a
 tmuxGuiSpec =
   tmuxSpec' def

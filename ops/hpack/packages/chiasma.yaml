@@ -36,6 +36,8 @@ dependencies:
   - filepath
   - free ^>= 5.1
   - lens >= 4 && < 5
+  - lifted-base
+  - monad-control
   - mtl
   - parsec
   - parsers ^>= 0.12
@@ -49,6 +51,7 @@ dependencies:
   - split ^>= 0.2
   - stm-chans ^>= 3.0
   - stm-conduit ^>= 4.0
+  - temporary
   - text
   - transformers
   - typed-process ^>= 0.2
