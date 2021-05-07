@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           chiasma
-version:        0.1.0.1
+version:        0.2.0.0
 synopsis:       tmux api
 description:    Please see the README on GitHub at <https://github.com/tek/chiasma>
 category:       Terminal
