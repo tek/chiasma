@@ -133,6 +133,18 @@ withTestTmux tConf thunk tempDir = do
   pc <- liftIO $ testTmuxProcessConfig tConf socket conf terminal
   withProcessWait pc $ runAndKillTmux thunk (TmuxNative $ Just socket)
 
+withTempDir ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  (FilePath -> m a) ->
+  m a
+withTempDir f = do
+  targetDir <- liftIO getCanonicalTemporaryDirectory
+  bracket
+    (liftIO (createTempDirectory targetDir "chiasma-test"))
+    (liftIO . removeDirectoryRecursive)
+    f
+
 tmuxSpec' ::
   MonadIO m =>
   MonadBaseControl IO m =>
@@ -140,11 +152,7 @@ tmuxSpec' ::
   (TmuxNative -> m a) ->
   m a
 tmuxSpec' conf thunk = do
-  targetDir <- liftIO getCanonicalTemporaryDirectory
-  bracket
-    (liftIO (createTempDirectory targetDir "chiasma-test"))
-    (liftIO . removeDirectoryRecursive)
-    (withTestTmux conf thunk)
+  withTempDir (withTestTmux conf thunk)
 
 tmuxSpec ::
   MonadIO m =>
