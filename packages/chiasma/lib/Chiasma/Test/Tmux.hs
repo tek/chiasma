@@ -136,14 +136,23 @@ withTestTmux tConf thunk tempDir = do
 withTempDir ::
   MonadIO m =>
   MonadBaseControl IO m =>
+  FilePath ->
   (FilePath -> m a) ->
   m a
-withTempDir f = do
-  targetDir <- liftIO getCanonicalTemporaryDirectory
+withTempDir targetDir f =
   bracket
     (liftIO (createTempDirectory targetDir "chiasma-test"))
     (liftIO . removeDirectoryRecursive)
     f
+
+withSystemTempDir ::
+  MonadIO m =>
+  MonadBaseControl IO m =>
+  (FilePath -> m a) ->
+  m a
+withSystemTempDir f = do
+  targetDir <- liftIO getCanonicalTemporaryDirectory
+  withTempDir targetDir f
 
 tmuxSpec' ::
   MonadIO m =>
@@ -152,7 +161,7 @@ tmuxSpec' ::
   (TmuxNative -> m a) ->
   m a
 tmuxSpec' conf thunk = do
-  withTempDir (withTestTmux conf thunk)
+  withSystemTempDir (withTestTmux conf thunk)
 
 tmuxSpec ::
   MonadIO m =>
