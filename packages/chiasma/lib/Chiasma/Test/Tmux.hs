@@ -20,7 +20,6 @@ import System.Process.Typed (
   Process,
   ProcessConfig,
   StreamSpec,
-  waitExitCode,
   proc,
   setStderr,
   setStdin,
@@ -29,6 +28,7 @@ import System.Process.Typed (
   stopProcess,
   unsafeProcessHandle,
   useHandleClose,
+  waitExitCode,
   )
 import UnliftIO.Exception (tryAny)
 
