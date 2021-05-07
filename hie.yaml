@@ -1,0 +1,10 @@
+cradle:
+  cabal:
+    - path: "./packages/chiasma/lib"
+      component: "lib:chiasma"
+
+    - path: "./packages/chiasma/test"
+      component: "chiasma:test:chiasma-unit"
+
+    - path: "./packages/chiasma/integration"
+      component: "chiasma:test:chiasma-integration"
