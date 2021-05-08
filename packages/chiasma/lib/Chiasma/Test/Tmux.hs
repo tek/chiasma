@@ -5,7 +5,7 @@ import Chiasma.Monad.Stream (runTmux)
 import qualified Chiasma.Monad.Tmux as Tmux (write)
 import Chiasma.Native.Api (TmuxNative(..))
 import Control.Concurrent (threadDelay)
-import Control.Exception.Lifted (bracket, finally, ioError)
+import Control.Exception.Lifted (bracket, finally, ioError, try)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import System.Directory (doesFileExist, removeDirectoryRecursive)
 import System.FilePath ((</>))
@@ -33,7 +33,6 @@ import System.Process.Typed (
 import UnliftIO.Exception (tryAny)
 
 import Chiasma.Test.File (fixture)
-import Control.Exception.Lifted (try)
 
 data Terminal = Terminal Handle Pty
 
@@ -118,7 +117,7 @@ withProcessWait ::
   (Process stdin stdout stderr -> m a) ->
   m a
 withProcessWait config f =
-  bracket (startProcess config) stopProcess \ p -> f p <* waitExitCode p
+  bracket (startProcess config) (try @_ @SomeException . stopProcess) \ p -> f p <* waitExitCode p
 
 withTestTmux ::
   MonadIO m =>
