@@ -33,6 +33,7 @@ import System.Process.Typed (
 import UnliftIO.Exception (tryAny)
 
 import Chiasma.Test.File (fixture)
+import Control.Exception.Lifted (try)
 
 data Terminal = Terminal Handle Pty
 
@@ -142,7 +143,7 @@ withTempDir ::
 withTempDir targetDir f =
   bracket
     (liftIO (createTempDirectory targetDir "chiasma-test"))
-    (liftIO . removeDirectoryRecursive)
+    (try @_ @SomeException . liftIO . removeDirectoryRecursive)
     f
 
 withSystemTempDir ::
