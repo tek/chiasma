@@ -141,7 +141,7 @@ withTempDir ::
   m a
 withTempDir targetDir f =
   bracket
-    (liftIO (createTempDirectory targetDir "chiasma-test"))
+    (liftIO (createTempDirectory targetDir "chiasma-test-XXX"))
     (try @_ @SomeException . liftIO . removeDirectoryRecursive)
     f
 
