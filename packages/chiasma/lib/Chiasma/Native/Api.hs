@@ -2,10 +2,14 @@
 
 module Chiasma.Native.Api where
 
+import Chiasma.Api.Class (TmuxApi(..))
+import Chiasma.Data.Cmd (Cmd(..), CmdArgs(..), CmdName(..))
+import Chiasma.Data.Conduit (createSinkFlush)
 import Chiasma.Data.TmuxError (TmuxError)
 import Conduit (ConduitT, Flush, mapC, (.|))
 import Control.Monad.Catch (MonadMask)
 import qualified Control.Monad.Catch as Catch (bracket)
+import Control.Monad.Catch (try)
 import Data.Conduit.Process.Typed (createSource)
 import qualified Data.Text as Text (unwords)
 import System.Process.Typed (
@@ -21,11 +25,9 @@ import System.Process.Typed (
   )
 import Text.ParserCombinators.Parsec ()
 
-import Chiasma.Api.Class (TmuxApi(..))
-import Chiasma.Data.Cmd (Cmd(..), CmdArgs(..), CmdName(..))
-import Chiasma.Data.Conduit (createSinkFlush)
 import Chiasma.Native.Process (nativeTmuxProcess, socketArg)
 import Chiasma.Native.StreamParse (parseConduit)
+import Control.Monad.Trans.Control (MonadBaseControl)
 
 newtype TmuxNative =
   TmuxNative { tmuxServerSocket :: Maybe FilePath }
@@ -51,9 +53,9 @@ withProcess :: (MonadIO m, MonadMask m)
             => ProcessConfig stdin stdout stderr
             -> (Process stdin stdout stderr -> m a)
             -> m a
-withProcess config = Catch.bracket (startProcess config) stopProcess
+withProcess config = Catch.bracket (startProcess config) (try @_ @SomeException . stopProcess)
 
-instance (MonadIO m, MonadDeepError e TmuxError m, MonadMask m) => TmuxApi m TmuxNative where
+instance (MonadBaseControl IO m, MonadIO m, MonadDeepError e TmuxError m, MonadMask m) => TmuxApi m TmuxNative where
   runCommands (TmuxNative socket) =
     nativeTmuxProcess socket
 
