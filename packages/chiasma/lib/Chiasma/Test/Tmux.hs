@@ -128,7 +128,7 @@ withTestTmux ::
   m a
 withTestTmux tConf thunk tempDir = do
   let socket = tempDir </> "tmux_socket"
-  conf <- fixture "u" "tmux.conf"
+  conf <- fixture "tmux.conf"
   terminal <- liftIO unsafeTerminal
   pc <- liftIO $ testTmuxProcessConfig tConf socket conf terminal
   withProcessWait pc $ runAndKillTmux thunk (TmuxNative $ Just socket)
