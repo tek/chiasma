@@ -8,7 +8,7 @@ import qualified Chiasma.Monad.Tmux as Tmux (read, write)
 import Chiasma.Native.Api (TmuxNative(..))
 import Hedgehog ((===))
 
-import Chiasma.Test.Tmux (tmuxSpec)
+import Chiasma.Test.Tmux (tmuxTest)
 import Chiasma.Test.Util (UnitTest)
 
 prog :: TmuxProg ([Pane], [Pane], [Window])
@@ -31,7 +31,7 @@ runProg api = runExceptT $ runTmux api prog
 
 test_individual :: UnitTest
 test_individual = do
-  result :: Either TmuxError ([Pane], [Pane], [Window]) <- liftIO (tmuxSpec runProg)
+  result :: Either TmuxError ([Pane], [Pane], [Window]) <- liftIO (tmuxTest runProg)
   Right ([p0], [p0, p1, p2], [w0, w1, w2]) === result
   where
     p0 = p 0

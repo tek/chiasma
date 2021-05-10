@@ -154,27 +154,27 @@ withSystemTempDir f = do
   targetDir <- liftIO getCanonicalTemporaryDirectory
   withTempDir targetDir f
 
-tmuxSpec' ::
+tmuxTest' ::
   MonadIO m =>
   MonadBaseControl IO m =>
   TmuxTestConf ->
   (TmuxNative -> m a) ->
   m a
-tmuxSpec' conf thunk = do
+tmuxTest' conf thunk = do
   withSystemTempDir (withTestTmux conf thunk)
 
-tmuxSpec ::
+tmuxTest ::
   MonadIO m =>
   MonadBaseControl IO m =>
   (TmuxNative -> m a) ->
   m a
-tmuxSpec =
-  tmuxSpec' def { ttcGui = False }
+tmuxTest =
+  tmuxTest' def { ttcGui = False }
 
-tmuxGuiSpec ::
+tmuxGuiTest ::
   MonadIO m =>
   MonadBaseControl IO m =>
   (TmuxNative -> m a) ->
   m a
-tmuxGuiSpec =
-  tmuxSpec' def
+tmuxGuiTest =
+  tmuxTest' def

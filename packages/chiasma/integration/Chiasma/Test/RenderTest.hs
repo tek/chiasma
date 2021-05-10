@@ -23,7 +23,7 @@ import Test.Tasty (TestTree, testGroup)
 import UnliftIO (throwString)
 import UnliftIO.Directory (getCurrentDirectory)
 
-import Chiasma.Test.Tmux (sleep, tmuxSpec)
+import Chiasma.Test.Tmux (sleep, tmuxTest)
 import Chiasma.Test.Util (UnitTest, integrationTest)
 
 id0, id1, id2, id3 :: Ident
@@ -61,9 +61,9 @@ runRender tree api = do
   ps <- runExceptT @TmuxError $ runTmux api panesAs
   return (sortOn viewIdent vs2, sortOn paneLeft . drop 1 <$> ps)
 
-renderSpec :: ViewTree -> [PaneDetail] -> UnitTest
-renderSpec tree target = do
-  (_, pse) <- liftIO $ tmuxSpec $ runRender tree
+renderTest :: ViewTree -> [PaneDetail] -> UnitTest
+renderTest tree target = do
+  (_, pse) <- liftIO $ tmuxTest $ runRender tree
   ps <- evalEither pse
   target === ps
 
@@ -85,7 +85,7 @@ imbalancedTarget =
 
 test_imbalanced :: UnitTest
 test_imbalanced =
-  renderSpec treeImbalanced imbalancedTarget
+  renderTest treeImbalanced imbalancedTarget
 
 treeNested :: ViewTree
 treeNested =
@@ -113,7 +113,7 @@ nestedTarget =
 
 test_nested :: UnitTest
 test_nested =
-  renderSpec treeNested nestedTarget
+  renderTest treeNested nestedTarget
 
 treeTwoLayouts :: ViewTree
 treeTwoLayouts =
@@ -139,7 +139,7 @@ twoLayoutsTarget =
 
 test_twoLayouts :: UnitTest
 test_twoLayouts =
-  renderSpec treeTwoLayouts twoLayoutsTarget
+  renderTest treeTwoLayouts twoLayoutsTarget
 
 treePosition :: ViewTree
 treePosition =
@@ -164,7 +164,7 @@ positionTarget =
 
 test_position :: UnitTest
 test_position =
-  renderSpec treePosition positionTarget
+  renderTest treePosition positionTarget
 
 treeSuccessiveOpen :: ViewTree
 treeSuccessiveOpen =
@@ -191,7 +191,7 @@ successiveOpenTarget =
 
 test_successiveOpen :: UnitTest
 test_successiveOpen = do
-  ps <- liftIO $ tmuxSpec \ api -> do
+  ps <- liftIO $ tmuxTest \ api -> do
     vs1 <- safeRender views treeSuccessiveOpen api
     sleep 0.2
     vs2 <- safeRender vs1 tree1 api

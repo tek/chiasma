@@ -19,7 +19,7 @@ import Data.Conduit.Process.Typed (
 import qualified Data.Text as Text (splitOn)
 import Hedgehog (assert)
 
-import Chiasma.Test.Tmux (tmuxSpec)
+import Chiasma.Test.Tmux (tmuxTest)
 import Chiasma.Test.Util (UnitTest)
 
 run :: Process (ConduitT (Flush ByteString) Void IO ()) (ConduitT () ByteString IO ()) () -> IO [Text]
@@ -32,7 +32,7 @@ run prc = do
 
 test_process :: UnitTest
 test_process = do
-  out <- liftIO $ tmuxSpec $ \(TmuxNative sock) -> do
+  out <- liftIO $ tmuxTest $ \(TmuxNative sock) -> do
     withProcessTerm (pc (args sock)) run
   assert (length out > 3)
     where

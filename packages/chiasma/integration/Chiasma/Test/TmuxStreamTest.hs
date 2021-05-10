@@ -10,7 +10,7 @@ import Chiasma.Native.Api (TmuxNative(..))
 import Control.Monad.Free.Class (MonadFree)
 import Hedgehog ((===))
 
-import Chiasma.Test.Tmux (tmuxSpec)
+import Chiasma.Test.Tmux (tmuxTest)
 import Chiasma.Test.Util (UnitTest)
 
 prog :: MonadFree TmuxThunk m => m ([Pane], [Pane], [Window])
@@ -33,7 +33,7 @@ runProg api = runExceptT @TmuxError $ runTmux api prog
 
 test_streamed :: UnitTest
 test_streamed = do
-  result <- liftIO (tmuxSpec runProg)
+  result <- liftIO (tmuxTest runProg)
   (Right ([p0], [p0, p1, p2], [w0, w1, w2])) === result
   where
     p0 = p 0
