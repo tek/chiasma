@@ -1,5 +1,5 @@
 {
-  description = "tmux api";
+  description = "Tmux Client";
 
   inputs.hix.url = github:tek/hix;
 
