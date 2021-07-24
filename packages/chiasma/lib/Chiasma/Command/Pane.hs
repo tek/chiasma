@@ -118,7 +118,7 @@ capturePane ::
   PaneId ->
   m [Text]
 capturePane paneId = do
-  lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId <> ["-p", "-e"])
+  lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId <> ["-p", "-e", "-J"])
   return $ dropWhileEnd ("" ==) lines'
 
 panePid ::
