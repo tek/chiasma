@@ -7,6 +7,7 @@ module Chiasma.Native.StreamParse(
 import Conduit (ConduitT, mapC, (.|))
 import Control.Monad.Catch (MonadThrow)
 import Data.Attoparsec.ByteString (Parser)
+import Data.ByteString.Internal (packChars)
 import Data.Conduit.Attoparsec (conduitParser)
 import qualified Data.Text as T (pack)
 import Text.Parser.Char (CharParsing, anyChar, newline, string)
@@ -26,7 +27,7 @@ data TmuxOutputBlock =
   deriving (Eq, Show)
 
 tillEol :: (Alternative m, CharParsing m) => m Text
-tillEol = T.pack <$> manyTill anyChar newline
+tillEol = decodeUtf8 . packChars <$> manyTill anyChar newline
 
 beginLine :: (Alternative m, CharParsing m, Monad m) => m ()
 beginLine = void $ string "%begin" >> tillEol
