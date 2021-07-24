@@ -47,7 +47,7 @@ tmuxProcessConfig sock =
     cons =
       setStdin createSinkFlush . setStdout createSource . proc "tmux"
     args =
-      toString <$> (socketArg sock ++ ["-C", "attach"])
+      toString <$> (socketArg sock ++ ["-C", "-u", "attach"])
 
 withProcess :: (MonadIO m, MonadMask m)
             => ProcessConfig stdin stdout stderr
