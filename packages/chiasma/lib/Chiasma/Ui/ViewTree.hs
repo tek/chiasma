@@ -1,11 +1,5 @@
 module Chiasma.Ui.ViewTree where
 
-import Chiasma.Data.Ident (Ident)
-import Chiasma.Lens.Tree (
-  LeafIndexTree(..),
-  _litTree,
-  leafDataTraversal,
-  )
 import Control.Lens (
   Traversal,
   Traversal',
@@ -18,24 +12,34 @@ import Control.Lens (
   over,
   transformM,
   )
-import Control.Monad.Error.Class (throwError)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT)
 import Control.Monad.Trans.Writer (WriterT, runWriterT, tell)
 import Data.Composition ((.:))
+import Data.Semigroup (Sum (Sum))
+import Exon (exon)
+import Prelude hiding (tell)
 
-import Chiasma.Ui.Data.TreeModError (TreeModError(PaneMissing, AmbiguousPane, LayoutMissing, AmbiguousLayout))
+import Chiasma.Data.Ident (Ident)
+import Chiasma.Lens.Tree (
+  LeafIndexTree (..),
+  _litTree,
+  leafDataTraversal,
+  )
+import Chiasma.Ui.Data.TreeModError (TreeModError (AmbiguousLayout, AmbiguousPane, LayoutMissing, PaneMissing))
 import Chiasma.Ui.Data.View (
-  Pane(Pane),
+  Pane (Pane),
   PaneView,
-  Tree(Tree),
-  TreeSub(TreeNode, TreeLeaf),
-  View(View),
+  Tree (Tree),
+  TreeSub (TreeLeaf, TreeNode),
+  View (View),
   ViewTree,
   ViewTreeSub,
   )
 import qualified Chiasma.Ui.Data.View as Pane (open)
 import qualified Chiasma.Ui.Data.View as TreeSub (leafData)
 import qualified Chiasma.Ui.Data.View as View (extra)
-import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import Chiasma.Ui.Data.ViewState (ViewState (ViewState))
 import Chiasma.Ui.Pane (paneSetOpen, paneToggleOpen)
 
 modCounted :: Monad m => (a -> m a) -> a -> WriterT (Sum Int) m a
@@ -55,9 +59,9 @@ modifyTreeUniqueM f ident tree = do
   let st = (transformM $ mapMOf (ix ident) (modCounted f)) tree
   (result, Sum count) <- lift $ runWriterT st
   case count of
-    1 -> return result
-    0 -> throwError $ LayoutMissing ident
-    n -> throwError $ AmbiguousLayout ident n
+    1 -> pure result
+    0 -> ExceptT (pure (Left (LayoutMissing ident)))
+    n -> ExceptT (pure (Left (AmbiguousLayout ident n)))
 
 toggleLayout1 :: Ident -> ViewTree -> Either TreeModError ViewTree
 toggleLayout1 ident tree =
@@ -68,9 +72,9 @@ modifyPaneUniqueM f ident tree = do
   let st = (transformM $ mapMOf (ix ident) (modCounted f)) (LeafIndexTree tree)
   (result, Sum count) <- lift $ runWriterT st
   case count of
-    1 -> return $ litTree result
-    0 -> throwError $ PaneMissing ident
-    n -> throwError $ AmbiguousPane ident n
+    1 -> pure $ litTree result
+    0 -> ExceptT (pure (Left (PaneMissing ident)))
+    n -> ExceptT (pure (Left (AmbiguousPane ident n)))
 
 modifyPane :: (PaneView -> PaneView) -> Ident -> ViewTree -> Either TreeModError ViewTree
 modifyPane modification ident tree =
@@ -115,7 +119,7 @@ data ToggleStatus =
   Multiple Int
   |
   Consistent
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 instance Semigroup ToggleStatus where
   Pristine <> a = a
@@ -134,7 +138,7 @@ data ToggleResult a =
   NotFound
   |
   Ambiguous Int
-  deriving (Eq, Show, Functor)
+  deriving stock (Eq, Show, Functor)
 
 instance Semigroup (ToggleResult a) where
   NotFound <> a = a
@@ -157,6 +161,12 @@ instance Monad ToggleResult where
     Success a >>= f = f a
     NotFound >>= _ = NotFound
     Ambiguous n >>= _ = Ambiguous n
+
+toggleResultEither :: ToggleResult a -> Either Text a
+toggleResultEither = \case
+  Success a -> Right a
+  NotFound -> Left "not found"
+  Ambiguous n -> Left [exon|ambiguous: #{show n}|]
 
 openPinnedSubs :: ToggleStatus -> ViewTree -> (ToggleStatus, ViewTree)
 openPinnedSubs Pristine t =

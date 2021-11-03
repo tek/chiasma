@@ -3,8 +3,11 @@ cradle:
     - path: "./packages/chiasma/lib"
       component: "lib:chiasma"
 
-    - path: "./packages/chiasma/test"
-      component: "chiasma:test:chiasma-unit"
+    - path: "./packages/test/lib"
+      component: "lib:chiasma-test"
 
-    - path: "./packages/chiasma/integration"
-      component: "chiasma:test:chiasma-integration"
+    - path: "./packages/test/test"
+      component: "chiasma-test:test:chiasma-unit"
+
+    - path: "./packages/test/integration"
+      component: "chiasma-test:test:chiasma-integration"

@@ -1,58 +1,48 @@
-{-# LANGUAGE TypeOperators #-}
-
 module Chiasma.Codec.Decode where
 
 import qualified Data.Text as Text (null, unpack)
 import Data.Text.Read (decimal)
-import GHC.Generics (K1(..), M1(..), (:*:)(..))
+import GHC.Generics (K1 (..), M1 (..), (:*:) (..))
 import Prelude hiding (many)
-import Text.Parsec.Char (char, digit)
-import Text.ParserCombinators.Parsec (
-  GenParser,
-  ParseError,
-  many,
-  parse,
+import Text.Parsec.Char (digit, string)
+import Text.ParserCombinators.Parsec (GenParser, many, parse)
+
+import Chiasma.Data.DecodeError (DecodeFailure (BoolParsingFailure, IntParsingFailure, ParseFailure, TooFewFields))
+import Chiasma.Data.TmuxId (
+  ClientId (ClientId),
+  PaneId (..),
+  SessionId (..),
+  WindowId (..),
+  panePrefix,
+  sessionPrefix,
+  windowPrefix,
   )
 
-import Chiasma.Data.TmuxId (PaneId(..), SessionId(..), WindowId(..), panePrefix, sessionPrefix, windowPrefix)
-
-data TmuxDecodeError =
-  ParseFailure Text ParseError
-  |
-  IntParsingFailure Text
-  |
-  BoolParsingFailure Text
-  |
-  TooFewFields
-  |
-  TooManyFields [Text]
-  deriving (Eq, Show)
-
 class TmuxPrimDecode a where
-  primDecode :: Text -> Either TmuxDecodeError a
+  primDecode :: Text -> Either DecodeFailure a
 
 class TmuxDataDecode f where
-  decode' :: [Text] -> Either TmuxDecodeError ([Text], f a)
+  decode' :: [Text] -> Either DecodeFailure ([Text], f a)
 
 instance (TmuxDataDecode f, TmuxDataDecode g) => TmuxDataDecode (f :*: g) where
   decode' fields = do
     (rest, left) <- decode' fields
     (rest1, right) <- decode' rest
-    return (rest1, left :*: right)
+    pure (rest1, left :*: right)
 
 instance TmuxDataDecode f => (TmuxDataDecode (M1 i c f)) where
   decode' fields =
     second M1 <$> decode' fields
 
 instance TmuxPrimDecode a => (TmuxDataDecode (K1 c a)) where
-  decode' (a:as) = do
+  decode' (a:as') = do
     prim <- primDecode a
-    return (as, K1 prim)
+    pure (as', K1 prim)
   decode' [] = Left TooFewFields
 
-readInt :: Text -> Text -> Either TmuxDecodeError Int
-readInt input num =
-  first (const $ IntParsingFailure input) parsed
+readInt :: Text -> Text -> Either DecodeFailure Int
+readInt text num =
+  first (const $ IntParsingFailure text) parsed
   where
     parsed = do
       (num', rest) <- decimal num
@@ -72,15 +62,18 @@ instance TmuxPrimDecode Bool where
       convert _ =
         Left (BoolParsingFailure $ "got non-bool `" <> show field <> "`")
 
-idParser :: Char -> GenParser Char st Text
+idParser :: Text -> GenParser Char st Text
 idParser sym =
-  char sym *> (toText <$> many digit)
+  string (toString sym) *> (toText <$> many digit)
 
-parseId :: (Int -> a) -> Char -> Text -> Either TmuxDecodeError a
-parseId cons sym input = do
-  num <- first (ParseFailure "id") $ parse (idParser sym) "none" (Text.unpack input)
-  i <- readInt input num
-  return $ cons i
+parseId :: (Int -> a) -> Text -> Text -> Either DecodeFailure a
+parseId cons sym text = do
+  num <- first (ParseFailure "id") $ parse (idParser sym) "none" (Text.unpack text)
+  i <- readInt text num
+  pure (cons i)
+
+instance TmuxPrimDecode ClientId where
+  primDecode = pure . ClientId
 
 instance TmuxPrimDecode SessionId where
   primDecode = parseId SessionId sessionPrefix

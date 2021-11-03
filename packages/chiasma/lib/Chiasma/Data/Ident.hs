@@ -1,10 +1,10 @@
 module Chiasma.Data.Ident where
 
-import Data.Aeson (FromJSON, ToJSON(toEncoding), defaultOptions, genericToEncoding)
 import Data.Data (Data)
-import Data.Text.Prettyprint.Doc (Pretty(..))
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID (fromText, toText)
+import Polysemy.Time.Json (json)
+import Prettyprinter (Pretty (..))
 import System.Random (randomIO)
 import qualified Text.Show as Show
 
@@ -12,7 +12,9 @@ data Ident =
   Str Text
   |
   Uuid UUID
-  deriving (Eq, Generic, Data, NFData, Ord)
+  deriving stock (Eq, Ord, Generic, Data)
+
+json ''Ident
 
 instance Show Ident where
   show = toString . identText
@@ -32,11 +34,6 @@ instance Default Ident where
 
 instance IsString Ident where
   fromString = Str . toText
-
-instance FromJSON Ident where
-
-instance ToJSON Ident where
-  toEncoding = genericToEncoding defaultOptions
 
 sameIdent ::
   Identifiable a =>

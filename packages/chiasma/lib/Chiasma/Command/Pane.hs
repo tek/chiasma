@@ -1,19 +1,31 @@
 module Chiasma.Command.Pane where
 
-import Control.Monad.Free.Class (MonadFree)
-import Data.List (dropWhileEnd)
-import qualified Data.Text as Text (intercalate, singleton, splitOn)
+import Prelude hiding (output)
 
-import Chiasma.Codec (TmuxCodec)
-import qualified Chiasma.Codec.Data as Codec (Pane)
-import qualified Chiasma.Codec.Data.PaneCoords as Codec (PaneCoords)
+import qualified Chiasma.Codec.Data.Pane as Codec (Pane)
 import qualified Chiasma.Codec.Data.PaneMode as Codec (PaneMode (PaneMode))
-import qualified Chiasma.Codec.Data.PanePid as Codec (PanePid)
+import Chiasma.Data.Axis (Axis)
+import Chiasma.Data.CapturePaneParams (CaptureOutput (Stdout), escapeSequences, output, target)
+import Chiasma.Data.CopyModeParams (target)
+import Chiasma.Data.KillPaneParams (target)
+import qualified Chiasma.Data.PaneSelection as PaneSelection
+import qualified Chiasma.Data.Panes as Panes
+import Chiasma.Data.Panes (TmuxPanes)
+import Chiasma.Data.PipePaneParams (command, target)
+import Chiasma.Data.ResizePaneParams (ResizeAbsolute (ResizeAbsolute), absolute, target)
+import Chiasma.Data.SelectParams (target)
+import qualified Chiasma.Data.SendKeysParams as SendKeysParams
+import Chiasma.Data.SendKeysParams (Key, keys, target)
+import Chiasma.Data.SplitParams (JoinPaneParams (axis, detach, source, target))
+import qualified Chiasma.Data.Target as Target
+import Chiasma.Data.TmuxCommand (
+  TmuxCommand (CapturePane, CopyMode, KillPane, MovePane, PipePane, ResizePane, SelectPane, SendKeys),
+  )
 import Chiasma.Data.TmuxId (HasPaneId, PaneId, WindowId, formatId)
 import qualified Chiasma.Data.TmuxId as HasPaneId (paneId)
-import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.View (View (View))
-import qualified Chiasma.Monad.Tmux as Tmux (read, readRaw, unsafeReadFirst, write)
+import qualified Chiasma.Effect.TmuxApi as Tmux
+import Chiasma.Effect.TmuxApi (Tmux)
 
 paneTarget :: PaneId -> [Text]
 paneTarget paneId =
@@ -22,153 +34,136 @@ paneTarget paneId =
 sameId :: HasPaneId a => PaneId -> a -> Bool
 sameId target candidate = target == HasPaneId.paneId candidate
 
-panesAs :: (MonadFree TmuxThunk m, TmuxCodec a) => m [a]
-panesAs =
-  Tmux.read "list-panes" ["-a"]
-
-panes :: MonadFree TmuxThunk m => m [Codec.Pane]
+panes ::
+  Member (TmuxPanes a) r =>
+  Sem r [a]
 panes =
-  panesAs
+  Tmux.send (Panes.List PaneSelection.All)
 
-pane :: (MonadFree TmuxThunk m, TmuxCodec a, HasPaneId a) => PaneId -> m (Maybe a)
+pane ::
+  Member (TmuxPanes a) r =>
+  HasPaneId a =>
+  PaneId ->
+  Sem r (Maybe a)
 pane paneId =
-  find (sameId paneId) <$> Tmux.read "list-panes" ["-t", formatId paneId]
+  find (sameId paneId) <$> Tmux.send (Panes.List (PaneSelection.InWindow (Target.Pane paneId)))
 
-windowPanesAs :: (MonadFree TmuxThunk m, TmuxCodec a) => WindowId -> m [a]
-windowPanesAs windowId =
-  Tmux.read "list-panes" ["-t", formatId windowId]
+windowPanes ::
+  Member (TmuxPanes a) r =>
+  WindowId ->
+  Sem r [a]
+windowPanes windowId =
+  Tmux.send (Panes.List (PaneSelection.InWindow (Target.Window windowId)))
 
-windowPanes :: MonadFree TmuxThunk m => WindowId -> m [Codec.Pane]
-windowPanes =
-  windowPanesAs
-
-firstWindowPane :: MonadFree TmuxThunk m => WindowId -> m Codec.Pane
+firstWindowPane ::
+  Member (TmuxPanes a) r =>
+  WindowId ->
+  Sem r a
 firstWindowPane windowId =
-  Tmux.unsafeReadFirst "list-panes" ["-t", formatId windowId]
+  Tmux.send (Panes.First (PaneSelection.InWindow (Target.Window windowId)))
 
-closePane :: MonadFree TmuxThunk m => PaneId -> m ()
+closePane ::
+  Member Tmux r =>
+  PaneId ->
+  Sem r ()
 closePane paneId =
-  Tmux.write "kill-pane" (paneTarget paneId)
+  Tmux.send (KillPane def { target = Target.Pane paneId })
 
 isPaneIdOpen ::
-  MonadFree TmuxThunk m =>
+  Member (TmuxPanes Codec.Pane) r =>
   PaneId ->
-  m Bool
+  Sem r Bool
 isPaneIdOpen paneId =
   any (sameId paneId) <$> panes
 
 isPaneOpen ::
-  MonadFree TmuxThunk m =>
+  Member (TmuxPanes Codec.Pane) r =>
   View PaneId ->
-  m Bool
+  Sem r Bool
 isPaneOpen (View _ (Just paneId)) =
   isPaneIdOpen paneId
-isPaneOpen _ = return False
+isPaneOpen _ =
+  pure False
 
 movePane ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
   PaneId ->
   PaneId ->
-  Bool ->
-  m ()
-movePane paneId refId vertical =
-  Tmux.write "move-pane" ["-d", "-s", formatId paneId, "-t", formatId refId, direction]
-  where
-    direction = if vertical then "-v" else "-h"
+  Axis ->
+  Sem r ()
+movePane paneId refId axis =
+  Tmux.send (MovePane def {
+    detach = True,
+    source = Just (Target.Pane paneId),
+    target = Target.Pane refId,
+    axis = Just axis
+  })
 
 resizePane ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
   PaneId ->
-  Bool ->
+  Axis ->
   Int ->
-  m ()
-resizePane paneId vertical size =
-  Tmux.write "resize-pane" ["-t", formatId paneId, direction, show size]
-  where
-    direction = if vertical then "-y" else "-x"
-
-formatLine :: Text -> [Text]
-formatLine line =
-  ["\"" <> replace "\"" "\\\"" line <> Text.singleton '"', "enter"]
-  where
-    replace from to =
-      Text.intercalate to . Text.splitOn from
+  Sem r ()
+resizePane paneId axis size =
+  Tmux.send (ResizePane def {
+    target = Target.Pane paneId,
+    absolute = Just (ResizeAbsolute axis size)
+  })
 
 sendKeys ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
   PaneId ->
-  [Text] ->
-  [Text] ->
-  m ()
-sendKeys paneId args lines' =
-  traverse_ send formatted
-  where
-    formatted = lines' >>= formatLine
-    send line = Tmux.write "send-keys" (args <> paneTarget paneId <> [line])
+  [Key] ->
+  Sem r ()
+sendKeys paneId lines' =
+  for_ lines' \ line ->
+    Tmux.send (SendKeys def { target = Target.Pane paneId, keys = [line] })
 
 pipePane ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
   PaneId ->
   Text ->
-  m ()
+  Sem r ()
 pipePane paneId cmd =
-  Tmux.write "pipe-pane" (paneTarget paneId <> [cmd])
+  Tmux.schedule (PipePane def { target = Target.Pane paneId, command = Just cmd })
 
 capturePane ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
   PaneId ->
-  m [Text]
-capturePane paneId = do
-  lines' <- Tmux.readRaw "capture-pane" (paneTarget paneId <> ["-p", "-e", "-J"])
-  return $ dropWhileEnd ("" ==) lines'
-
-panePid ::
-  MonadFree TmuxThunk m =>
-  PaneId ->
-  m (Maybe Codec.PanePid)
-panePid =
-  pane
-
-panePids ::
-  MonadFree TmuxThunk m =>
-  m [Codec.PanePid]
-panePids =
-  panesAs
-
-paneCoords ::
-  MonadFree TmuxThunk m =>
-  PaneId ->
-  m (Maybe Codec.PaneCoords)
-paneCoords =
-  pane
+  Sem r [Text]
+capturePane paneId =
+  Tmux.send (CapturePane def { target = Target.Pane paneId, escapeSequences = True, output = Just Stdout})
 
 selectPane ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
   PaneId ->
-  m ()
+  Sem r ()
 selectPane paneId =
-  Tmux.write "select-pane" (paneTarget paneId)
+  Tmux.send (SelectPane def { target = Target.Pane paneId })
 
 copyMode ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
   PaneId ->
-  m ()
-copyMode =
-  Tmux.write "copy-mode" . paneTarget
+  Sem r ()
+copyMode paneId =
+  Tmux.send (CopyMode def { target = Target.Pane paneId })
 
 paneMode ::
-  MonadFree TmuxThunk m =>
+  Member (TmuxPanes Codec.PaneMode) r =>
   PaneId ->
-  m (Maybe Codec.PaneMode)
+  Sem r (Maybe Codec.PaneMode)
 paneMode =
   pane
 
 quitCopyMode ::
-  MonadFree TmuxThunk m =>
+  Member Tmux r =>
+  Member (TmuxPanes Codec.PaneMode) r =>
   PaneId ->
-  m ()
+  Sem r ()
 quitCopyMode paneId =
   traverse_ check =<< pane paneId
   where
     check (Codec.PaneMode _ mode) =
-      when (mode == "copy-mode") (sendKeys paneId ["-X"] ["cancel"])
+      when (mode == "copy-mode") do
+        Tmux.send (SendKeys def { target = Target.Pane paneId, SendKeysParams.copyMode = True, keys = ["cancel"] })

@@ -9,7 +9,7 @@ data View a =
     viewIdent :: Ident,
     viewId :: Maybe a
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 makeClassy_ ''View
 

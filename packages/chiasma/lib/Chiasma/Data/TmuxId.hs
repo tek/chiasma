@@ -1,35 +1,43 @@
 module Chiasma.Data.TmuxId where
 
-import Data.Text.Prettyprint.Doc (Pretty(..))
+import Prettyprinter (Pretty (..))
 
-sessionPrefix :: Char
-sessionPrefix = '$'
+newtype ClientId =
+  ClientId { unClientId :: Text }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString)
+
+instance Pretty ClientId where
+  pretty = pretty . unClientId
+
+sessionPrefix :: Text
+sessionPrefix = "$"
 
 newtype SessionId =
   SessionId Int
-  deriving (Eq, Show, Generic)
+  deriving stock (Eq, Show, Generic)
   deriving newtype (Num, Ord)
 
 instance Pretty SessionId where
   pretty = pretty . formatId
 
-windowPrefix :: Char
-windowPrefix = '@'
+windowPrefix :: Text
+windowPrefix = "@"
 
 newtype WindowId =
   WindowId Int
-  deriving (Eq, Show, Generic)
+  deriving stock (Eq, Show, Generic)
   deriving newtype (Num, Ord)
 
 instance Pretty WindowId where
   pretty = pretty . formatId
 
-panePrefix :: Char
-panePrefix = '%'
+panePrefix :: Text
+panePrefix = "%"
 
 newtype PaneId =
   PaneId Int
-  deriving (Eq, Show, Generic)
+  deriving stock (Eq, Show, Generic)
   deriving newtype (Num, Ord)
 
 instance Pretty PaneId where
@@ -39,7 +47,9 @@ class HasPaneId a where
   paneId :: a -> PaneId
 
 newtype TmuxIdPrefix a =
-  TmuxIdPrefix Char
+  TmuxIdPrefix { unTmuxIdPrefix :: Text }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString)
 
 class TmuxId a where
   prefix :: TmuxIdPrefix a
@@ -47,7 +57,7 @@ class TmuxId a where
 
   formatId :: a -> Text
   formatId a =
-    toText (p : show (number a))
+    p <> show (number a)
     where
       (TmuxIdPrefix p) = prefix @a
 

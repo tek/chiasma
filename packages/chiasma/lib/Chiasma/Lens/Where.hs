@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Chiasma.Lens.Where(
   where1,
 ) where

@@ -3,11 +3,11 @@ module Chiasma.Ui.ShowTree where
 import Chiasma.Data.Ident (identText)
 import Chiasma.Ui.Data.View (
   LayoutView,
-  Pane(Pane),
+  Pane (Pane),
   PaneView,
-  Tree(Tree),
-  TreeSub(TreeNode, TreeLeaf),
-  View(View),
+  Tree (Tree),
+  TreeSub (TreeLeaf, TreeNode),
+  View (View),
   ViewTree,
   )
 
@@ -38,4 +38,8 @@ showViewTree :: ViewTree -> [Text]
 showViewTree = showTree . formatViewTree
 
 printViewTree :: MonadIO m => ViewTree -> m ()
-printViewTree = liftIO . traverse_ putStrLn . fmap toString . showViewTree
+printViewTree =
+  liftIO .
+  traverse_ putStrLn .
+  fmap toString .
+  showViewTree

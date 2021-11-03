@@ -1,39 +1,21 @@
 module Chiasma.Data.TmuxError where
 
-import Chiasma.Codec.Decode (TmuxDecodeError)
-import Text.ParserCombinators.Parsec (ParseError)
+import Polysemy.Process.Data.ProcessError (ProcessError)
 
-import Chiasma.Data.Cmd (Cmds(..))
+import Chiasma.Data.CodecError (CodecError (CodecError))
+import Chiasma.Data.DecodeError (DecodeError)
+import Chiasma.Data.TmuxRequest (TmuxRequest)
 
 data TmuxError =
-  ProcessFailed {
-    processFailedCmds :: Cmds,
-    processFailedReason :: Text
-    }
+  ProcessFailed ProcessError
   |
-  OutputParsingFailed {
-    parsingFailedCmds :: Cmds,
-    parsingFailedOutput :: [Text],
-    parsingFailedError :: ParseError
-  }
+  RequestFailed TmuxRequest [Text]
   |
-  NoOutput Cmds
+  DecodeFailed TmuxRequest DecodeError
   |
-  DecodingFailed {
-    decodingFailedCmds :: Cmds,
-    decodingFailedOutput :: Text,
-    decodingFailedError :: TmuxDecodeError
-  }
-  |
-  InvalidOutput {
-    invalidOutputReason :: Text,
-    invalidOutputCommand :: Text
-  }
-  |
-  CommandFailed {
-    commandFailedCmds :: Cmds,
-    commandFailedError :: [Text]
-  }
-  deriving (Eq, Show)
+  NoClients
+  deriving stock (Eq, Show)
 
-deepPrisms ''TmuxError
+codec :: CodecError -> TmuxError
+codec (CodecError req err) =
+  DecodeFailed req err

@@ -1,7 +1,7 @@
 module Chiasma.Native.Parse where
 
 import qualified Data.Text as T (pack)
-import Prelude hiding (many)
+import Prelude hiding (many, try)
 import Text.Parsec (
   ParseError,
   many,

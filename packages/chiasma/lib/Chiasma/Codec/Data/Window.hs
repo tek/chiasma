@@ -9,4 +9,5 @@ data Window =
     windowWidth :: Int,
     windowHeight :: Int
   }
-  deriving (Eq, Show, Generic, TmuxCodec)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (TmuxCodec)

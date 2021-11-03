@@ -1,23 +1,24 @@
 module Chiasma.Ui.Data.View where
 
-import Chiasma.Data.Ident (Ident, Identifiable(..))
-import Control.Lens (Index, IxValue, Ixed(ix), makeClassy_)
+import Control.Lens (Index, IxValue, Ixed (ix), makeClassy, makeClassy_)
 import Control.Lens.Plated (Plated)
+import Data.Bifoldable (Bifoldable (bifoldMap))
 import Data.Data (Data)
-import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, nest, space, vsep, (<+>))
-import Prelude hiding (state)
+import Prettyprinter (Doc, Pretty (..), emptyDoc, nest, space, vsep, (<+>))
 
+import Chiasma.Data.Axis (Axis (Horizontal, Vertical))
+import Chiasma.Data.Ident (Ident, Identifiable (..))
 import Chiasma.Ui.Data.ViewGeometry (ViewGeometry)
-import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import Chiasma.Ui.Data.ViewState (ViewState (ViewState))
 import Chiasma.Ui.Lens.Ident (matchIdentP)
 
 data Pane =
   Pane {
     _open :: Bool,
     _pin :: Bool,
-    _cwd :: Maybe FilePath
+    _cwd :: Maybe Text
   }
-  deriving (Eq, Show, Data, Generic)
+  deriving stock (Eq, Show, Data, Generic)
 
 makeClassy ''Pane
 
@@ -26,14 +27,12 @@ instance Default Pane where
 
 newtype Layout =
   Layout {
-    vertical :: Bool
+    axis :: Axis
   }
-  deriving (Eq, Show, Data, Generic)
+  deriving stock (Eq, Show, Data, Generic)
+  deriving newtype (Default)
 
 makeClassy_ ''Layout
-
-instance Default Layout where
-  def = Layout True
 
 data View a =
   View {
@@ -42,7 +41,7 @@ data View a =
     _geometry :: ViewGeometry,
     _extra :: a
   }
-  deriving (Eq, Show, Data, Generic)
+  deriving stock (Eq, Show, Data, Generic)
 
 makeClassy ''View
 
@@ -53,8 +52,11 @@ type PaneView = View Pane
 type LayoutView = View Layout
 
 instance Pretty Layout where
-  pretty (Layout vertical) =
-    if vertical then "▤" else "▥"
+  pretty = \case
+    Layout Vertical ->
+      "➡"
+    Layout Horizontal ->
+      "⬇"
 
 instance Pretty Pane where
   pretty (Pane open' pin' _) =
@@ -75,16 +77,16 @@ instance Pretty (View Layout) where
 consPane :: Ident -> PaneView
 consPane ident' = View ident' (ViewState False) def (Pane False False Nothing)
 
-consLayoutAs :: Bool -> Ident -> LayoutView
-consLayoutAs vert ident' = View ident' (ViewState False) def (Layout vert)
+consLayoutAs :: Axis -> Ident -> LayoutView
+consLayoutAs axis ident' = View ident' (ViewState False) def (Layout axis)
 
 consLayout :: Ident -> LayoutView
 consLayout =
-  consLayoutAs False
+  consLayoutAs Horizontal
 
 consLayoutVertical :: Ident -> LayoutView
 consLayoutVertical =
-  consLayoutAs True
+  consLayoutAs Vertical
 
 instance Identifiable (View a) where
   identify = _ident
@@ -95,7 +97,7 @@ data Tree l p =
     treeData :: l,
     treeSubs :: [TreeSub l p]
     }
-  deriving (Eq, Show, Data, Generic)
+  deriving stock (Eq, Show, Data, Generic)
 
 instance Bifunctor Tree where
   first f (Tree l sub) = Tree (f l) (fmap (first f) sub)
@@ -110,7 +112,7 @@ data TreeSub l p =
   TreeNode { _subTree :: Tree l p }
   |
   TreeLeaf { _leafData :: p }
-  deriving (Eq, Show, Data, Generic)
+  deriving stock (Eq, Show, Data, Generic)
 
 instance Bifunctor TreeSub where
   first f (TreeNode t) = TreeNode (first f t)

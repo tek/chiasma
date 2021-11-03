@@ -1,6 +1,3 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE TypeOperators #-}
-
 module Chiasma.Codec.Query where
 
 import Data.Char (isUpper, toLower)

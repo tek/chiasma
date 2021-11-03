@@ -1,16 +1,16 @@
 module Chiasma.Data.TmuxThunk where
 
-import Chiasma.Codec.Decode (TmuxDecodeError)
-import Chiasma.Data.Cmd (Cmd(..))
-import Chiasma.Data.TmuxError (TmuxError(..))
+-- import Chiasma.Codec.Decode (DecodeFailure)
+-- import Chiasma.Data.Cmd (Cmd(..))
+-- import Chiasma.Data.TmuxError (TmuxError(..))
 
-data TmuxThunk next =
-  ∀ a . Read Cmd (Text -> Either TmuxDecodeError a) ([a] -> next)
-  |
-  Write Cmd (() -> next)
-  |
-  Flush (() -> next)
-  |
-  Failed TmuxError
+-- data TmuxThunk next =
+--   ∀ a . Read Cmd (Text -> Either DecodeFailure a) ([a] -> next)
+--   |
+--   Write Cmd (() -> next)
+--   |
+--   Flush (() -> next)
+--   |
+--   Failed TmuxError
 
-deriving instance Functor TmuxThunk
+-- deriving instance Functor TmuxThunk

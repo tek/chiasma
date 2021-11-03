@@ -1,20 +1,11 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-
 module Chiasma.Lens.Tree where
 
-import Chiasma.Data.Ident (Ident, Identifiable(..))
-import Chiasma.Ui.Data.View
-import Chiasma.Ui.Lens.Ident (matchIdentP)
 import Control.Lens (
   Fold,
   Index,
   IxValue,
-  Ixed(ix),
-  Plated(..),
+  Ixed (ix),
+  Plated (..),
   Traversal',
   cosmos,
   each,
@@ -26,12 +17,24 @@ import Control.Lens (
   )
 import Data.Data (Data)
 import Data.Foldable (foldrM)
+import Prelude hiding (transform)
+
+import Chiasma.Data.Ident (Ident, Identifiable (..))
+import Chiasma.Ui.Data.View (
+  HasTree (_treeSubs),
+  HasTreeSub (leafData),
+  LayoutView,
+  PaneView,
+  Tree (Tree),
+  TreeSub (TreeNode),
+  )
+import Chiasma.Ui.Lens.Ident (matchIdentP)
 
 newtype NodeIndexTree l p =
   NodeIndexTree {
     nitTree :: Tree l p
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 makeClassy_ ''NodeIndexTree
 
@@ -39,7 +42,7 @@ newtype LeafIndexTree l p =
   LeafIndexTree {
     litTree :: Tree l p
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 makeClassy_ ''LeafIndexTree
 
@@ -90,7 +93,7 @@ modifyLeafByIdent ident' f tree' =
 subtreesWithLayout :: ∀ l p m. Monad m => ((l, TreeSub l p) -> m (l, TreeSub l p)) -> Tree l p -> m (Tree l p)
 subtreesWithLayout f (Tree l0 sub) = do
   (newL, newSub) <- foldrM applySub (l0, []) sub
-  return (Tree newL newSub)
+  pure (Tree newL newSub)
   where
     prependSub s (newL, newN) = (newL, newN : s)
     applySub :: TreeSub l p -> (l, [TreeSub l p]) -> m (l, [TreeSub l p])
@@ -103,7 +106,7 @@ subtreesWithLayout f (Tree l0 sub) = do
 subtrees :: ∀ l p m. Monad m => (TreeSub l p -> m (TreeSub l p)) -> Tree l p -> m (Tree l p)
 subtrees f (Tree l sub) = do
   newSub <- mapM applySub sub
-  return (Tree l newSub)
+  pure (Tree l newSub)
   where
     applySub :: TreeSub l p -> m (TreeSub l p)
     applySub (TreeNode t) = do

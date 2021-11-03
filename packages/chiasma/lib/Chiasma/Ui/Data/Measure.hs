@@ -1,8 +1,10 @@
 module Chiasma.Ui.Data.Measure where
 
-import Chiasma.Data.TmuxId (PaneId(..))
-import Data.Text.Prettyprint.Doc (Pretty(..), (<+>))
+import Control.Lens (makeClassy)
+import Prettyprinter (Pretty (..), (<+>))
 
+import Chiasma.Data.Axis (Axis)
+import Chiasma.Data.TmuxId (PaneId (..))
 import Chiasma.Ui.Data.Tree (NNode, NTree)
 
 data MPane =
@@ -11,7 +13,7 @@ data MPane =
     _mainPosition :: Int,
     _offPosition :: Int
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 makeClassy ''MPane
 
@@ -20,9 +22,9 @@ data MLayout =
     _reference :: PaneId,
     _lMainPosition :: Int,
     _lOffPosition :: Int,
-    _vertical :: Bool
+    _axis :: Axis
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 makeClassy ''MLayout
 
@@ -31,7 +33,7 @@ data Measured a =
     _size :: Int,
     _view :: a
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 makeClassy ''Measured
 
@@ -39,9 +41,8 @@ type MeasureTree = NTree (Measured MLayout) (Measured MPane)
 type MeasureTreeSub = NNode (Measured MLayout) (Measured MPane)
 
 instance Pretty MLayout where
-  pretty (MLayout (PaneId refId) mainPos offPos vertical') =
-    "l –" <+> "ref:" <+> pretty refId <+> "pos:" <+> pretty mainPos <+> "(" <> pretty offPos <> ")" <+>
-      if vertical' then "v" else "h"
+  pretty (MLayout (PaneId refId) mainPos offPos axis') =
+    "l –" <+> "ref:" <+> pretty refId <+> "pos:" <+> pretty mainPos <+> "(" <> pretty offPos <> ")" <+> pretty axis'
 
 instance Pretty MPane where
   pretty (MPane (PaneId paneId') mainPos offPos) =

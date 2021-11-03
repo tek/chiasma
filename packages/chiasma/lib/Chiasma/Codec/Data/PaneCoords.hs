@@ -1,9 +1,8 @@
 module Chiasma.Codec.Data.PaneCoords where
 
-import Chiasma.Data.TmuxId (HasPaneId, PaneId, SessionId, WindowId)
-import qualified Chiasma.Data.TmuxId as HasPaneId (HasPaneId(..))
-
 import Chiasma.Codec (TmuxCodec)
+import Chiasma.Data.TmuxId (HasPaneId, PaneId, SessionId, WindowId)
+import qualified Chiasma.Data.TmuxId as HasPaneId (HasPaneId (..))
 
 data PaneCoords =
   PaneCoords {
@@ -11,7 +10,8 @@ data PaneCoords =
     windowId :: WindowId,
     paneId :: PaneId
   }
-  deriving (Eq, Show, Generic, TmuxCodec)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (TmuxCodec)
 
 instance HasPaneId PaneCoords where
   paneId = paneId

@@ -1,0 +1,311 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.34.6.
+--
+-- see: https://github.com/sol/hpack
+
+name:           chiasma-test
+version:        1.0.0.0
+synopsis:       Tmux Client
+description:    See <https://hackage.haskell.org/package/chiasma-test/docs/Chiasma.Test.html>
+category:       Terminal
+homepage:       https://github.com/tek/chiasma#readme
+bug-reports:    https://github.com/tek/chiasma/issues
+author:         Torsten Schmits
+maintainer:     haskell@tryp.io
+copyright:      2022 Torsten Schmits
+license:        BSD-2-Clause-Patent
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    readme.md
+    changelog.md
+
+source-repository head
+  type: git
+  location: https://github.com/tek/chiasma
+
+library
+  exposed-modules:
+      Chiasma.Test.File
+      Chiasma.Test.Screenshot
+      Chiasma.Test.Tmux
+  hs-source-dirs:
+      lib
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DoAndIfThenElse
+      DuplicateRecordFields
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImpredicativeTypes
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedStrings
+      OverloadedLists
+      PackageImports
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      QuasiQuotes
+      RankNTypes
+      RecordWildCards
+      RecursiveDo
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin
+  build-depends:
+      aeson >=1.4 && <1.6
+    , attoparsec >=0.13
+    , base ==4.*
+    , bytestring
+    , chiasma
+    , chronos >=1.1.1
+    , containers
+    , directory
+    , exceptions
+    , exon
+    , filepath
+    , free >=5.1
+    , hedgehog
+    , incipit >=0.1.0.3
+    , lens ==4.*
+    , path
+    , path-io
+    , polysemy
+    , polysemy-chronos
+    , polysemy-conc
+    , polysemy-log
+    , polysemy-plugin
+    , polysemy-process
+    , polysemy-resume
+    , polysemy-test
+    , polysemy-time
+    , prettyprinter >=1.6 && <1.8
+    , prettyprinter-ansi-terminal >=1.1
+    , process >=1.6
+    , random >=1.1
+    , template-haskell
+    , text
+    , transformers
+    , typed-process >=0.2
+    , unix
+  mixins:
+      base hiding (Prelude)
+  if impl(ghc >= 8.10)
+    ghc-options: -Wunused-packages
+  default-language: Haskell2010
+
+test-suite chiasma-integration
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Chiasma.Test.RenderTest
+      Chiasma.Test.TmuxTest
+      Chiasma.Test.Util
+  hs-source-dirs:
+      integration
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DoAndIfThenElse
+      DuplicateRecordFields
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImpredicativeTypes
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedStrings
+      OverloadedLists
+      PackageImports
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      QuasiQuotes
+      RankNTypes
+      RecordWildCards
+      RecursiveDo
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base ==4.*
+    , chiasma
+    , chiasma-test
+    , hedgehog
+    , incipit
+    , path-io
+    , polysemy
+    , polysemy-chronos
+    , polysemy-plugin
+    , polysemy-test
+    , tasty
+    , tasty-hedgehog
+  mixins:
+      base hiding (Prelude)
+  if impl(ghc >= 8.10)
+    ghc-options: -Wunused-packages
+  default-language: Haskell2010
+
+test-suite chiasma-unit
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Chiasma.Test.CodecTest
+      Chiasma.Test.LensTest
+      Chiasma.Test.OutputParseTest
+      Chiasma.Test.PinTest
+      Chiasma.Test.Util
+  hs-source-dirs:
+      test
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DoAndIfThenElse
+      DuplicateRecordFields
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImpredicativeTypes
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedStrings
+      OverloadedLists
+      PackageImports
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      QuasiQuotes
+      RankNTypes
+      RecordWildCards
+      RecursiveDo
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base ==4.*
+    , chiasma
+    , hedgehog
+    , incipit
+    , lens
+    , polysemy
+    , polysemy-plugin
+    , tasty
+    , tasty-hedgehog
+    , text
+  mixins:
+      base hiding (Prelude)
+  if impl(ghc >= 8.10)
+    ghc-options: -Wunused-packages
+  default-language: Haskell2010

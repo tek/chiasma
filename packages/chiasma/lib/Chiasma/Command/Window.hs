@@ -1,53 +1,72 @@
 module Chiasma.Command.Window where
 
-import Control.Monad.Free.Class (MonadFree)
+import Exon (exon)
+import Path (Abs, Dir, Path)
 
-import Chiasma.Codec (TmuxCodec)
-import Chiasma.Codec.Data (Pane, Window(Window))
-import Chiasma.Data.Ident (Ident, identText)
-import Chiasma.Data.TmuxId (SessionId, TmuxId(formatId), WindowId)
-import Chiasma.Data.TmuxThunk (TmuxThunk)
-import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadFirst, unsafeReadOne)
+import Chiasma.Codec.Data.Pane (Pane)
+import Chiasma.Codec.Data.Window (Window (Window))
+import Chiasma.Data.Ident (Ident)
+import Chiasma.Data.LayoutError (LayoutError (LayoutError))
+import qualified Chiasma.Data.Target as Target
+import Chiasma.Data.TmuxCommand (TmuxCommand (ListWindows, NewWindow, SplitWindow))
+import Chiasma.Data.TmuxId (SessionId, WindowId)
+import Chiasma.Data.WindowParams (cwd, detach, name, target)
+import qualified Chiasma.Data.WindowSelection as WindowSelection
+import qualified Chiasma.Effect.TmuxApi as Tmux
+import Chiasma.Effect.TmuxApi (Tmux)
 
 sameId :: WindowId -> Window -> Bool
 sameId target (Window i _ _) = target == i
 
-windows :: MonadFree TmuxThunk m => m [Window]
+windows ::
+  Member Tmux r =>
+  Sem r [Window]
 windows =
-  Tmux.read "list-windows" ["-a"]
+  Tmux.send (ListWindows WindowSelection.All)
 
-window :: MonadFree TmuxThunk m => WindowId -> m (Maybe Window)
+window ::
+  Member Tmux r =>
+  WindowId ->
+  Sem r (Maybe Window)
 window windowId =
   find (sameId windowId) <$> windows
 
-sessionWindows :: MonadFree TmuxThunk m => SessionId -> m [Window]
+sessionWindows ::
+  Member Tmux r =>
+  SessionId ->
+  Sem r [Window]
 sessionWindows sid =
-  Tmux.read "list-windows" ["-t", formatId sid]
+  Tmux.send (ListWindows (WindowSelection.InSession (Target.Session sid)))
 
-newSessionWindow :: MonadFree TmuxThunk m => SessionId -> m Window
+-- TODO this could be ListWindow
+newSessionWindow ::
+  Members [Tmux, Stop LayoutError] r =>
+  SessionId ->
+  Sem r Window
 newSessionWindow sid =
-  Tmux.unsafeReadOne "list-windows" ["-t", formatId sid]
+  sessionWindows sid >>= \case
+    [w] -> pure w
+    ws -> stop (LayoutError [exon|New session contains multiple windows: #{show ws}|])
 
-doesWindowExist :: MonadFree TmuxThunk m => WindowId -> m Bool
+doesWindowExist ::
+  Member Tmux r =>
+  WindowId ->
+  Sem r Bool
 doesWindowExist windowId =
   any (sameId windowId) <$> windows
 
-newWindow :: MonadFree TmuxThunk m => SessionId -> Ident -> m Window
+newWindow ::
+  Member Tmux r =>
+  SessionId ->
+  Ident ->
+  Sem r Window
 newWindow sid name =
-  Tmux.unsafeReadOne "new-window" ["-t", formatId sid, "-n", identText name, "-P"]
-
-splitWindowAs ::
-  (MonadFree TmuxThunk m, TmuxCodec a) =>
-  FilePath ->
-  WindowId ->
-  m a
-splitWindowAs dir windowId =
-  Tmux.unsafeReadFirst "split-window" ["-t", formatId windowId, "-d", "-P", "-c", toText dir]
+  Tmux.send (NewWindow def { target = Target.Session sid, name = Just name })
 
 splitWindow ::
-  (MonadFree TmuxThunk m) =>
-  FilePath ->
+  Member Tmux r =>
+  Path Abs Dir ->
   WindowId ->
-  m Pane
-splitWindow =
-  splitWindowAs
+  Sem r Pane
+splitWindow dir windowId =
+  Tmux.send (SplitWindow def { target = Target.Window windowId, detach = True, cwd = Just dir } def)

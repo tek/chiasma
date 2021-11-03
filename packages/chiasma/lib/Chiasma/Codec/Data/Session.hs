@@ -6,6 +6,8 @@ import Chiasma.Data.TmuxId (SessionId)
 -- must be data for now because of how derivation of `TmuxCodec` is implemented
 data Session =
   Session {
-    sessionId :: SessionId
+    sessionId :: SessionId,
+    sessionName :: Text
   }
-  deriving (Eq, Show, Generic, TmuxCodec)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (TmuxCodec)

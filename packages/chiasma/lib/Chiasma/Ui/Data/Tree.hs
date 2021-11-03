@@ -1,8 +1,7 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Chiasma.Ui.Data.Tree where
 
-import Data.Text.Prettyprint.Doc (Pretty(..), vsep, nest)
+import Control.Lens (makeClassy)
+import Prettyprinter (Pretty (..), nest, vsep)
 
 data Tree f l p =
   Tree {
@@ -10,11 +9,11 @@ data Tree f l p =
     _forest :: f (Node f l p)
     }
 
-deriving instance (Eq l, Eq p) => Eq (Tree [] l p)
-deriving instance (Show l, Show p) => Show (Tree [] l p)
+deriving stock instance (Eq l, Eq p) => Eq (Tree [] l p)
+deriving stock instance (Show l, Show p) => Show (Tree [] l p)
 
-deriving instance (Eq l, Eq p) => Eq (Tree NonEmpty l p)
-deriving instance (Show l, Show p) => Show (Tree NonEmpty l p)
+deriving stock instance (Eq l, Eq p) => Eq (Tree NonEmpty l p)
+deriving stock instance (Show l, Show p) => Show (Tree NonEmpty l p)
 
 data Node f l p =
   Sub { _subTree :: Tree f l p }
@@ -24,11 +23,11 @@ data Node f l p =
 makeClassy ''Tree
 makeClassy ''Node
 
-deriving instance (Eq l, Eq p) => Eq (Node [] l p)
-deriving instance (Show l, Show p) => Show (Node [] l p)
+deriving stock instance (Eq l, Eq p) => Eq (Node [] l p)
+deriving stock instance (Show l, Show p) => Show (Node [] l p)
 
-deriving instance (Eq l, Eq p) => Eq (Node NonEmpty l p)
-deriving instance (Show l, Show p) => Show (Node NonEmpty l p)
+deriving stock instance (Eq l, Eq p) => Eq (Node NonEmpty l p)
+deriving stock instance (Show l, Show p) => Show (Node NonEmpty l p)
 
 type LTree l p = Tree [] l p
 type LNode l p = Node [] l p

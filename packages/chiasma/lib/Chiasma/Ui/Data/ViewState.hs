@@ -6,7 +6,7 @@ newtype ViewState =
   ViewState {
     minimized :: Bool
   }
-  deriving (Eq, Show, Data, Generic)
+  deriving stock (Eq, Show, Data, Generic)
 
 instance Default ViewState where
   def = ViewState False

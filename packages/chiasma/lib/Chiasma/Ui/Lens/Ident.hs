@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Chiasma.Ui.Lens.Ident(
   matchIdent,
   matchIdentL,

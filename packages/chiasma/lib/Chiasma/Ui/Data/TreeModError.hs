@@ -1,6 +1,7 @@
 module Chiasma.Ui.Data.TreeModError where
 
 import Chiasma.Data.Ident (Ident)
+
 import Chiasma.Ui.Data.View (LayoutView, PaneView)
 
 data TreeModError =
@@ -17,6 +18,4 @@ data TreeModError =
   AmbiguousLayout Ident Int
   |
   NoTrees
-  deriving (Eq, Show)
-
-deepPrisms ''TreeModError
+  deriving stock (Eq, Show)

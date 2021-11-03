@@ -1,9 +1,8 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Chiasma.Data.Views where
 
-import Data.Text.Prettyprint.Doc (Doc)
-import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle)
+import Control.Lens (makeClassy)
+import Prettyprinter (Doc)
+import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
@@ -17,9 +16,7 @@ data ViewsError =
   NoSuchPane Ident
   |
   NoPaneId Ident
-  deriving (Eq, Show)
-
-deepPrisms ''ViewsError
+  deriving stock (Eq, Show)
 
 data Views =
   Views {
@@ -28,10 +25,11 @@ data Views =
     _panes :: [View PaneId],
     _log :: [Doc AnsiStyle]
   }
-  deriving (Show, Generic, Default)
+  deriving stock (Show, Generic)
+  deriving anyclass (Default)
+
+makeClassy ''Views
 
 instance Eq Views where
   (Views sa wa pa _) == (Views sb wb pb _) =
     (sa == sb) && (wa == wb) && (pa == pb)
-
-deepLenses ''Views

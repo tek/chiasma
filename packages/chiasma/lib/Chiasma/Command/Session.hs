@@ -1,33 +1,62 @@
 module Chiasma.Command.Session where
 
-import Control.Monad.Free.Class (MonadFree)
-
-import Chiasma.Codec.Data (Session(Session))
-import Chiasma.Data.Ident (Ident, identText)
+import Chiasma.Codec.Data.Client (Client (Client))
+import Chiasma.Codec.Data.Session (Session (Session))
+import Chiasma.Data.Ident (Ident)
+import Chiasma.Data.SessionParams (name)
+import qualified Chiasma.Data.Target as Target
+import Chiasma.Data.TmuxCommand (TmuxCommand (ListClients, ListSessions, NewSession, SwitchClient))
+import Chiasma.Data.TmuxError (TmuxError (NoClients))
 import Chiasma.Data.TmuxId (SessionId)
-import Chiasma.Data.TmuxThunk (TmuxThunk)
-import qualified Chiasma.Monad.Tmux as Tmux (read, unsafeReadOne, write)
+import qualified Chiasma.Effect.TmuxApi as Tmux
+import Chiasma.Effect.TmuxApi (Tmux)
 
 sameId :: SessionId -> Session -> Bool
-sameId target (Session i) = target == i
+sameId target (Session i _) = target == i
 
-sessions :: MonadFree TmuxThunk m => m [Session]
+sessions ::
+  Member Tmux r =>
+  Sem r [Session]
 sessions =
-  Tmux.read "list-sessions" []
+  Tmux.send ListSessions
 
-doesSessionExist :: MonadFree TmuxThunk m => SessionId -> m Bool
+doesSessionExist ::
+  Member Tmux r =>
+  SessionId ->
+  Sem r Bool
 doesSessionExist sessionId =
   any (sameId sessionId) <$> sessions
 
-existingSessionId :: MonadFree TmuxThunk m => SessionId -> m (Maybe SessionId)
+existingSessionId ::
+  Member Tmux r =>
+  SessionId ->
+  Sem r (Maybe SessionId)
 existingSessionId sessionId = do
   exists <- doesSessionExist sessionId
-  return $ if exists then Just sessionId else Nothing
+  pure $ if exists then Just sessionId else Nothing
 
-newSession :: MonadFree TmuxThunk m => Ident -> m Session
+newSession ::
+  Member Tmux r =>
+  Ident ->
+  Sem r Session
 newSession name =
-  Tmux.unsafeReadOne "new-session" ["-s", identText name, "-P"]
+  Tmux.send (NewSession def { name = Just name })
 
-activateSession :: MonadFree TmuxThunk m => Int -> m ()
-activateSession sessionId =
-  Tmux.write "send-keys" ["-t", "%1", "'tmux switch-client -t \\$" <> show sessionId <> "'", "enter"]
+clientForSession :: SessionId -> [Client] -> Maybe Client
+clientForSession session =
+  find \case
+    Client _ False sid ->
+      sid == session
+    _ ->
+      False
+
+switchClient ::
+  Members [Tmux, Stop TmuxError] r =>
+  SessionId ->
+  SessionId ->
+  Sem r ()
+switchClient clientSession session = do
+  clients <- Tmux.send ListClients
+  dbgs (clientSession, session, clients)
+  Client client _ _ <- stopNote NoClients (clientForSession clientSession clients)
+  Tmux.send (SwitchClient client (Target.Session session))

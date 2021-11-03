@@ -15,4 +15,4 @@ data WindowState =
     wsLayout :: RenderableTree,
     wsReferencePane :: PaneId
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)

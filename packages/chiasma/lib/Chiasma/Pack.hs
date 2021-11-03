@@ -1,61 +1,64 @@
 module Chiasma.Pack where
 
-import qualified Chiasma.Codec.Data as Codec (Window(Window))
+import Control.Lens (each, mapMOf_)
+import qualified Data.List.NonEmpty as NonEmpty (reverse, toList)
+import qualified Data.Set as Set (fromList, size)
+import Prettyprinter (Doc, line, pretty, (<+>))
+
+import qualified Chiasma.Codec.Data.Window as Codec (Window (Window))
 import Chiasma.Command.Pane (movePane, resizePane)
+import Chiasma.Data.Axis (Axis (Horizontal, Vertical))
 import Chiasma.Data.TmuxId (PaneId)
-import Chiasma.Data.TmuxThunk (TmuxThunk)
 import Chiasma.Data.Views (Views)
-import Chiasma.Data.WindowState (WindowState(..))
-import Chiasma.Ui.Data.Measure (MLayout(..), MPane(..), MeasureTree, MeasureTreeSub, Measured(Measured))
-import Chiasma.Ui.Data.Tree (Node(Sub, Leaf), Tree(Tree))
+import Chiasma.Data.WindowState (WindowState (..))
+import Chiasma.Effect.TmuxApi (Tmux)
+import Chiasma.Ui.Data.Measure (MLayout (..), MPane (..), MeasureTree, MeasureTreeSub, Measured (Measured))
+import Chiasma.Ui.Data.Tree (Node (Leaf, Sub), Tree (Tree))
 import qualified Chiasma.Ui.Data.Tree as Tree (subTree)
 import Chiasma.Ui.Measure (measureTree)
 import Chiasma.View (viewsLog)
-import Control.Lens (each, mapMOf_)
-import Control.Monad.Free.Class (MonadFree)
-import qualified Data.List.NonEmpty as NonEmpty (reverse, toList)
-import qualified Data.Set as Set (fromList, size)
-import Data.Text.Prettyprint.Doc (Doc, line, pretty, (<+>))
 
 packPane ::
-  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
+  Members [AtomicState Views, Tmux] r =>
   PaneId ->
-  Bool ->
+  Axis ->
   PaneId ->
-  m ()
-packPane refId vertical paneId =
-  when (paneId /= refId) $ movePane paneId refId vertical
+  Sem r ()
+packPane refId axis paneId =
+  when (paneId /= refId) do
+    movePane paneId refId axis
 
 positionView ::
-  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
-  Bool ->
+  Members [AtomicState Views, Tmux] r =>
+  Axis ->
   PaneId ->
   MeasureTreeSub ->
-  m ()
-positionView vertical refId =
+  Sem r ()
+positionView axis refId =
   position
   where
     position (Sub (Tree (Measured _ (MLayout layoutRef _ _ _)) _)) =
-      packPane refId vertical layoutRef
+      packPane refId axis layoutRef
     position (Leaf (Measured _ (MPane paneId _ _))) =
-      packPane refId vertical paneId
+      packPane refId axis paneId
 
-describeVertical :: Bool -> Doc a
-describeVertical True = "vertically"
-describeVertical False = "horizontally"
+describeAxis :: Axis -> Doc a
+describeAxis = \case
+  Vertical -> "vertically"
+  Horizontal -> "horizontally"
 
 resizeView ::
-  MonadDeepState s Views m =>
-  MonadFree TmuxThunk m =>
-  Bool ->
+  Members [AtomicState Views, Tmux] r =>
+  Axis ->
   MeasureTreeSub ->
-  m ()
-resizeView vertical (Sub (Tree (Measured size (MLayout refId _ _ _)) _)) = do
-  viewsLog $ "resizing layout with ref" <+> pretty refId <+> "to" <+> pretty size <+> describeVertical vertical
-  resizePane refId vertical size
-resizeView vertical (Leaf (Measured size (MPane paneId _ _))) = do
-  viewsLog $ "resizing pane" <+> pretty paneId <+> "to" <+> pretty size <+> describeVertical vertical
-  resizePane paneId vertical size
+  Sem r ()
+resizeView axis = \case
+  Sub (Tree (Measured size (MLayout refId _ _ _)) _) -> do
+    viewsLog ("resizing layout with ref" <+> pretty refId <+> "to" <+> pretty size <+> describeAxis axis)
+    resizePane refId axis size
+  Leaf (Measured size (MPane paneId _ _)) -> do
+    viewsLog $ "resizing pane" <+> pretty paneId <+> "to" <+> pretty size <+> describeAxis axis
+    resizePane paneId axis size
 
 needPositioning ::
   NonEmpty MeasureTreeSub ->
@@ -83,26 +86,26 @@ needPositioning sub =
       offPos
 
 packTree ::
-  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
+  Members [AtomicState Views, Tmux] r =>
   MeasureTree ->
-  m ()
+  Sem r ()
 packTree =
   pack
   where
-    pack (Tree (Measured _ (MLayout ref _ _ vertical)) sub) = do
+    pack (Tree (Measured _ (MLayout ref _ _ axis)) sub) = do
       when needPos runPos
       mapMOf_ (each . Tree.subTree) pack sub
-      traverse_ (resizeView vertical) sub
+      traverse_ (resizeView axis) sub
       where
         needPos = needPositioning sub
         runPos = do
           viewsLog $ "repositioning views" <+> pretty sub
-          traverse_ (positionView vertical ref) (NonEmpty.reverse sub)
+          traverse_ (positionView axis ref) (NonEmpty.reverse sub)
 
 packWindow ::
-  (MonadDeepState s Views m, MonadFree TmuxThunk m) =>
+  Members [AtomicState Views, Tmux] r =>
   WindowState ->
-  m ()
+  Sem r ()
 packWindow (WindowState (Codec.Window _ width height) _ _ tree _) = do
   let measures = measureTree tree width height
   viewsLog $ "measured tree:" <> line <> pretty measures

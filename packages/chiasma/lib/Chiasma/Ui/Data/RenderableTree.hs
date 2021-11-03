@@ -1,18 +1,19 @@
 module Chiasma.Ui.Data.RenderableTree where
 
-import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, space, (<+>))
+import Prettyprinter (Doc, Pretty (..), emptyDoc, space, (<+>))
 
-import Chiasma.Data.TmuxId (PaneId(..))
+import Chiasma.Data.Axis (Axis)
+import Chiasma.Data.TmuxId (PaneId (..))
 import Chiasma.Ui.Data.Tree (NNode, NTree)
-import Chiasma.Ui.Data.ViewGeometry (ViewGeometry(ViewGeometry))
+import Chiasma.Ui.Data.ViewGeometry (ViewGeometry (ViewGeometry))
 import Chiasma.Ui.Data.ViewState (ViewState)
 
 data RLayout =
   RLayout {
     _ref :: RPane,
-    _vertical :: Bool
+    _axis :: Axis
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 data RPane =
   RPane {
@@ -20,7 +21,7 @@ data RPane =
     _top :: Int,
     _left :: Int
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 data Renderable a =
   Renderable {
@@ -28,7 +29,7 @@ data Renderable a =
     _geometry :: ViewGeometry,
     _view :: a
   }
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 type RenderableLayout = Renderable RLayout
 type RenderablePane = Renderable RPane
@@ -36,8 +37,8 @@ type RenderableTree = NTree RenderableLayout RenderablePane
 type RenderableNode = NNode RenderableLayout RenderablePane
 
 instance Pretty RLayout where
-  pretty (RLayout (RPane (PaneId refId) _ _) vertical) =
-    "l –" <+> "ref:" <+> pretty refId <+> "pos:" <+> if vertical then "v" else "h"
+  pretty (RLayout (RPane (PaneId refId) _ _) axis) =
+    "l –" <+> "ref:" <+> pretty refId <+> "pos:" <+> pretty axis
 
 instance Pretty RPane where
   pretty (RPane (PaneId paneId) top left) =

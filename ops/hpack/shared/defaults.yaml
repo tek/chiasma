@@ -1,0 +1,20 @@
+<<: !include extensions.yaml
+
+dependencies:
+  - name: base
+    version: '>= 4 && < 5'
+    mixin:
+      hiding (Prelude)
+
+ghc-options:
+  - -Wall
+  - -Wredundant-constraints
+  - -Wincomplete-uni-patterns
+  - -Wmissing-deriving-strategies
+  - -Widentities
+  - -fplugin=Polysemy.Plugin
+
+when:
+  condition: impl(ghc >= 8.10)
+  ghc-options:
+    - -Wunused-packages

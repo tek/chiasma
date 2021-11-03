@@ -1,17 +1,17 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Chiasma.View where
+
+import Control.Lens (Lens', over)
+import qualified Control.Lens as Lens (over, set, view)
+import Exon (exon)
+import Prettyprinter (Doc, pretty)
+import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Chiasma.Data.Ident (Ident, identText, sameIdent)
 import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
-import Chiasma.Data.View (View(View), viewIdent)
-import Chiasma.Data.Views (Views, ViewsError(..))
+import Chiasma.Data.View (View (View), viewIdent)
+import Chiasma.Data.Views (Views, ViewsError (..))
 import qualified Chiasma.Data.Views as Views (log, panes, sessions, windows)
 import Chiasma.Lens.Where (where1)
-import Control.Lens (Lens', over)
-import qualified Control.Lens as Lens (over, set, view)
-import Data.Text.Prettyprint.Doc (Doc, pretty)
-import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle)
 
 sameId :: Eq a => a -> View a -> Bool
 sameId id' (View _ (Just vid)) = id' == vid
@@ -78,26 +78,42 @@ updatePane = updateView Views.panes NoSuchPane
 type Getter a = Ident -> Views -> Either ViewsError (View a)
 type Setter a = View a -> Views -> Views
 
-addView :: MonadDeepState s Views m => Setter a -> Ident -> m (View a)
-addView setter ident = do
-  modify $ setter newView
-  viewsLogS $ "added tmux view " <> identText ident
-  return newView
-  where
-    newView = View ident Nothing
-
-findOrCreateView :: (MonadDeepState s Views m) => Getter a -> Setter a -> Ident -> m (View a)
-findOrCreateView getter setter ident = do
-  existing <- gets $ getter ident
-  either (const $ addView setter ident) return existing
-
-viewsLog :: MonadDeepState s Views m => Doc AnsiStyle -> m ()
+viewsLog ::
+  Member (AtomicState Views) r =>
+  Doc AnsiStyle ->
+  Sem r ()
 viewsLog message =
-  modify f
+  atomicModify' f
   where
     f :: Views -> Views
     f = over Views.log (message :)
 
-viewsLogS :: MonadDeepState s Views m => Text -> m ()
+viewsLogS ::
+  Member (AtomicState Views) r =>
+  Text ->
+  Sem r ()
 viewsLogS =
   viewsLog . pretty
+
+addView ::
+  Member (AtomicState Views) r =>
+  Setter a ->
+  Ident ->
+  Sem r (View a)
+addView setter ident = do
+  atomicModify' (setter newView)
+  viewsLogS [exon|added tmux view #{identText ident}|]
+  pure newView
+  where
+    newView =
+      View ident Nothing
+
+findOrCreateView ::
+  Member (AtomicState Views) r =>
+  Getter a ->
+  Setter a ->
+  Ident ->
+  Sem r (View a)
+findOrCreateView getter setter ident = do
+  existing <- atomicGets (getter ident)
+  either (const (addView setter ident)) pure existing

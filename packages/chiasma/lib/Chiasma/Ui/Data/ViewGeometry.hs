@@ -1,9 +1,7 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Chiasma.Ui.Data.ViewGeometry where
 
 import Data.Data (Data)
-import Data.Text.Prettyprint.Doc (Doc, Pretty(..), emptyDoc, space, (<+>))
+import Prettyprinter (Doc, Pretty (..), emptyDoc, space, (<+>))
 
 data ViewGeometry =
   ViewGeometry {
@@ -14,7 +12,8 @@ data ViewGeometry =
     weight :: Maybe Float,
     position :: Maybe Float
   }
-  deriving (Eq, Show, Data, Generic, Default)
+  deriving stock (Eq, Show, Data, Generic)
+  deriving anyclass (Default)
 
 mayPretty :: Text -> Maybe Float -> Doc a
 mayPretty prefix (Just a) =
