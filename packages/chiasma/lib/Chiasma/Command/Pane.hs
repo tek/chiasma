@@ -1,19 +1,19 @@
 module Chiasma.Command.Pane where
 
+import Control.Monad.Free.Class (MonadFree)
 import Data.List (dropWhileEnd)
 import qualified Data.Text as Text (intercalate, singleton, splitOn)
 
 import Chiasma.Codec (TmuxCodec)
 import qualified Chiasma.Codec.Data as Codec (Pane)
 import qualified Chiasma.Codec.Data.PaneCoords as Codec (PaneCoords)
-import qualified Chiasma.Codec.Data.PaneMode as Codec (PaneMode(PaneMode))
+import qualified Chiasma.Codec.Data.PaneMode as Codec (PaneMode (PaneMode))
 import qualified Chiasma.Codec.Data.PanePid as Codec (PanePid)
 import Chiasma.Data.TmuxId (HasPaneId, PaneId, WindowId, formatId)
 import qualified Chiasma.Data.TmuxId as HasPaneId (paneId)
 import Chiasma.Data.TmuxThunk (TmuxThunk)
-import Chiasma.Data.View (View(View))
+import Chiasma.Data.View (View (View))
 import qualified Chiasma.Monad.Tmux as Tmux (read, readRaw, unsafeReadFirst, write)
-import Control.Monad.Free.Class (MonadFree)
 
 paneTarget :: PaneId -> [Text]
 paneTarget paneId =
@@ -98,12 +98,13 @@ sendKeys ::
   MonadFree TmuxThunk m =>
   PaneId ->
   [Text] ->
+  [Text] ->
   m ()
-sendKeys paneId lines' =
+sendKeys paneId args lines' =
   traverse_ send formatted
   where
     formatted = lines' >>= formatLine
-    send line = Tmux.write "send-keys" (paneTarget paneId <> [line])
+    send line = Tmux.write "send-keys" (args <> paneTarget paneId <> [line])
 
 pipePane ::
   MonadFree TmuxThunk m =>
@@ -170,4 +171,4 @@ quitCopyMode paneId =
   traverse_ check =<< pane paneId
   where
     check (Codec.PaneMode _ mode) =
-      when (mode == "copy-mode") (sendKeys paneId ["C-c"])
+      when (mode == "copy-mode") (sendKeys paneId ["-X"] ["C-c"])
