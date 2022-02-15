@@ -171,4 +171,4 @@ quitCopyMode paneId =
   traverse_ check =<< pane paneId
   where
     check (Codec.PaneMode _ mode) =
-      when (mode == "copy-mode") (sendKeys paneId ["-X"] ["C-c"])
+      when (mode == "copy-mode") (sendKeys paneId ["-X"] ["cancel"])
