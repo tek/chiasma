@@ -93,7 +93,7 @@ library
       ViewPatterns
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin
   build-depends:
-      aeson >=1.4 && <1.6
+      aeson >=1.4
     , attoparsec >=0.13
     , base ==4.*
     , bytestring
@@ -107,7 +107,7 @@ library
     , free >=5.1
     , hedgehog
     , incipit >=0.1.0.3
-    , lens ==4.*
+    , lens >=4
     , path
     , path-io
     , polysemy
@@ -119,7 +119,7 @@ library
     , polysemy-resume
     , polysemy-test
     , polysemy-time
-    , prettyprinter >=1.6 && <1.8
+    , prettyprinter >=1.6
     , prettyprinter-ansi-terminal >=1.1
     , process >=1.6
     , random >=1.1

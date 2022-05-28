@@ -12,7 +12,7 @@ extra-source-files:
 library:
   source-dirs: lib
   dependencies:
-    - aeson >= 1.4 && < 1.6
+    - aeson >= 1.4
     - attoparsec >= 0.13
     - bytestring
     - composition >= 1.0
@@ -23,7 +23,7 @@ library:
     - extra
     - first-class-families
     - incipit >= 0.1.0.3
-    - lens >= 4 && < 5
+    - lens >= 4
     - path
     - path-io
     - parsec
@@ -35,7 +35,7 @@ library:
     - polysemy-log
     - polysemy-process
     - polysemy-time
-    - prettyprinter >= 1.6 && < 1.8
+    - prettyprinter >= 1.6
     - prettyprinter-ansi-terminal >= 1.1
     - process >= 1.6
     - random >= 1.1

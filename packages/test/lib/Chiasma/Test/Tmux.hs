@@ -4,7 +4,7 @@ import qualified Chronos
 import Chronos (datetimeToTime)
 import Exon (exon)
 import Hedgehog (TestT)
-import Path (Abs, Dir, File, Path, Rel, relfile, (</>))
+import Path (Abs, Dir, File, Path, relfile, (</>))
 import Path.IO (createTempDir, doesFileExist, getTempDir, removeDirRecur)
 import Polysemy.Chronos (ChronosTime, interpretTimeChronosConstant)
 import qualified Polysemy.Conc as Race

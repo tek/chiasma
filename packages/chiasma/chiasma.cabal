@@ -241,7 +241,7 @@ library
       ViewPatterns
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin -fplugin=Polysemy.Plugin -Wall -Wredundant-constraints -Wunused-packages -Wincomplete-uni-patterns -Wmissing-deriving-strategies
   build-depends:
-      aeson >=1.4 && <1.6
+      aeson >=1.4
     , attoparsec >=0.13
     , base ==4.*
     , bytestring
@@ -253,7 +253,7 @@ library
     , extra
     , first-class-families
     , incipit >=0.1.0.3
-    , lens ==4.*
+    , lens >=4
     , parsec
     , parsers >=0.12
     , path
@@ -265,7 +265,7 @@ library
     , polysemy-process
     , polysemy-resume
     , polysemy-time
-    , prettyprinter >=1.6 && <1.8
+    , prettyprinter >=1.6
     , prettyprinter-ansi-terminal >=1.1
     , process >=1.6
     , random >=1.1

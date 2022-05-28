@@ -24,8 +24,9 @@ parseResult = \case
   Done rest block -> pure ([Right block], rest)
 
 interpretProcessOutputTmuxBlock ::
+  ∀ p r .
   Member (Embed IO) r =>
-  InterpreterFor (ProcessOutput (Either Text TmuxOutputBlock)) r
+  InterpreterFor (ProcessOutput p (Either Text TmuxOutputBlock)) r
 interpretProcessOutputTmuxBlock =
   interpretAtomic (Nothing :: Maybe ParseCont) .
   interpret \case

@@ -9,11 +9,11 @@ data Tree f l p =
     _forest :: f (Node f l p)
     }
 
-deriving stock instance (Eq l, Eq p) => Eq (Tree [] l p)
-deriving stock instance (Show l, Show p) => Show (Tree [] l p)
+deriving stock instance (Eq l, Eq (Node [] l p)) => Eq (Tree [] l p)
+deriving stock instance (Show l, Show (Node [] l p)) => Show (Tree [] l p)
 
-deriving stock instance (Eq l, Eq p) => Eq (Tree NonEmpty l p)
-deriving stock instance (Show l, Show p) => Show (Tree NonEmpty l p)
+deriving stock instance (Eq l, Eq (Node NonEmpty l p)) => Eq (Tree NonEmpty l p)
+deriving stock instance (Show l, Show (Node NonEmpty l p)) => Show (Tree NonEmpty l p)
 
 data Node f l p =
   Sub { _subTree :: Tree f l p }

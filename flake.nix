@@ -36,8 +36,7 @@
     };
     main = "chiasma-test";
     inherit overrides;
-    deps = [incipit];
-    devGhc.compiler = "ghc8107";
+    depsFull = [incipit];
     compat.enable = false;
     hackage.versionFile = "ops/hpack/packages/chiasma.yaml";
     ghci = {

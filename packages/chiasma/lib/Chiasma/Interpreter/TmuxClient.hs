@@ -8,10 +8,9 @@ import Polysemy.Conc (interpretAtomic)
 import Polysemy.Conc.Interpreter.Scoped (interpretScopedResumableWith_)
 import qualified Polysemy.Log as Log
 import qualified Polysemy.Process as Process
-import Polysemy.Process (Process, withProcess)
+import Polysemy.Process (OutputPipe (Stderr, Stdout), Process, SystemProcess, interpretProcessInputId, interpretProcessOutputLeft, withProcess)
 import Polysemy.Process.Data.ProcessError (ProcessError)
 import Polysemy.Process.Data.SystemProcessError (SystemProcessError)
-import Polysemy.Process.Effect.SystemProcess (SystemProcess)
 import Polysemy.Process.Interpreter.Process (ProcessQueues, interpretProcess)
 import Polysemy.Process.Interpreter.ProcessOutput (interpretProcessOutputTextLines)
 import Polysemy.Process.Interpreter.SystemProcess (PipesProcess, interpretSystemProcessNative)
@@ -32,7 +31,7 @@ type TmuxQueues =
   ProcessQueues (Either Text TmuxOutputBlock) Text
 
 type TmuxProc =
-  Process ByteString (Either Text TmuxOutputBlock) Text
+  Process ByteString (Either Text TmuxOutputBlock)
 
 validate :: TmuxRequest -> TmuxOutputBlock -> Either TmuxError [Text]
 validate request = \case
@@ -42,7 +41,7 @@ validate request = \case
     Left (TmuxError.RequestFailed request a)
 
 tmuxRequest ::
-  Members [Process ByteString (Either Text TmuxOutputBlock) Text, Log, Stop TmuxError] r =>
+  Members [Process ByteString (Either Text TmuxOutputBlock), Log, Stop TmuxError] r =>
   TmuxRequest ->
   Sem r [Text]
 tmuxRequest request = do
@@ -78,10 +77,12 @@ interpretProcessTmux ::
   Members [Scoped res (SystemProcess !! SystemProcessError), Resource, Race, Async, Embed IO] r =>
   InterpreterFor (Scoped () TmuxProc !! ProcessError) r
 interpretProcessTmux sem = do
-  interpretProcessOutputTmuxBlock $
-    interpretProcessOutputTextLines $
-    interpretProcess True 64 $
-    raiseUnder2 sem
+  interpretProcessOutputTmuxBlock @'Stdout $
+    interpretProcessOutputTextLines @'Stderr $
+    interpretProcessOutputLeft @'Stderr $
+    interpretProcessInputId $
+    interpretProcess def $
+    insertAt @1 sem
 {-# inline interpretProcessTmux #-}
 
 flush ::

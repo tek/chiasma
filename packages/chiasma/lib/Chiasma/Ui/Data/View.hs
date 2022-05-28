@@ -140,7 +140,8 @@ type instance Index (Tree _ _) = Ident
 type instance IxValue (Tree l p) = Tree l p
 
 instance Identifiable l => Ixed (Tree l p) where
-  ix = matchIdentP
+  ix i =
+    matchIdentP i
 
 instance (Pretty l, Pretty p) => Pretty (TreeSub l p) where
   pretty (TreeNode a) =
