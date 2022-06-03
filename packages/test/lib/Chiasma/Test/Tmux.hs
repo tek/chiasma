@@ -4,6 +4,7 @@ import qualified Chronos
 import Chronos (datetimeToTime)
 import Exon (exon)
 import Hedgehog (TestT)
+import Hedgehog.Internal.Property (Failure)
 import Path (Abs, Dir, File, Path, relfile, (</>))
 import Path.IO (createTempDir, doesFileExist, getTempDir, removeDirRecur)
 import Polysemy.Chronos (ChronosTime, interpretTimeChronosConstant)
@@ -186,6 +187,7 @@ type TestStack =
     Fail,
     Error TestError,
     Hedgehog IO,
+    Error Failure,
     Embed IO,
     Resource,
     Final IO
