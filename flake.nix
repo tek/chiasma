@@ -6,10 +6,11 @@
     incipit.url = github:tek/incipit;
     polysemy-conc.url = github:tek/polysemy-conc;
     polysemy-time.url = github:tek/polysemy-time;
+    polysemy-test.url = github:tek/polysemy-test;
     old.url = github:NixOS/nixpkgs/1db42b7fe3878f3f5f7a4f2dc210772fd080e205;
   };
 
-  outputs = { hix, incipit, polysemy-conc, polysemy-time, old, ... }:
+  outputs = { hix, incipit, polysemy-conc, polysemy-time, polysemy-test, old, ... }:
   let
     overrides = { hackage, source, unbreak, pkgs, system, transform_, ... }:
     let
@@ -27,6 +28,7 @@
       polysemy-conc = source.package polysemy-conc "conc";
       polysemy-process = source.package polysemy-conc "process";
       polysemy-time = source.package polysemy-time "time";
+      polysemy-test = source.package polysemy-test "polysemy-test";
     };
   in hix.lib.flake ({ config, ... }: {
     base = ./.;
