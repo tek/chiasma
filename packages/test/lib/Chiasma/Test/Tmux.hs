@@ -52,10 +52,10 @@ data TmuxTestConf =
 
 instance Default TmuxTestConf where
   def =
-    TmuxTestConf 240 61 10 True mempty
+    TmuxTestConf 240 61 12 True mempty
 
-urxvtArgs :: Int -> Int -> Int -> [Text]
-urxvtArgs width height fontSize =
+xtermArgs :: Int -> Int -> Int -> [Text]
+xtermArgs width height fontSize =
   ["-geometry", show width <> "x" <> show height, "-fn", "xft:monospace:size=" <> show fontSize, "-e", "tmux"]
 
 createTmuxConf ::
@@ -88,7 +88,7 @@ testTmuxProcessConfig wait (TmuxTestConf width height fontSize gui conf) socket 
       ["-S", pathText socket, "-f", pathText confFile]
     prc =
       if gui
-      then proc "urxvt" (toString <$> urxvtArgs (fromIntegral width) (fromIntegral height) fontSize ++ tmuxArgs)
+      then proc "xterm" (toString <$> xtermArgs (fromIntegral width) (fromIntegral height) fontSize ++ tmuxArgs)
       else proc "tmux" (toString <$> tmuxArgs)
   pure (stdio (useHandleClose handle) prc)
   where
@@ -156,11 +156,10 @@ withTempDir ::
   Path Abs Dir ->
   (Path Abs Dir -> Sem r a) ->
   Sem r a
-withTempDir targetDir f =
+withTempDir targetDir =
   bracket
     (createTempDir targetDir "chiasma-test")
     (tryAny . removeDirRecur)
-    f
 
 withSystemTempDir ::
   Members [Resource, Embed IO] r =>

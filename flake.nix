@@ -16,7 +16,7 @@
       oldPkgs = import old { inherit system; };
     in {
       chiasma = transform_ (drv: drv.overrideAttrs (prev: {
-        buildInputs = prev.buildInputs ++ [oldPkgs.tmux pkgs.rxvt-unicode];
+        buildInputs = prev.buildInputs ++ [oldPkgs.tmux pkgs.xterm];
       }));
       cornea = hackage "0.4.0.1" "00f8fsizqw52001nsd6x9x6amsbh6qqiyy26knfjwm91dcyaanmn";
       exon = hackage "0.3.0.0" "0jgpj8818nhwmb3271ixid38mx11illlslyi69s4m0ws138v6i18";
@@ -46,6 +46,6 @@
     };
     ghcid.shellConfig =
       let oldPkgs = import old { inherit (config) system; };
-      in { buildInputs = [oldPkgs.tmux]; };
+      in { buildInputs = [oldPkgs.tmux config.devGhc.pkgs.xterm]; };
   });
 }

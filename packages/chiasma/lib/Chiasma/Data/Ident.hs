@@ -26,8 +26,10 @@ instance Identifiable Ident where
   identify = id
 
 instance Pretty Ident where
-  pretty (Str s) = pretty s
-  pretty (Uuid u) = pretty . UUID.toText $ u
+  pretty =
+    pretty . \case
+      Str s -> s
+      Uuid u -> UUID.toText u
 
 instance Default Ident where
   def = Str ""
