@@ -22,33 +22,49 @@ storeScreenshot path text = do
 
 takeScreenshot ::
   Member Tmux r =>
+  (Text -> Text) ->
   Int ->
   Sem r [Text]
-takeScreenshot =
-  capturePane . PaneId
+takeScreenshot sanitize =
+  fmap (fmap sanitize) . capturePane . PaneId
 
 recordScreenshot ::
   Members [Tmux, Embed IO] r =>
+  (Text -> Text) ->
   Path Abs File ->
   Int ->
   Sem r ()
-recordScreenshot path paneId = do
-  current <- takeScreenshot paneId
+recordScreenshot sanitize path paneId = do
+  current <- takeScreenshot sanitize paneId
   storeScreenshot path current
 
 testScreenshot ::
   Members [Tmux, Embed IO] r =>
+  (Text -> Text) ->
   Path Abs File ->
   Int ->
   Sem r (Maybe ([Text], [Text]))
-testScreenshot path pane = do
-  current <- takeScreenshot pane
+testScreenshot sanitize path pane = do
+  current <- takeScreenshot sanitize pane
   loadScreenshot path >>= check current
   where
     check current (Just existing) =
       pure $ Just (current, Text.lines existing)
     check current Nothing =
       Nothing <$ storeScreenshot path current
+
+screenshotSanitized ::
+  Members [Tmux, Error Text, Embed IO] r =>
+  (Text -> Text) ->
+  Bool ->
+  Path Abs Dir ->
+  Text ->
+  Int ->
+  Sem r (Maybe ([Text], [Text]))
+screenshotSanitized sanitize record storage name paneId = do
+  rel <- fromEither (first show (parseRelFile (toString name)))
+  let path = storage </> rel
+  if record then Nothing <$ recordScreenshot sanitize path paneId else testScreenshot sanitize path paneId
 
 screenshot ::
   Members [Tmux, Error Text, Embed IO] r =>
@@ -57,7 +73,5 @@ screenshot ::
   Text ->
   Int ->
   Sem r (Maybe ([Text], [Text]))
-screenshot record storage name paneId = do
-  rel <- fromEither (first show (parseRelFile (toString name)))
-  let path = storage </> rel
-  if record then Nothing <$ recordScreenshot path paneId else testScreenshot path paneId
+screenshot =
+  screenshotSanitized id
