@@ -49,11 +49,11 @@ data TmuxTestConf =
     ttcGui :: Bool,
     ttcConf :: [Text]
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 instance Default TmuxTestConf where
   def =
-    TmuxTestConf 240 61 12 True mempty
+    TmuxTestConf 240 61 12 False mempty
 
 xtermArgs :: Int -> Int -> Int -> [Text]
 xtermArgs width height fontSize =
@@ -103,7 +103,7 @@ waitForServer ::
 waitForServer =
   Time.while (MilliSeconds 10) do
     resumeAs @CodecError @(Codec _ _ _) True $ resumeAs @TmuxError @(Scoped _ _) True $ withTmux do
-      s <- [] <! (TmuxApi.send ListSessions)
+      s <- [] <! TmuxApi.send ListSessions
       pure (s /= [Session 0 "0"])
 
 waitForFile ::
@@ -220,10 +220,10 @@ tmuxTest ::
   Sem TestStack a ->
   TestT IO a
 tmuxTest =
-  runTmuxTest def { ttcGui = False }
+  runTmuxTest def
 
 tmuxGuiTest ::
   Sem TestStack a ->
   TestT IO a
 tmuxGuiTest =
-  runTmuxTest def
+  runTmuxTest def { ttcGui = True }
