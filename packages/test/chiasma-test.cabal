@@ -27,7 +27,6 @@ source-repository head
 
 library
   exposed-modules:
-      Chiasma.Test.File
       Chiasma.Test.Screenshot
       Chiasma.Test.Tmux
   hs-source-dirs:
