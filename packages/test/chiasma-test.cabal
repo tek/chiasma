@@ -5,21 +5,18 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           chiasma-test
-version:        1.0.0.0
-synopsis:       Tmux Client
-description:    See <https://hackage.haskell.org/package/chiasma-test/docs/Chiasma.Test.html>
+version:        0.9.9.9
+synopsis:       A tmux client for Polysemy
+description:    See https://hackage.haskell.org/package/chiasma-test/docs/Chiasma-Test.html
 category:       Terminal
 homepage:       https://github.com/tek/chiasma#readme
 bug-reports:    https://github.com/tek/chiasma/issues
 author:         Torsten Schmits
-maintainer:     haskell@tryp.io
+maintainer:     hackage@tryp.io
 copyright:      2022 Torsten Schmits
 license:        BSD-2-Clause-Patent
 license-file:   LICENSE
 build-type:     Simple
-extra-source-files:
-    readme.md
-    changelog.md
 
 source-repository head
   type: git
@@ -45,6 +42,7 @@ library
       DeriveFoldable
       DeriveFunctor
       DeriveGeneric
+      DeriveLift
       DeriveTraversable
       DerivingStrategies
       DerivingVia
@@ -58,7 +56,6 @@ library
       FunctionalDependencies
       GADTs
       GeneralizedNewtypeDeriving
-      ImpredicativeTypes
       InstanceSigs
       KindSignatures
       LambdaCase
@@ -78,6 +75,7 @@ library
       RankNTypes
       RecordWildCards
       RecursiveDo
+      RoleAnnotations
       ScopedTypeVariables
       StandaloneDeriving
       TemplateHaskell
@@ -90,23 +88,16 @@ library
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin
+      ImpredicativeTypes
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin
   build-depends:
-      aeson >=1.4
-    , attoparsec >=0.13
-    , base ==4.*
+      base >=4.12 && <5
     , bytestring
     , chiasma
-    , chronos >=1.1.1
-    , containers
-    , directory
-    , exceptions
+    , chronos
     , exon
-    , filepath
-    , free >=5.1
     , hedgehog
-    , incipit >=0.1.0.3
-    , lens >=4
+    , incipit >=0.2
     , path
     , path-io
     , polysemy
@@ -115,113 +106,17 @@ library
     , polysemy-log
     , polysemy-plugin
     , polysemy-process
-    , polysemy-resume
-    , polysemy-test
+    , polysemy-test >=0.6
     , polysemy-time
-    , prettyprinter >=1.6
-    , prettyprinter-ansi-terminal >=1.1
-    , process >=1.6
-    , random >=1.1
-    , template-haskell
     , text
-    , transformers
     , typed-process >=0.2
-    , unix
   mixins:
       base hiding (Prelude)
-  if impl(ghc >= 8.10)
-    ghc-options: -Wunused-packages
+    , incipit (Incipit as Prelude)
+    , incipit hiding (Incipit)
   default-language: Haskell2010
 
-test-suite chiasma-integration
-  type: exitcode-stdio-1.0
-  main-is: Main.hs
-  other-modules:
-      Chiasma.Test.RenderTest
-      Chiasma.Test.TmuxTest
-      Chiasma.Test.Util
-  hs-source-dirs:
-      integration
-  default-extensions:
-      AllowAmbiguousTypes
-      ApplicativeDo
-      BangPatterns
-      BinaryLiterals
-      BlockArguments
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveAnyClass
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveTraversable
-      DerivingStrategies
-      DerivingVia
-      DisambiguateRecordFields
-      DoAndIfThenElse
-      DuplicateRecordFields
-      EmptyDataDecls
-      ExistentialQuantification
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      GeneralizedNewtypeDeriving
-      ImpredicativeTypes
-      InstanceSigs
-      KindSignatures
-      LambdaCase
-      LiberalTypeSynonyms
-      MultiParamTypeClasses
-      MultiWayIf
-      NamedFieldPuns
-      OverloadedStrings
-      OverloadedLists
-      PackageImports
-      PartialTypeSignatures
-      PatternGuards
-      PatternSynonyms
-      PolyKinds
-      QuantifiedConstraints
-      QuasiQuotes
-      RankNTypes
-      RecordWildCards
-      RecursiveDo
-      ScopedTypeVariables
-      StandaloneDeriving
-      TemplateHaskell
-      TupleSections
-      TypeApplications
-      TypeFamilies
-      TypeFamilyDependencies
-      TypeOperators
-      TypeSynonymInstances
-      UndecidableInstances
-      UnicodeSyntax
-      ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base ==4.*
-    , chiasma
-    , chiasma-test
-    , hedgehog
-    , incipit
-    , path-io
-    , polysemy
-    , polysemy-chronos
-    , polysemy-plugin
-    , polysemy-test
-    , tasty
-    , tasty-hedgehog
-  mixins:
-      base hiding (Prelude)
-  if impl(ghc >= 8.10)
-    ghc-options: -Wunused-packages
-  default-language: Haskell2010
-
-test-suite chiasma-unit
+test-suite chiasma-test-unit
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
@@ -246,6 +141,7 @@ test-suite chiasma-unit
       DeriveFoldable
       DeriveFunctor
       DeriveGeneric
+      DeriveLift
       DeriveTraversable
       DerivingStrategies
       DerivingVia
@@ -259,7 +155,6 @@ test-suite chiasma-unit
       FunctionalDependencies
       GADTs
       GeneralizedNewtypeDeriving
-      ImpredicativeTypes
       InstanceSigs
       KindSignatures
       LambdaCase
@@ -279,6 +174,7 @@ test-suite chiasma-unit
       RankNTypes
       RecordWildCards
       RecursiveDo
+      RoleAnnotations
       ScopedTypeVariables
       StandaloneDeriving
       TemplateHaskell
@@ -291,20 +187,20 @@ test-suite chiasma-unit
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
+      ImpredicativeTypes
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base ==4.*
+      base >=4.12 && <5
     , chiasma
     , hedgehog
-    , incipit
-    , lens
+    , incipit >=0.2
+    , lens >=4
     , polysemy
     , polysemy-plugin
     , tasty
     , tasty-hedgehog
-    , text
   mixins:
       base hiding (Prelude)
-  if impl(ghc >= 8.10)
-    ghc-options: -Wunused-packages
+    , incipit (Incipit as Prelude)
+    , incipit hiding (Incipit)
   default-language: Haskell2010

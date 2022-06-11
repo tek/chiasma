@@ -1,14 +1,7 @@
 module Chiasma.Ui.Measure.Balance where
 
 import Data.List (zipWith3)
-import qualified Data.List.NonEmpty as NonEmpty (
-  filter,
-  toList,
-  zip,
-  zipWith,
-  )
-import GHC.Float (float2Int, int2Float)
-import GHC.Float.RealFracMethods (floorFloatInt)
+import qualified Data.List.NonEmpty as NonEmpty
 
 import Chiasma.Ui.Measure.Weights (
   amendAndNormalizeWeights,
@@ -30,24 +23,37 @@ data Balance =
 
 reverseWeights :: NonEmpty Float -> NonEmpty Float
 reverseWeights weights =
-  if norm > 0 then fmap (/ norm) r else r
+  rev <$> r
   where
-    r = fmap (1 -) weights
-    norm = sum r
+    rev a =
+      fromMaybe a (a / norm)
+    r =
+      fmap (1 -) weights
+    norm =
+      sum r
 
 cutSizes :: Balance -> NonEmpty Float
-cutSizes (Balance min' _ weights _ total) =
-  fmap addDist cut
+cutSizes (Balance minSizes _ weights _ total) =
+  addNegatives <$> truncatedWeighted
   where
-    surplus = sum min' - total
-    dist = fmap (surplus *) (reverseWeights weights)
-    cut = fmap (uncurry (-)) (NonEmpty.zip min' dist)
-    negOrZero a = if a < 0 then a else 0
-    neg = fmap negOrZero cut
-    negTotal = sum neg
-    negCount = length (NonEmpty.filter (< 0) neg)
-    dist2 = negTotal / int2Float (length min' - negCount)
-    addDist a = if a < 0 then 0 else a + dist2
+    surplus =
+      sum minSizes - total
+    surplusDistWeighted =
+      fmap (surplus *) (reverseWeights weights)
+    truncatedWeighted =
+      fmap (uncurry (-)) (NonEmpty.zip minSizes surplusDistWeighted)
+    negOrZero a =
+      if a < 0 then a else 0
+    neg =
+      fmap negOrZero truncatedWeighted
+    negTotal =
+      sum neg
+    negCount =
+      length (NonEmpty.filter (< 0) neg)
+    negativesDist =
+      fromMaybe 0 (negTotal / realToFrac (length minSizes - negCount))
+    addNegatives a =
+      if a < 0 then 0 else a + negativesDist
 
 distributeOnUnbounded :: Balance -> NonEmpty Float
 distributeOnUnbounded (Balance min' max' weights _ total) =
@@ -121,28 +127,37 @@ distributeSizes balance =
     maxTotal = sum (catMaybes $ NonEmpty.toList $ balanceMax balance)
 
 roundSizes :: NonEmpty Float -> NonEmpty Int
-roundSizes (head' :| tail') =
-  roundedHead + (float2Int surplus) :| roundedTail
+roundSizes (h :| t) =
+  roundedHead + round surplus :| roundedTail
   where
-    (surplus, roundedTail) = mapAccumL folder diff0 tail'
-    (roundedHead, diff0) = diff head'
+    (surplus, roundedTail) = mapAccumL folder diff0 t
+    (roundedHead, diff0) = diff h
     folder z a =
       (z + z1, a1)
       where
         (a1, z1) = diff a
-    diff a = (floorFloatInt a, a - int2Float (floor a))
+    diff a = (floor a, a - fromIntegral (floor a :: Int))
 
+-- |Tmux doesn't render panes smaller than two cells.
 ensureMinimum2 :: NonEmpty Float -> NonEmpty Float
 ensureMinimum2 sizes =
   choose <$> positives
   where
-    positive = max 0
-    positives = positive <$> sizes
-    positivesCount = length $ NonEmpty.filter (>= 2) sizes
-    unders = amountUnderTwo <$> positives
-    sub = sum unders / int2Float positivesCount
-    amountUnderTwo a = positive (2 - a)
-    choose a = max 2 (a - sub)
+    positive =
+      max 0
+    positives =
+      positive <$> sizes
+    overTwoCount =
+      length (NonEmpty.filter (>= 2) sizes)
+    unders =
+      amountUnderTwo <$> positives
+    -- If no sizes are larger than 2, nothing will have to be subtracted, all sizes will be clamped to 2
+    amountUnderTwoDist =
+      fromMaybe 0 (sum unders / realToFrac overTwoCount)
+    amountUnderTwo a =
+      positive (2 - a)
+    choose a =
+      max 2 (a - amountUnderTwoDist)
 
 rectifySizes :: NonEmpty Float -> NonEmpty Int
 rectifySizes =

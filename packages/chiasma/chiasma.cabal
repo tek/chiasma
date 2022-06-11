@@ -5,21 +5,18 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           chiasma
-version:        1.0.0.0
-synopsis:       Tmux Client
-description:    See <https://hackage.haskell.org/package/chiasma/docs/Chiasma.html>
+version:        0.9.9.9
+synopsis:       A tmux client for Polysemy
+description:    See https://hackage.haskell.org/package/chiasma/docs/Chiasma.html
 category:       Terminal
 homepage:       https://github.com/tek/chiasma#readme
 bug-reports:    https://github.com/tek/chiasma/issues
 author:         Torsten Schmits
-maintainer:     haskell@tryp.io
+maintainer:     hackage@tryp.io
 copyright:      2022 Torsten Schmits
 license:        BSD-2-Clause-Patent
 license-file:   LICENSE
 build-type:     Simple
-extra-source-files:
-    readme.md
-    changelog.md
 
 source-repository head
   type: git
@@ -136,6 +133,7 @@ library
       DeriveFoldable
       DeriveFunctor
       DeriveGeneric
+      DeriveLift
       DeriveTraversable
       DerivingStrategies
       DerivingVia
@@ -149,7 +147,6 @@ library
       FunctionalDependencies
       GADTs
       GeneralizedNewtypeDeriving
-      ImpredicativeTypes
       InstanceSigs
       KindSignatures
       LambdaCase
@@ -169,6 +166,7 @@ library
       RankNTypes
       RecordWildCards
       RecursiveDo
+      RoleAnnotations
       ScopedTypeVariables
       StandaloneDeriving
       TemplateHaskell
@@ -181,101 +179,37 @@ library
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      AllowAmbiguousTypes
-      ApplicativeDo
-      BangPatterns
-      BinaryLiterals
-      BlockArguments
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveAnyClass
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveTraversable
-      DerivingStrategies
-      DerivingVia
-      DisambiguateRecordFields
-      DoAndIfThenElse
-      DuplicateRecordFields
-      EmptyDataDecls
-      ExistentialQuantification
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      GeneralizedNewtypeDeriving
       ImpredicativeTypes
-      InstanceSigs
-      KindSignatures
-      LambdaCase
-      LiberalTypeSynonyms
-      MultiParamTypeClasses
-      MultiWayIf
-      NamedFieldPuns
-      OverloadedStrings
-      OverloadedLists
-      PackageImports
-      PartialTypeSignatures
-      PatternGuards
-      PatternSynonyms
-      PolyKinds
-      QuantifiedConstraints
-      QuasiQuotes
-      RankNTypes
-      RecordWildCards
-      RecursiveDo
-      ScopedTypeVariables
-      StandaloneDeriving
-      TemplateHaskell
-      TupleSections
-      TypeApplications
-      TypeFamilies
-      TypeFamilyDependencies
-      TypeOperators
-      TypeSynonymInstances
-      UndecidableInstances
-      UnicodeSyntax
-      ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -fplugin=Polysemy.Plugin -fplugin=Polysemy.Plugin -Wall -Wredundant-constraints -Wunused-packages -Wincomplete-uni-patterns -Wmissing-deriving-strategies
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin
   build-depends:
-      aeson >=1.4
-    , attoparsec >=0.13
-    , base ==4.*
+      attoparsec >=0.13
+    , base >=4.12 && <5
     , bytestring
     , composition >=1.0
     , containers
-    , data-default >=0.7
-    , either >=5.0.1
     , exon
     , extra
     , first-class-families
-    , incipit >=0.1.0.3
+    , incipit >=0.2
     , lens >=4
     , parsec
     , parsers >=0.12
     , path
-    , path-io
     , polysemy
-    , polysemy-conc
-    , polysemy-log
+    , polysemy-conc >=0.9
+    , polysemy-log >=0.7
     , polysemy-plugin
-    , polysemy-process
-    , polysemy-resume
-    , polysemy-time
+    , polysemy-process >=0.9
+    , polysemy-time >=0.5
     , prettyprinter >=1.6
     , prettyprinter-ansi-terminal >=1.1
-    , process >=1.6
     , random >=1.1
-    , template-haskell
     , text
     , transformers
     , typed-process >=0.2
     , uuid >=1.3
   mixins:
       base hiding (Prelude)
-  if impl(ghc >= 8.10)
-    ghc-options: -Wunused-packages
+    , incipit (Incipit as Prelude)
+    , incipit hiding (Incipit)
   default-language: Haskell2010
