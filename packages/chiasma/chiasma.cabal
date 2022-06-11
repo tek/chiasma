@@ -190,7 +190,7 @@ library
     , exon
     , extra
     , first-class-families
-    , incipit >=0.2
+    , incipit >=0.3
     , lens >=4
     , parsec
     , parsers >=0.12

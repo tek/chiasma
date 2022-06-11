@@ -49,7 +49,7 @@ let
 
   dependencies = [
       { name = "base"; version = ">= 4.12 && < 5"; mixin = "hiding (Prelude)"; }
-      { name = "incipit"; version = ">= 0.2"; mixin = ["(Incipit as Prelude)" "hiding (Incipit)"]; }
+      { name = "incipit"; version = ">= 0.3"; mixin = ["(Incipit as Prelude)" "hiding (Incipit)"]; }
       "polysemy"
       "polysemy-plugin"
     ];

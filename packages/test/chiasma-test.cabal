@@ -97,7 +97,7 @@ library
     , chronos
     , exon
     , hedgehog
-    , incipit >=0.2
+    , incipit >=0.3
     , path
     , path-io
     , polysemy
@@ -193,7 +193,7 @@ test-suite chiasma-test-unit
       base >=4.12 && <5
     , chiasma
     , hedgehog
-    , incipit >=0.2
+    , incipit >=0.3
     , lens >=4
     , polysemy
     , polysemy-plugin
