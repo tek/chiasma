@@ -281,11 +281,11 @@
         "thax": "thax"
       },
       "locked": {
-        "lastModified": 1654280324,
-        "narHash": "sha256-qG+P2HxL1T8PUP1/aPqRtE1fobo8FZIpwjT9/tXAW3U=",
+        "lastModified": 1655122384,
+        "narHash": "sha256-kFEOkmd8gqn3Yy3vwqHlIRWjEjNDtECMQ3pLhvv76sE=",
         "owner": "tek",
         "repo": "hix",
-        "rev": "6b0625c7744e57293f781ff574ea909943898008",
+        "rev": "8a8066db7ed9321e636fe826902261ae9d87b0e4",
         "type": "github"
       },
       "original": {
@@ -310,11 +310,11 @@
         "thax": "thax_2"
       },
       "locked": {
-        "lastModified": 1654280324,
-        "narHash": "sha256-qG+P2HxL1T8PUP1/aPqRtE1fobo8FZIpwjT9/tXAW3U=",
+        "lastModified": 1655122384,
+        "narHash": "sha256-kFEOkmd8gqn3Yy3vwqHlIRWjEjNDtECMQ3pLhvv76sE=",
         "owner": "tek",
         "repo": "hix",
-        "rev": "6b0625c7744e57293f781ff574ea909943898008",
+        "rev": "8a8066db7ed9321e636fe826902261ae9d87b0e4",
         "type": "github"
       },
       "original": {
@@ -475,8 +475,8 @@
         "polysemy-log": "polysemy-log"
       },
       "locked": {
-        "lastModified": 1654971521,
-        "narHash": "sha256-b248DoxgU9ekTdvhKGzjGli67Atobwl7mLLe1mQ7hiY=",
+        "lastModified": 1655378319,
+        "narHash": "sha256-KcB/tZaJ8Yc+NzR8SzCO2ORFgR/fMBUmzy8b+CNYl5o=",
         "path": "/home/tek/code/tek/haskell/incipit",
         "type": "path"
       },
@@ -1627,14 +1627,18 @@
         "polysemy-time": "polysemy-time"
       },
       "locked": {
-        "lastModified": 1654970417,
-        "narHash": "sha256-1YD+9epaCv1ktBXThsLNiWv/HAvjxLixdxglDWnGfeA=",
-        "path": "/home/tek/code/tek/haskell/polysemy-conc",
-        "type": "path"
+        "lastModified": 1654968690,
+        "narHash": "sha256-6eITef03GNWDoXn36yXlLIrzj92lnKtpBpnaXapKJok=",
+        "owner": "tek",
+        "repo": "polysemy-conc",
+        "rev": "c76b523a9bd7dc73e60489dfe3daad3b1989c275",
+        "type": "github"
       },
       "original": {
-        "path": "/home/tek/code/tek/haskell/polysemy-conc",
-        "type": "path"
+        "owner": "tek",
+        "ref": "v0.9.0.0",
+        "repo": "polysemy-conc",
+        "type": "github"
       }
     },
     "polysemy-conc_2": {
@@ -1663,13 +1667,17 @@
       },
       "locked": {
         "lastModified": 1654970235,
-        "narHash": "sha256-SD098PQgHd9MiPYo7tf0Av5WAzE60CJth+g2IOcFo20=",
-        "path": "/home/tek/code/tek/haskell/polysemy-log",
-        "type": "path"
+        "narHash": "sha256-mk4hMavnyI8jmvURbZH/4aUT0bIYi6k2MliYABNdHUg=",
+        "owner": "tek",
+        "repo": "polysemy-log",
+        "rev": "e8f6547ccee721d28f5a8137467baaad785f31c7",
+        "type": "github"
       },
       "original": {
-        "path": "/home/tek/code/tek/haskell/polysemy-log",
-        "type": "path"
+        "owner": "tek",
+        "ref": "v0.7.0.0",
+        "repo": "polysemy-log",
+        "type": "github"
       }
     },
     "polysemy-time": {
