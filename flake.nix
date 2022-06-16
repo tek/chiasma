@@ -3,7 +3,7 @@
 
   inputs = {
     hix.url = github:tek/hix;
-    incipit.url = path:/home/tek/code/tek/haskell/incipit;
+    incipit.url = github:tek/incipit;
     old.url = github:NixOS/nixpkgs/1db42b7fe3878f3f5f7a4f2dc210772fd080e205;
   };
 

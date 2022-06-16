@@ -475,14 +475,17 @@
         "polysemy-log": "polysemy-log"
       },
       "locked": {
-        "lastModified": 1655378319,
-        "narHash": "sha256-KcB/tZaJ8Yc+NzR8SzCO2ORFgR/fMBUmzy8b+CNYl5o=",
-        "path": "/home/tek/code/tek/haskell/incipit",
-        "type": "path"
+        "lastModified": 1655377234,
+        "narHash": "sha256-A5jeAcCfxC2b9PnlazJ1CBd43OaaxStO3Ace6u3lq6Y=",
+        "owner": "tek",
+        "repo": "incipit",
+        "rev": "65fb9c99ec257aedfc822888ab5c144ec5f09184",
+        "type": "github"
       },
       "original": {
-        "path": "/home/tek/code/tek/haskell/incipit",
-        "type": "path"
+        "owner": "tek",
+        "repo": "incipit",
+        "type": "github"
       }
     },
     "nixpkgs": {
