@@ -15,7 +15,7 @@ import Polysemy.Process (
   interpretProcessInputId,
   interpretProcessOutputLeft,
   interpretProcess_,
-  withProcess,
+  withProcess_,
   )
 import Polysemy.Process.Data.ProcessError (ProcessError)
 import Polysemy.Process.Data.SystemProcessError (SystemProcessError)
@@ -105,7 +105,7 @@ tmuxSession ::
   Sem (TmuxProc : r) a ->
   Sem r a
 tmuxSession action =
-  resumeHoist @ProcessError @(Scoped res TmuxProc) TmuxError.ProcessFailed $ withProcess do
+  resumeHoist @ProcessError @(Scoped res TmuxProc) TmuxError.ProcessFailed $ withProcess_ do
     void Process.recv
     raiseUnder action <* flush
 
