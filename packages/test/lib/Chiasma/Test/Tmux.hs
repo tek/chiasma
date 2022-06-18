@@ -7,7 +7,7 @@ import Hedgehog (TestT)
 import Hedgehog.Internal.Property (Failure)
 import Path (Abs, Dir, File, Path, relfile, (</>))
 import Path.IO (createTempDir, doesFileExist, getTempDir, removeDirRecur)
-import Polysemy.Chronos (ChronosTime, interpretTimeChronosConstant)
+import Polysemy.Chronos (ChronosTime, interpretTimeChronos)
 import qualified Polysemy.Conc as Race
 import Polysemy.Conc (interpretRace)
 import qualified Polysemy.Log as Log
@@ -123,7 +123,7 @@ runAndKillTmux ::
 runAndKillTmux thunk = do
   Race.timeout (throw "tmux didn't create sessions") (Seconds 3) waitForServer
   result <- finally thunk do
-    resumeWith @TmuxError (withTmux (resume_ (TmuxApi.send KillServer))) (Log.error "failed to kill server")
+    resumeWith @_ @(Scoped _ _) (withTmux (resume_ (TmuxApi.send KillServer))) (Log.error "failed to kill server")
     resume_ SystemProcess.kill
   result <$ resume_ (void SystemProcess.wait)
 
@@ -213,7 +213,7 @@ runTmuxTest conf thunk =
   mapError @CodecError @Text show $
   stopToError $
   interpretLogStdoutConc $
-  interpretTimeChronosConstant testTime do
+  interpretTimeChronos do
     withSystemTempDir (withTestTmux conf thunk)
 
 tmuxTest ::

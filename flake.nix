@@ -5,9 +5,10 @@
     hix.url = github:tek/hix;
     incipit.url = github:tek/incipit;
     old.url = github:NixOS/nixpkgs/1db42b7fe3878f3f5f7a4f2dc210772fd080e205;
+    polysemy-conc.url = github:tek/polysemy-conc;
   };
 
-  outputs = { hix, incipit, old, ... }:
+  outputs = { hix, incipit, old, polysemy-conc, ... }:
   let
     overrides = { hackage, source, unbreak, pkgs, system, buildInputs, ... }:
     let
@@ -17,7 +18,9 @@
       exon = hackage "0.4.0.0" "098ym81pz8rv88kgf4fmwwh52gz3151j3zvmpmg0a535irajqmq1";
       flatparse = unbreak;
       polysemy = hackage "1.7.1.0" "0qwli1kx3hk68hqsgw65mk81bx0djw1wlk17v8ggym7mf3lailyc";
+      polysemy-conc = source.package polysemy-conc "conc";
       polysemy-plugin = hackage "0.4.3.0" "1r7j1ffsd6z2q2fgpg78brl2gb0dg8r5ywfiwdrsjd2fxkinjcg1";
+      polysemy-process = source.package polysemy-conc "process";
     };
   in hix.lib.flake ({ config, lib, ... }: {
     base = ./.;

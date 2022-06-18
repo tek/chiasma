@@ -8,12 +8,20 @@ import Polysemy.Conc (interpretAtomic)
 import Polysemy.Conc.Interpreter.Scoped (interpretScopedResumableWith_)
 import qualified Polysemy.Log as Log
 import qualified Polysemy.Process as Process
-import Polysemy.Process (OutputPipe (Stderr, Stdout), Process, SystemProcess, interpretProcessInputId, interpretProcessOutputLeft, withProcess)
+import Polysemy.Process (
+  OutputPipe (Stderr, Stdout),
+  Process,
+  SystemProcess,
+  interpretProcessInputId,
+  interpretProcessOutputLeft,
+  interpretProcess_,
+  withProcess,
+  )
 import Polysemy.Process.Data.ProcessError (ProcessError)
 import Polysemy.Process.Data.SystemProcessError (SystemProcessError)
-import Polysemy.Process.Interpreter.Process (ProcessQueues, interpretProcess)
+import Polysemy.Process.Interpreter.Process (ProcessQueues)
 import Polysemy.Process.Interpreter.ProcessOutput (interpretProcessOutputTextLines)
-import Polysemy.Process.Interpreter.SystemProcess (PipesProcess, interpretSystemProcessNative)
+import Polysemy.Process.Interpreter.SystemProcess (PipesProcess, interpretSystemProcessNative_)
 import System.Process.Typed (ProcessConfig, proc)
 
 import qualified Chiasma.Data.TmuxError as TmuxError
@@ -71,7 +79,7 @@ interpretSystemProcessTmux ::
   InterpreterFor (Scoped PipesProcess (SystemProcess !! SystemProcessError)) r
 interpretSystemProcessTmux sem = do
   conf <- tmuxProc <$> ask
-  interpretSystemProcessNative conf sem
+  interpretSystemProcessNative_ conf sem
 
 interpretProcessTmux ::
   Members [Scoped res (SystemProcess !! SystemProcessError), Resource, Race, Async, Embed IO] r =>
@@ -81,7 +89,7 @@ interpretProcessTmux sem = do
     interpretProcessOutputTextLines @'Stderr $
     interpretProcessOutputLeft @'Stderr $
     interpretProcessInputId $
-    interpretProcess def $
+    interpretProcess_ def $
     insertAt @1 sem
 {-# inline interpretProcessTmux #-}
 
