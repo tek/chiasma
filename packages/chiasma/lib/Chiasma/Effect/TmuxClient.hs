@@ -4,7 +4,7 @@ import Prelude hiding (send)
 
 import Chiasma.Data.TmuxRequest (TmuxRequest)
 
-data TmuxClient  (encode :: Type -> Type) (decode :: Type -> Type) :: Effect where
+data TmuxClient (encode :: Type -> Type) (decode :: Type -> Type) :: Effect where
   Send :: encode a -> TmuxClient encode decode m (decode a)
   Schedule :: encode a -> TmuxClient encode decode m ()
 
