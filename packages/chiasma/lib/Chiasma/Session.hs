@@ -41,7 +41,6 @@ ensureSession ::
   Sem r (SessionId, Maybe WindowId)
 ensureSession session' window = do
   existing <- join <$> traverse existingSessionId (Tmux.viewId session')
-  dbgs existing
   case existing of
     Just sid -> pure (sid, Nothing)
     Nothing -> second Just <$> spawnSession session' window

@@ -57,6 +57,5 @@ switchClient ::
   Sem r ()
 switchClient clientSession session = do
   clients <- Tmux.send ListClients
-  dbgs (clientSession, session, clients)
   Client client _ _ <- stopNote NoClients (clientForSession clientSession clients)
   Tmux.send (SwitchClient client (Target.Session session))
