@@ -76,3 +76,5 @@ instance CmdArgs CapturePaneParams where
     optionArgsWith "-S" startLine
     <>
     optionArgsWith "-E" endLine
+    <>
+    cmdArgs target
