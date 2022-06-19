@@ -1,6 +1,7 @@
 module Chiasma.Data.TmuxCommand where
 
 import Data.List (dropWhileEnd)
+import qualified Data.Text as Text
 import Exon (exon)
 import Text.Show (Show (showsPrec), showParen, showString, shows)
 
@@ -11,7 +12,7 @@ import Chiasma.Codec.Data.Client (Client)
 import Chiasma.Codec.Data.Pane (Pane)
 import Chiasma.Codec.Data.Session (Session)
 import Chiasma.Codec.Data.Window (Window)
-import Chiasma.Data.CapturePaneParams (CapturePaneParams)
+import Chiasma.Data.CapturePaneParams (CapturePaneParams (CapturePaneParams), stripBlank, stripTrailingWs)
 import Chiasma.Data.CopyModeParams (CopyModeParams)
 import Chiasma.Data.DecodeError (DecodeError)
 import Chiasma.Data.KillPaneParams (KillPaneParams)
@@ -29,6 +30,7 @@ import Chiasma.Data.TmuxQuery (TmuxQuery)
 import Chiasma.Data.TmuxRequest (TmuxRequest (TmuxRequest))
 import Chiasma.Data.WindowParams (WindowParams)
 import Chiasma.Data.WindowSelection (WindowSelection)
+import Chiasma.Function (applyWhen)
 
 data TmuxCommand :: Type -> Type where
   Fmap :: (a -> b) -> TmuxCommand a -> TmuxCommand b
@@ -201,7 +203,10 @@ decode out = \case
     unit
   PipePane _ ->
     unit
-  CapturePane _ ->
-    pure (dropWhileEnd ("" ==) out)
+  CapturePane CapturePaneParams {stripBlank, stripTrailingWs} ->
+    pure $
+    applyWhen stripBlank (dropWhileEnd ("" ==)) $
+    applyWhen stripTrailingWs (fmap Text.stripEnd) $
+    out
   KillServer ->
     unit

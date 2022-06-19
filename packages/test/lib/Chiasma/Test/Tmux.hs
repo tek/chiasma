@@ -11,7 +11,7 @@ import Polysemy.Chronos (ChronosTime, interpretTimeChronos)
 import qualified Polysemy.Conc as Race
 import Polysemy.Conc (interpretRace)
 import qualified Polysemy.Log as Log
-import Polysemy.Log (interpretLogStdoutConc)
+import Polysemy.Log (Severity (Trace), interpretLogStdoutLevelConc)
 import Polysemy.Process (interpretSystemProcessNativeOpaqueSingle, resolveExecutable)
 import qualified Polysemy.Process.Effect.Pty as Pty
 import Polysemy.Process.Effect.Pty (Pty, withPty)
@@ -39,36 +39,31 @@ import Chiasma.Effect.TmuxClient (TmuxClient)
 import Chiasma.Interpreter.Codec (interpretCodecPanesPane, interpretCodecTmuxCommand)
 import Chiasma.Interpreter.TmuxClient (interpretTmuxNative)
 import Chiasma.Path (pathText)
+import qualified Chiasma.Test.Data.TmuxTestConfig as TmuxTestConfig
+import Chiasma.Test.Data.TmuxTestConfig (TmuxTestConfig (TmuxTestConfig))
 import Chiasma.Tmux (withTmux)
-
-data TmuxTestConf =
-  TmuxTestConf {
-    ttcWidth :: Pty.Rows,
-    ttcHeight :: Pty.Cols,
-    ttcFontSize :: Int,
-    ttcGui :: Bool,
-    ttcConf :: [Text]
-  }
-  deriving stock (Eq, Show, Generic)
-
-instance Default TmuxTestConf where
-  def =
-    TmuxTestConf 240 61 12 False mempty
 
 xtermArgs :: Int -> Int -> Int -> [Text]
 xtermArgs width height fontSize =
   ["-geometry", show width <> "x" <> show height, "-fn", "xft:monospace:size=" <> show fontSize, "-e", "tmux"]
+
+bashrcContent :: [Text]
+bashrcContent =
+  [
+    "PS1='$ '"
+  ]
 
 createTmuxConf ::
   Member Test r =>
   Path Abs File ->
   [Text] ->
   Sem r (Path Abs File)
-createTmuxConf wait content =
-  Test.tempFile (defaultContent ++ content ++ initCommands) [relfile|tmux.conf|]
+createTmuxConf wait content = do
+  bashrc <- Test.tempFile bashrcContent [relfile|bashrc|]
+  Test.tempFile (defaultContent bashrc ++ content ++ initCommands) [relfile|tmux.conf|]
   where
-    defaultContent =
-      ["set -g default-command '/usr/bin/env bash --norc --noprofile'"]
+    defaultContent rc =
+      [[exon|set -g default-command '/usr/bin/env bash --noprofile --rcfile #{pathText rc}'|]]
     initCommands =
       [
         [exon|run-shell -b 'touch #{pathText wait}'|]
@@ -77,10 +72,10 @@ createTmuxConf wait content =
 testTmuxProcessConfig ::
   Members [Pty, Test, Embed IO] r =>
   Path Abs File ->
-  TmuxTestConf ->
+  TmuxTestConfig ->
   Path Abs File ->
   Sem r (ProcessConfig () () ())
-testTmuxProcessConfig wait (TmuxTestConf width height fontSize gui conf) socket = do
+testTmuxProcessConfig wait (TmuxTestConfig width height fontSize gui conf _) socket = do
   confFile <- createTmuxConf wait conf
   Pty.resize width height
   handle <- Pty.handle
@@ -137,7 +132,7 @@ type TestTmuxEffects =
 
 withTestTmux ::
   Members [Test, Time t d, Log, Resource, Error Text, Race, Async, Embed IO] r =>
-  TmuxTestConf ->
+  TmuxTestConfig ->
   Sem (TestTmuxEffects ++ r) a ->
   Path Abs Dir ->
   Sem r a
@@ -198,7 +193,7 @@ testTime =
   datetimeToTime (mkDatetime 2030 3 20 12 0 0)
 
 runTmuxTest ::
-  TmuxTestConf ->
+  TmuxTestConfig ->
   Sem TestStack a ->
   TestT IO a
 runTmuxTest conf thunk =
@@ -212,7 +207,7 @@ runTmuxTest conf thunk =
   stopToError $
   mapError @CodecError @Text show $
   stopToError $
-  interpretLogStdoutConc $
+  interpretLogStdoutLevelConc (Just (TmuxTestConfig.logLevel conf)) $
   interpretTimeChronos do
     withSystemTempDir (withTestTmux conf thunk)
 
@@ -222,8 +217,14 @@ tmuxTest ::
 tmuxTest =
   runTmuxTest def
 
+tmuxTestDebug ::
+  Sem TestStack a ->
+  TestT IO a
+tmuxTestDebug =
+  runTmuxTest def { TmuxTestConfig.logLevel = Trace }
+
 tmuxGuiTest ::
   Sem TestStack a ->
   TestT IO a
 tmuxGuiTest =
-  runTmuxTest def { ttcGui = True }
+  runTmuxTest def { TmuxTestConfig.gui = True }

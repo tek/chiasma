@@ -24,8 +24,11 @@ source-repository head
 
 library
   exposed-modules:
+      Chiasma.Test.CaptureTest
+      Chiasma.Test.Data.TmuxTestConfig
       Chiasma.Test.Screenshot
       Chiasma.Test.Tmux
+      Chiasma.Test.Wait
   hs-source-dirs:
       lib
   default-extensions:

@@ -83,6 +83,7 @@ library
       Chiasma.Effect.TmuxApi
       Chiasma.Effect.TmuxClient
       Chiasma.Event
+      Chiasma.Function
       Chiasma.Interpreter.Codec
       Chiasma.Interpreter.ProcessOutput
       Chiasma.Interpreter.TmuxApi

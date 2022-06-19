@@ -38,7 +38,9 @@ data CapturePaneParams =
     incomplete :: Bool,
     startLine :: Maybe CaptureLine,
     endLine :: Maybe CaptureLine,
-    target :: Target
+    target :: Target,
+    stripBlank :: Bool,
+    stripTrailingWs :: Bool
   }
   deriving stock (Eq, Show)
 
@@ -54,7 +56,9 @@ instance Default CapturePaneParams where
       incomplete = False,
       startLine = Nothing,
       endLine = Nothing,
-      target = Target.Current
+      target = Target.Current,
+      stripBlank = True,
+      stripTrailingWs = True
     }
 
 instance CmdArgs CapturePaneParams where
