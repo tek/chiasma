@@ -110,7 +110,7 @@ waitForEmptyPrompt =
   Time.while (MilliSeconds 10) do
     resumeAs @CodecError @(Codec _ _ _) True $ resumeAs @TmuxError @(Scoped _ _) True $ withTmux do
       prompt <- [] <! capturePane 0
-      pure (["$"] == prompt)
+      pure (["$"] /= prompt)
 
 waitForFile ::
   Members [Time t d, Embed IO] r =>
