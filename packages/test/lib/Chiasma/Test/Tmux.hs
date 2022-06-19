@@ -26,6 +26,7 @@ import System.Process.Typed (ProcessConfig, StreamSpec, proc, setStderr, setStdi
 
 import Chiasma.Codec.Data.Pane (Pane)
 import Chiasma.Codec.Data.Session (Session (Session))
+import Chiasma.Command.Pane (capturePane)
 import Chiasma.Data.CodecError (CodecError)
 import Chiasma.Data.Panes (Panes)
 import Chiasma.Data.RenderError (RenderError)
@@ -75,7 +76,7 @@ testTmuxProcessConfig ::
   TmuxTestConfig ->
   Path Abs File ->
   Sem r (ProcessConfig () () ())
-testTmuxProcessConfig wait (TmuxTestConfig width height fontSize gui conf _) socket = do
+testTmuxProcessConfig wait (TmuxTestConfig {..}) socket = do
   confFile <- createTmuxConf wait conf
   Pty.resize width height
   handle <- Pty.handle
@@ -101,6 +102,16 @@ waitForServer =
       s <- [] <! TmuxApi.send ListSessions
       pure (s /= [Session 0 "0"])
 
+waitForEmptyPrompt ::
+  ∀ resource enc dec t d r .
+  Members [Scoped resource (TmuxClient enc dec) !! TmuxError, Codec TmuxCommand enc dec !! CodecError, Time t d] r =>
+  Sem r ()
+waitForEmptyPrompt =
+  Time.while (MilliSeconds 10) do
+    resumeAs @CodecError @(Codec _ _ _) True $ resumeAs @TmuxError @(Scoped _ _) True $ withTmux do
+      prompt <- [] <! capturePane 0
+      pure (["$"] == prompt)
+
 waitForFile ::
   Members [Time t d, Embed IO] r =>
   Path Abs File ->
@@ -113,10 +124,13 @@ runAndKillTmux ::
   ∀ resource err enc dec t d r a .
   Members [Scoped resource (TmuxClient enc dec) !! TmuxError, Codec TmuxCommand enc dec !! CodecError] r =>
   Members [SystemProcess !! err, Time t d, Log, Resource, Error Text, Race, Embed IO] r =>
+  Bool ->
   Sem r a ->
   Sem r a
-runAndKillTmux thunk = do
-  Race.timeout (throw "tmux didn't create sessions") (Seconds 3) waitForServer
+runAndKillTmux waitForPrompt thunk = do
+  void (Race.timeout (throw "tmux didn't create sessions") (Seconds 3) waitForServer)
+  when waitForPrompt do
+    void (Race.timeout (throw "empty prompt did not appear in pane 0") (Seconds 3) waitForEmptyPrompt)
   result <- finally thunk do
     resumeWith @_ @(Scoped _ _) (withTmux (resume_ (TmuxApi.send KillServer))) (Log.error "failed to kill server")
     resume_ SystemProcess.kill
@@ -136,7 +150,7 @@ withTestTmux ::
   Sem (TestTmuxEffects ++ r) a ->
   Path Abs Dir ->
   Sem r a
-withTestTmux tConf thunk tempDir = do
+withTestTmux tConf@TmuxTestConfig {waitForPrompt} thunk tempDir = do
   let socket = tempDir </> [relfile|tmux_socket|]
   let wait = tempDir </> [relfile|wait|]
   exe <- fromEither =<< resolveExecutable [relfile|tmux|] Nothing
@@ -145,7 +159,7 @@ withTestTmux tConf thunk tempDir = do
     interpretSystemProcessNativeOpaqueSingle pc $ runReader (TmuxNative exe (Just socket)) do
       void $ Race.timeout (throw "tmux didn't start") (Seconds 3) (waitForFile wait)
       interpretCodecPanesPane $ interpretCodecTmuxCommand $ interpretTmuxNative do
-        runAndKillTmux @() (insertAt @4 thunk)
+        runAndKillTmux @() waitForPrompt (insertAt @4 thunk)
 
 withTempDir ::
   Members [Resource, Embed IO] r =>

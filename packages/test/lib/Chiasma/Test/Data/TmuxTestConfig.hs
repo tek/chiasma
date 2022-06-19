@@ -10,10 +10,11 @@ data TmuxTestConfig =
     fontSize :: Int,
     gui :: Bool,
     conf :: [Text],
-    logLevel :: Severity
+    logLevel :: Severity,
+    waitForPrompt :: Bool
   }
   deriving stock (Eq, Show, Generic)
 
 instance Default TmuxTestConfig where
   def =
-    TmuxTestConfig 240 61 12 False mempty Info
+    TmuxTestConfig 240 61 12 False mempty Info True

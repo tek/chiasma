@@ -15,8 +15,6 @@ test_capture :: UnitTest
 test_capture =
   tmuxTest do
     restop @TmuxError @(ScopedTmux _ _ _) do
-      withTmux do
-        resumeHoist TmuxError.codec do
-          assertWait (capturePane 0) (assertEq ["$"])
-          sendKeys 0 [Lit "echo 1"]
-          assertWait (capturePane 0) (assertEq ["$ echo 1", "1", "$"])
+      withTmux $ resumeHoist TmuxError.codec do
+        sendKeys 0 [Lit "echo 1"]
+        assertWait (capturePane 0) (assertEq ["$ echo 1", "1", "$"])
