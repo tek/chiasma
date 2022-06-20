@@ -1,6 +1,6 @@
 module Chiasma.Test.Util where
 
-import Hedgehog (TestT, withTests, property, test)
+import Hedgehog (TestT, property, test, withTests)
 import Test.Tasty (TestName, TestTree)
 import Test.Tasty.Hedgehog (testProperty)
 

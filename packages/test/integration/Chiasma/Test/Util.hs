@@ -16,4 +16,4 @@ integrationTest ::
   UnitTest ->
   TestTree
 integrationTest desc =
-  testProperty desc . withTests 1 . property . test . checkEnv
+  testProperty desc . withTests 1 . property . test
