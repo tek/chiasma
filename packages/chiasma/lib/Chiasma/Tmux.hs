@@ -7,7 +7,13 @@ import Polysemy.Internal.Union (hoist, weakenMid)
 import Chiasma.Effect.Codec (Codec)
 import Chiasma.Effect.TmuxApi (TmuxApi)
 import Chiasma.Effect.TmuxClient (TmuxClient)
-import Chiasma.Interpreter.TmuxApi (InterpretApis (interpretApis), TmuxApis, interpretTmuxApi)
+import Chiasma.Interpreter.TmuxApi (
+  InterpretApis (interpretApis),
+  RestopApis (restopApis),
+  TmuxApis,
+  interpretTmuxApi,
+  type (<$>),
+  )
 
 withTmuxApis' ::
   ∀ commands err encode decode resource r a .
@@ -33,7 +39,21 @@ withTmuxApis ::
   Member (Scoped resource (TmuxClient encode decode)) r =>
   InterpretersFor (TmuxApis commands err) r
 withTmuxApis =
-  scoped . interpretApis @commands @err . insertAfter @(TmuxApis commands err) @(TmuxClient encode decode) @r
+  scoped .
+  interpretApis @commands @err .
+  insertAfter @(TmuxApis commands err) @(TmuxClient encode decode) @r
+
+withTmuxApis_ ::
+  ∀ commands err encode decode resource apis r .
+  apis ~ TmuxApi <$> commands =>
+  KnownList apis =>
+  RestopApis commands err encode decode r =>
+  Member (Scoped resource (TmuxClient encode decode)) r =>
+  InterpretersFor apis r
+withTmuxApis_ =
+  scoped .
+  restopApis @commands @err .
+  insertAfter @apis @(TmuxClient encode decode) @r
 
 withTmux ::
   ∀ command err encode decode resource r .

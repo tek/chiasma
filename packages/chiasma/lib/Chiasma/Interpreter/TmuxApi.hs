@@ -1,6 +1,6 @@
 module Chiasma.Interpreter.TmuxApi where
 
-import Fcf (Eval, Exp, type (@@))
+import Fcf (Eval, Exp, type (@@), Pure1)
 import Fcf.Class.Functor (FMap)
 import Prelude hiding (send)
 
@@ -8,6 +8,10 @@ import Chiasma.Effect.Codec (Codec, decode, encode)
 import Chiasma.Effect.TmuxApi (TmuxApi (Schedule, Send), send)
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
+
+type family (f :: l -> k) <$> (fa :: [l]) :: [k] where
+  f <$> fa =
+    FMap (Pure1 f) @@ fa
 
 flush ::
   Member (TmuxApi c) r =>
@@ -57,3 +61,22 @@ instance (
   ) => InterpretApis (command : commands) err encode decode r where
     interpretApis =
       interpretApis @commands @err . interpretTmuxApi
+
+class RestopApis (commands :: [Type -> Type]) err encode decode r where
+  restopApis :: InterpretersFor (TmuxApi <$> commands) (TmuxClient encode decode : r)
+
+instance RestopApis '[] err encode decode r where
+  restopApis =
+    id
+
+instance (
+    r1 ~ (TmuxApi <$> commands ++ TmuxClient encode decode : r),
+    Members [TmuxClient encode decode, Stop err] r1,
+    Member (Codec command encode decode !! err) r1,
+    RestopApis commands err encode decode r
+  ) => RestopApis (command : commands) err encode decode r where
+    restopApis =
+      restopApis @commands @err @encode @decode .
+      interpretTmuxApi @command @encode @decode .
+      restop @err @(TmuxApi command) .
+      raiseUnder
