@@ -37,7 +37,7 @@ import Chiasma.Data.TmuxRequest (TmuxRequest)
 import Chiasma.Effect.Codec (Codec)
 import qualified Chiasma.Effect.TmuxApi as TmuxApi
 import Chiasma.Effect.TmuxClient (TmuxClient)
-import Chiasma.Interpreter.Codec (interpretCodecPanesPane, interpretCodecTmuxCommand)
+import Chiasma.Interpreter.Codec (interpretCodecPanes, interpretCodecTmuxCommand)
 import Chiasma.Interpreter.TmuxClient (interpretTmuxNative)
 import Chiasma.Path (pathText)
 import qualified Chiasma.Test.Data.TmuxTestConfig as TmuxTestConfig
@@ -158,7 +158,7 @@ withTestTmux tConf@TmuxTestConfig {waitForPrompt} thunk tempDir = do
     pc <- testTmuxProcessConfig wait tConf socket
     interpretSystemProcessNativeOpaqueSingle pc $ runReader (TmuxNative exe (Just socket)) do
       void $ Race.timeout (throw "tmux didn't start") (Seconds 3) (waitForFile wait)
-      interpretCodecPanesPane $ interpretCodecTmuxCommand $ interpretTmuxNative do
+      interpretCodecPanes $ interpretCodecTmuxCommand $ interpretTmuxNative do
         runAndKillTmux @() waitForPrompt (insertAt @4 thunk)
 
 withTempDir ::
