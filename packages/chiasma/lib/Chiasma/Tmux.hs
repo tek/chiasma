@@ -6,7 +6,7 @@ import Polysemy.Internal.Union (hoist, weakenMid)
 
 import Chiasma.Effect.Codec (Codec)
 import Chiasma.Effect.TmuxApi (TmuxApi)
-import Chiasma.Effect.TmuxClient (TmuxClient)
+import Chiasma.Effect.TmuxClient (TmuxClient, ScopedTmux)
 import Chiasma.Interpreter.TmuxApi (
   InterpretApis (interpretApis),
   RestopApis (restopApis),
@@ -17,8 +17,8 @@ import Chiasma.Interpreter.TmuxApi (
 
 withTmuxApis' ::
   ∀ commands err encode decode resource r a .
-  Member (Scoped resource (TmuxClient encode decode)) r =>
   InterpretApis commands err encode decode r =>
+  Member (ScopedTmux resource encode decode) r =>
   Sem (TmuxApis commands err ++ TmuxClient encode decode : r) a ->
   Sem r a
 withTmuxApis' =
@@ -36,7 +36,7 @@ withTmuxApis ::
   ∀ commands err encode decode resource r .
   KnownList (TmuxApis commands err) =>
   InterpretApis commands err encode decode r =>
-  Member (Scoped resource (TmuxClient encode decode)) r =>
+  Member (ScopedTmux resource encode decode) r =>
   InterpretersFor (TmuxApis commands err) r
 withTmuxApis =
   scoped .
@@ -48,7 +48,7 @@ withTmuxApis_ ::
   apis ~ TmuxApi <$> commands =>
   KnownList apis =>
   RestopApis commands err encode decode r =>
-  Member (Scoped resource (TmuxClient encode decode)) r =>
+  Member (ScopedTmux resource encode decode) r =>
   InterpretersFor apis r
 withTmuxApis_ =
   scoped .
@@ -57,7 +57,18 @@ withTmuxApis_ =
 
 withTmux ::
   ∀ command err encode decode resource r .
-  Members [Scoped resource (TmuxClient encode decode), Codec command encode decode !! err] r =>
+  Members [ScopedTmux resource encode decode, Codec command encode decode !! err] r =>
   InterpreterFor (TmuxApi command !! err) r
 withTmux =
   scoped . interpretTmuxApi . raiseUnder
+
+withTmux_ ::
+  ∀ command err encode decode resource r .
+  Members [ScopedTmux resource encode decode, Codec command encode decode !! err, Stop err] r =>
+  InterpreterFor (TmuxApi command) r
+withTmux_ =
+  scoped .
+  interpretTmuxApi .
+  raiseUnder .
+  restop @err @(TmuxApi command) .
+  raiseUnder
