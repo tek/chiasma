@@ -118,6 +118,98 @@ library
     , incipit hiding (Incipit)
   default-language: Haskell2010
 
+test-suite chiasma-test-integration
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Chiasma.Test.CaptureTest
+      Chiasma.Test.RenderTest
+      Chiasma.Test.TmuxTest
+      Chiasma.Test.Util
+  hs-source-dirs:
+      integration
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DoAndIfThenElse
+      DuplicateRecordFields
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedStrings
+      OverloadedLists
+      PackageImports
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      QuasiQuotes
+      RankNTypes
+      RecordWildCards
+      RecursiveDo
+      RoleAnnotations
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+      ImpredicativeTypes
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.12 && <5
+    , chiasma
+    , chiasma-test
+    , hedgehog
+    , incipit >=0.3
+    , lens >=4
+    , path-io
+    , polysemy
+    , polysemy-chronos
+    , polysemy-plugin
+    , polysemy-test >=0.6
+    , tasty
+    , tasty-hedgehog
+  mixins:
+      base hiding (Prelude)
+    , incipit (Incipit as Prelude)
+    , incipit hiding (Incipit)
+  default-language: Haskell2010
+
 test-suite chiasma-test-unit
   type: exitcode-stdio-1.0
   main-is: Main.hs
@@ -199,6 +291,7 @@ test-suite chiasma-test-unit
     , lens >=4
     , polysemy
     , polysemy-plugin
+    , polysemy-test >=0.6
     , tasty
     , tasty-hedgehog
   mixins:

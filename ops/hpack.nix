@@ -129,6 +129,20 @@ in {
         "chiasma"
         "hedgehog"
         "lens >= 4"
+        "polysemy-test >= 0.6"
+        "tasty"
+        "tasty-hedgehog"
+      ];
+    };
+    tests.chiasma-test-integration = exe "chiasma-test" "integration" {
+      dependencies = [
+        "chiasma"
+        "chiasma-test"
+        "hedgehog"
+        "lens >= 4"
+        "path-io"
+        "polysemy-chronos"
+        "polysemy-test >= 0.6"
         "tasty"
         "tasty-hedgehog"
       ];

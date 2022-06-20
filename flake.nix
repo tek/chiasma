@@ -14,7 +14,7 @@
     let
       oldPkgs = import old { inherit system; };
     in {
-      chiasma = buildInputs [oldPkgs.tmux pkgs.xterm];
+      chiasma-test = buildInputs [oldPkgs.tmux pkgs.xterm];
       exon = hackage "0.4.0.0" "098ym81pz8rv88kgf4fmwwh52gz3151j3zvmpmg0a535irajqmq1";
       flatparse = unbreak;
       polysemy = hackage "1.7.1.0" "0qwli1kx3hk68hqsgw65mk81bx0djw1wlk17v8ggym7mf3lailyc";
