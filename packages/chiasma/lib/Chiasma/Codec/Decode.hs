@@ -22,23 +22,23 @@ class TmuxPrimDecode a where
   primDecode :: Text -> Either DecodeFailure a
 
 class TmuxDataDecode f where
-  decode' :: [Text] -> Either DecodeFailure ([Text], f a)
+  dataDecode :: [Text] -> Either DecodeFailure ([Text], f a)
 
 instance (TmuxDataDecode f, TmuxDataDecode g) => TmuxDataDecode (f :*: g) where
-  decode' fields = do
-    (rest, left) <- decode' fields
-    (rest1, right) <- decode' rest
+  dataDecode fields = do
+    (rest, left) <- dataDecode fields
+    (rest1, right) <- dataDecode rest
     pure (rest1, left :*: right)
 
 instance TmuxDataDecode f => (TmuxDataDecode (M1 i c f)) where
-  decode' fields =
-    second M1 <$> decode' fields
+  dataDecode fields =
+    second M1 <$> dataDecode fields
 
 instance TmuxPrimDecode a => (TmuxDataDecode (K1 c a)) where
-  decode' (a:as') = do
+  dataDecode (a:as') = do
     prim <- primDecode a
     pure (as', K1 prim)
-  decode' [] = Left TooFewFields
+  dataDecode [] = Left TooFewFields
 
 readInt :: Text -> Text -> Either DecodeFailure Int
 readInt text num =

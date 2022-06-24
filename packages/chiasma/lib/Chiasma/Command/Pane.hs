@@ -21,18 +21,10 @@ import qualified Chiasma.Data.Target as Target
 import Chiasma.Data.TmuxCommand (
   TmuxCommand (CapturePane, CopyMode, KillPane, MovePane, PipePane, ResizePane, SelectPane, SendKeys),
   )
-import Chiasma.Data.TmuxId (HasPaneId, PaneId, WindowId, formatId)
-import qualified Chiasma.Data.TmuxId as HasPaneId (paneId)
+import Chiasma.Data.TmuxId (PaneId, WindowId)
 import Chiasma.Data.View (View (View))
 import qualified Chiasma.Effect.TmuxApi as Tmux
 import Chiasma.Effect.TmuxApi (Tmux)
-
-paneTarget :: PaneId -> [Text]
-paneTarget paneId =
-  ["-t", formatId paneId]
-
-sameId :: HasPaneId a => PaneId -> a -> Bool
-sameId target candidate = target == HasPaneId.paneId candidate
 
 panes ::
   Member (TmuxPanes a) r =>
@@ -42,11 +34,10 @@ panes =
 
 pane ::
   Member (TmuxPanes a) r =>
-  HasPaneId a =>
   PaneId ->
   Sem r (Maybe a)
 pane paneId =
-  find (sameId paneId) <$> Tmux.send (Panes.List (PaneSelection.InWindow (Target.Pane paneId)))
+  Tmux.send (Panes.Find paneId)
 
 windowPanes ::
   Member (TmuxPanes a) r =>
@@ -74,7 +65,7 @@ isPaneIdOpen ::
   PaneId ->
   Sem r Bool
 isPaneIdOpen paneId =
-  any (sameId paneId) <$> panes
+  isJust <$> pane paneId
 
 isPaneOpen ::
   Member (TmuxPanes Codec.Pane) r =>

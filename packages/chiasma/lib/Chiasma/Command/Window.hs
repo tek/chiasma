@@ -63,10 +63,17 @@ newWindow ::
 newWindow sid name =
   Tmux.send (NewWindow def { target = Target.Session sid, name = Just name })
 
-splitWindow ::
+splitWindowInDir ::
   Member Tmux r =>
   Path Abs Dir ->
   WindowId ->
   Sem r Pane
-splitWindow dir windowId =
+splitWindowInDir dir windowId =
   Tmux.send (SplitWindow def { target = Target.Window windowId, detach = True, cwd = Just dir } def)
+
+splitWindow ::
+  Member Tmux r =>
+  WindowId ->
+  Sem r Pane
+splitWindow windowId =
+  Tmux.send (SplitWindow def { target = Target.Window windowId, detach = True } def)

@@ -5,16 +5,16 @@ import qualified Data.Text as Text (concatMap, singleton)
 import GHC.Generics (C1, D1, S1, Selector, selName, (:*:))
 
 class TmuxDataQuery f where
-  query' :: [Text]
+  dataQuery :: [Text]
 
 instance TmuxDataQuery f => (TmuxDataQuery (D1 c f)) where
-  query' = query' @f
+  dataQuery = dataQuery @f
 
 instance TmuxDataQuery f => (TmuxDataQuery (C1 c f)) where
-  query' = query' @f
+  dataQuery = dataQuery @f
 
 instance (TmuxDataQuery f, TmuxDataQuery g) => TmuxDataQuery (f :*: g) where
-  query' = query' @f <> query' @g
+  dataQuery = dataQuery @f <> dataQuery @g
 
 trans :: Char -> Text
 trans a | isUpper a = toText @String ['_', toLower a]
@@ -28,7 +28,7 @@ formatQuery :: Text -> Text
 formatQuery q = "#{" <> snakeCase q <> "}"
 
 instance Selector s => (TmuxDataQuery (S1 s f)) where
-  query' =
+  dataQuery =
     [formatQuery (toText query)]
     where
       query = selName (undefined :: t s f p)

@@ -123,6 +123,7 @@ test-suite chiasma-test-integration
   main-is: Main.hs
   other-modules:
       Chiasma.Test.CaptureTest
+      Chiasma.Test.FindTest
       Chiasma.Test.RenderTest
       Chiasma.Test.TmuxTest
       Chiasma.Test.Util

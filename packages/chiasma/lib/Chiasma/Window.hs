@@ -10,7 +10,7 @@ import qualified Chiasma.Codec.Data.Pane as Codec (Pane (Pane, paneId))
 import Chiasma.Codec.Data.Pane (Pane (Pane))
 import qualified Chiasma.Codec.Data.Window as Codec (Window (Window, windowId))
 import qualified Chiasma.Command.Pane as Cmd (closePane, firstWindowPane, windowPanes)
-import qualified Chiasma.Command.Window as Cmd (newWindow, splitWindow, window)
+import qualified Chiasma.Command.Window as Cmd (newWindow, splitWindowInDir, window)
 import Chiasma.Data.Axis (Axis)
 import Chiasma.Data.Ident (Ident, identText, identify)
 import Chiasma.Data.Panes (TmuxPanes)
@@ -135,7 +135,7 @@ openPane ::
   WindowId ->
   Sem r Pane
 openPane dir windowId = do
-  detail <- Cmd.splitWindow dir windowId
+  detail <- Cmd.splitWindowInDir dir windowId
   viewsLogS $ "opened pane " <> show (Pane.paneId detail) <> " in window " <> show windowId
   pure detail
 

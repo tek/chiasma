@@ -14,6 +14,8 @@ data DecodeFailure =
   TooManyFields [Text]
   |
   TooManyRecords [Text]
+  |
+  TargetMissing
   deriving stock (Eq, Show)
 
 data DecodeError =

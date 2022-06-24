@@ -79,6 +79,7 @@ library
       Chiasma.Data.WindowParams
       Chiasma.Data.WindowSelection
       Chiasma.Data.WindowState
+      Chiasma.Data.WithPaneId
       Chiasma.Effect.Codec
       Chiasma.Effect.TmuxApi
       Chiasma.Effect.TmuxClient
