@@ -33,10 +33,9 @@ import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxCommand (TmuxCommand (KillServer, ListSessions))
 import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Data.TmuxNative (TmuxNative (..))
-import Chiasma.Data.TmuxRequest (TmuxRequest)
-import Chiasma.Effect.Codec (Codec)
+import Chiasma.Effect.Codec (Codec, NativeCodec)
 import qualified Chiasma.Effect.TmuxApi as TmuxApi
-import Chiasma.Effect.TmuxClient (TmuxClient)
+import Chiasma.Effect.TmuxClient (NativeTmux, TmuxClient)
 import Chiasma.Interpreter.Codec (interpretCodecPanes, interpretCodecTmuxCommand)
 import Chiasma.Interpreter.TmuxClient (interpretTmuxNative)
 import Chiasma.Path (pathText)
@@ -138,14 +137,15 @@ runAndKillTmux waitForPrompt thunk = do
 
 type TestTmuxEffects =
   [
-    Scoped () (TmuxClient (Const TmuxRequest) (Const [Text])) !! TmuxError,
-    Codec TmuxCommand (Const TmuxRequest) (Const [Text]) !! CodecError,
-    Codec (Panes Pane) (Const TmuxRequest) (Const [Text]) !! CodecError,
+    NativeTmux,
+    NativeTmux !! TmuxError,
+    NativeCodec TmuxCommand !! CodecError,
+    NativeCodec (Panes Pane) !! CodecError,
     Reader TmuxNative
   ]
 
 withTestTmux ::
-  Members [Test, Time t d, Log, Resource, Error Text, Race, Async, Embed IO] r =>
+  Members [Test, Time t d, Log, Resource, Stop TmuxError, Error Text, Race, Async, Embed IO] r =>
   TmuxTestConfig ->
   Sem (TestTmuxEffects ++ r) a ->
   Path Abs Dir ->
@@ -158,8 +158,8 @@ withTestTmux tConf@TmuxTestConfig {waitForPrompt} thunk tempDir = do
     pc <- testTmuxProcessConfig wait tConf socket
     interpretSystemProcessNativeOpaqueSingle pc $ runReader (TmuxNative exe (Just socket)) do
       void $ Race.timeout (throw "tmux didn't start") (Seconds 3) (waitForFile wait)
-      interpretCodecPanes $ interpretCodecTmuxCommand $ interpretTmuxNative do
-        runAndKillTmux @() waitForPrompt (insertAt @4 thunk)
+      interpretCodecPanes $ interpretCodecTmuxCommand $ interpretTmuxNative $ restop @TmuxError do
+        runAndKillTmux @() waitForPrompt (insertAt @5 thunk)
 
 withTempDir ::
   Members [Resource, Embed IO] r =>
