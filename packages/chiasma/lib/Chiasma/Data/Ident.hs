@@ -6,18 +6,14 @@ import qualified Data.UUID as UUID (fromText, toText)
 import Polysemy.Time.Json (json)
 import Prettyprinter (Pretty (..))
 import System.Random (randomIO)
-import qualified Text.Show as Show
 
 data Ident =
   Str Text
   |
   Uuid UUID
-  deriving stock (Eq, Ord, Generic, Data)
+  deriving stock (Eq, Show, Ord, Generic, Data)
 
 json ''Ident
-
-instance Show Ident where
-  show = toString . identText
 
 class Identifiable a where
   identify :: a -> Ident
@@ -32,10 +28,12 @@ instance Pretty Ident where
       Uuid u -> UUID.toText u
 
 instance Default Ident where
-  def = Str ""
+  def =
+    Str ""
 
 instance IsString Ident where
-  fromString = Str . toText
+  fromString =
+    Str . toText
 
 sameIdent ::
   Identifiable a =>
