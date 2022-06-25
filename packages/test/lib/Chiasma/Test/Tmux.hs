@@ -139,8 +139,8 @@ type TestTmuxEffects =
   [
     NativeTmux,
     NativeTmux !! TmuxError,
-    NativeCodec TmuxCommand !! CodecError,
-    NativeCodec (Panes Pane) !! CodecError,
+    NativeCodec TmuxCommand,
+    NativeCodec (Panes Pane),
     Reader TmuxNative
   ]
 
