@@ -14,6 +14,7 @@ import Chiasma.Interpreter.TmuxApi (
   interpretTmuxApi,
   type (<$>),
   )
+import Chiasma.Data.Panes (Panes, TmuxPanes)
 
 withTmuxApis' ::
   ∀ commands err encode decode resource r a .
@@ -72,3 +73,17 @@ withTmux_ =
   raiseUnder .
   restop @err @(TmuxApi command) .
   raiseUnder
+
+withPanes ::
+  ∀ p err encode decode resource r .
+  Members [ScopedTmux resource encode decode, Codec (Panes p) encode decode !! err] r =>
+  InterpreterFor (TmuxPanes p !! err) r
+withPanes =
+  withTmux
+
+withPanes_ ::
+  ∀ p err encode decode resource r .
+  Members [ScopedTmux resource encode decode, Codec (Panes p) encode decode !! err, Stop err] r =>
+  InterpreterFor (TmuxPanes p) r
+withPanes_ =
+  withTmux_

@@ -32,8 +32,8 @@ data Panes (p :: Type) (a :: Type) :: Type where
   -- |Return the pane with the specified ID if it exists.
   Find :: PaneId -> Panes p (Maybe p)
 
-type TmuxPanes c =
-  TmuxApi (Panes c)
+type TmuxPanes p =
+  TmuxApi (Panes p)
 
 query ::
   ∀ p a .
