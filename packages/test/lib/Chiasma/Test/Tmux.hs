@@ -33,7 +33,7 @@ import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxCommand (TmuxCommand (KillServer, ListSessions))
 import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Data.TmuxNative (TmuxNative (..))
-import Chiasma.Effect.Codec (Codec, NativeCodec)
+import Chiasma.Effect.Codec (Codec, NativeCodecE)
 import qualified Chiasma.Effect.TmuxApi as TmuxApi
 import Chiasma.Effect.TmuxClient (NativeTmux, TmuxClient)
 import Chiasma.Interpreter.Codec (interpretCodecPanes, interpretCodecTmuxCommand)
@@ -139,8 +139,8 @@ type TestTmuxEffects =
   [
     NativeTmux,
     NativeTmux !! TmuxError,
-    NativeCodec TmuxCommand,
-    NativeCodec (Panes Pane),
+    NativeCodecE TmuxCommand,
+    NativeCodecE (Panes Pane),
     Reader TmuxNative
   ]
 

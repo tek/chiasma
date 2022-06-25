@@ -11,11 +11,21 @@ data Codec (command :: Type -> Type) (encode :: Type -> Type) (decode :: Type ->
 makeSem ''Codec
 
 type NativeCodec command =
-  Codec command (Const TmuxRequest) (Const [Text]) !! CodecError
+  Codec command (Const TmuxRequest) (Const [Text])
+
+type NativeCodecE command =
+  NativeCodec command !! CodecError
 
 type NativeCommandCodec =
   NativeCodec TmuxCommand
 
+type NativeCommandCodecE =
+  NativeCodecE TmuxCommand
+
 type family NativeCodecs (cs :: [Type -> Type]) :: [Effect] where
   NativeCodecs '[] = '[]
   NativeCodecs (c : cs) = NativeCodec c : NativeCodecs cs
+
+type family NativeCodecsE (cs :: [Type -> Type]) :: [Effect] where
+  NativeCodecsE '[] = '[]
+  NativeCodecsE (c : cs) = NativeCodecE c : NativeCodecsE cs
