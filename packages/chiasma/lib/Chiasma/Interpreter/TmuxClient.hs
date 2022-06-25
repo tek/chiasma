@@ -53,12 +53,12 @@ tmuxRequest ::
   TmuxRequest ->
   Sem r [Text]
 tmuxRequest request = do
-  Log.debug [exon|tmux request: #{Text.stripEnd (decodeUtf8 cmdline)}|]
+  Log.trace [exon|tmux request: #{Text.stripEnd (decodeUtf8 cmdline)}|]
   Process.send cmdline
   Process.recv >>= \case
     Left err -> stop (TmuxError.RequestFailed request [err])
     Right block -> do
-      Log.debug [exon|tmux response: #{show block}|]
+      Log.trace [exon|tmux response: #{show block}|]
       stopEither (validate request block)
   where
     cmdline =
