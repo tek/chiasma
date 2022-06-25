@@ -102,6 +102,7 @@ library
       Chiasma.Session
       Chiasma.Tmux
       Chiasma.TmuxApi
+      Chiasma.TmuxNative
       Chiasma.Ui.Data.Measure
       Chiasma.Ui.Data.RenderableTree
       Chiasma.Ui.Data.Tree
