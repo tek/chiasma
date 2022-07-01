@@ -18,7 +18,7 @@ import Polysemy.Process (
   withProcess_,
   )
 import Polysemy.Process.Data.ProcessError (ProcessError)
-import Polysemy.Process.Data.SystemProcessError (SystemProcessError)
+import Polysemy.Process.Data.SystemProcessError (SystemProcessError, SystemProcessScopeError)
 import Polysemy.Process.Interpreter.Process (ProcessQueues)
 import Polysemy.Process.Interpreter.ProcessOutput (interpretProcessOutputTextLines)
 import Polysemy.Process.Interpreter.SystemProcess (PipesProcess, interpretSystemProcessNative_)
@@ -76,13 +76,14 @@ tmuxProc (TmuxNative exe socket) =
 
 interpretSystemProcessTmux ::
   Members [Reader TmuxNative, Resource, Race, Async, Embed IO] r =>
-  InterpreterFor (Scoped PipesProcess (SystemProcess !! SystemProcessError)) r
+  InterpreterFor (Scoped PipesProcess (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r
 interpretSystemProcessTmux sem = do
   conf <- tmuxProc <$> ask
   interpretSystemProcessNative_ conf sem
 
 interpretProcessTmux ::
-  Members [Scoped res (SystemProcess !! SystemProcessError), Resource, Race, Async, Embed IO] r =>
+  Member (Scoped res (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r =>
+  Members [Resource, Race, Async, Embed IO] r =>
   InterpreterFor (Scoped () TmuxProc !! ProcessError) r
 interpretProcessTmux sem = do
   interpretProcessOutputTmuxBlock @'Stdout $

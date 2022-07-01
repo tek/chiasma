@@ -1,6 +1,6 @@
 module Chiasma.Test.FindTest where
 
-import Polysemy.Test (UnitTest)
+import Polysemy.Test (UnitTest, assert, (===))
 
 import Chiasma.Codec (TmuxCodec)
 import qualified Chiasma.Codec.Data.Pane as Pane
@@ -23,10 +23,11 @@ data Pid =
 test_find :: UnitTest
 test_find = do
   tmuxTest $ interpretCodecPanes do
-    result <- withTmuxApis_ @[TmuxCommand, Panes Pid] @CodecError do
+    (Pid pid, found) <- withTmuxApis_ @[TmuxCommand, Panes Pid] @CodecError do
       win <- TmuxApi.send (NewWindow def)
       pane <- splitWindow (windowId win)
       p1 <- TmuxApi.send (Panes.Get (Pane.paneId pane))
       p2 <- TmuxApi.send (Panes.Find 100)
       pure (p1, p2)
-    dbgs result
+    assert (pid > 0)
+    Nothing === found

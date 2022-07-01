@@ -143,6 +143,7 @@ library
       DisambiguateRecordFields
       DoAndIfThenElse
       DuplicateRecordFields
+      EmptyCase
       EmptyDataDecls
       ExistentialQuantification
       FlexibleContexts
@@ -157,8 +158,9 @@ library
       MultiParamTypeClasses
       MultiWayIf
       NamedFieldPuns
-      OverloadedStrings
+      OverloadedLabels
       OverloadedLists
+      OverloadedStrings
       PackageImports
       PartialTypeSignatures
       PatternGuards
