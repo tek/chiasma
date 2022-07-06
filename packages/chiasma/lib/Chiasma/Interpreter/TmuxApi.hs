@@ -4,12 +4,12 @@ import Fcf (Eval, Exp, Pure1, type (@@))
 import Fcf.Class.Functor (FMap)
 import Prelude hiding (send)
 
-import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Data.TmuxRequest (TmuxRequest)
 import Chiasma.Effect.Codec (Codec, decode, encode)
 import Chiasma.Effect.TmuxApi (TmuxApi (Schedule, Send), send)
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
+import Chiasma.Data.CodecError (CodecError)
 
 type family (f :: l -> k) <$> (fa :: [l]) :: [k] where
   f <$> fa =
@@ -65,7 +65,7 @@ instance (
       interpretApis @commands @err . interpretTmuxApi
 
 type InterpretApisNative commands r =
-  InterpretApis commands TmuxError (Const TmuxRequest) (Const [Text]) r
+  InterpretApis commands CodecError (Const TmuxRequest) (Const [Text]) r
 
 class RestopApis (commands :: [Type -> Type]) err encode decode r where
   restopApis :: InterpretersFor (TmuxApi <$> commands) (TmuxClient encode decode : r)
@@ -87,4 +87,4 @@ instance (
       raiseUnder
 
 type RestopApisNative commands r =
-  RestopApis commands TmuxError (Const TmuxRequest) (Const [Text]) r
+  RestopApis commands CodecError (Const TmuxRequest) (Const [Text]) r
