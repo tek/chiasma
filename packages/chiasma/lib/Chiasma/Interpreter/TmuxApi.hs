@@ -2,14 +2,14 @@ module Chiasma.Interpreter.TmuxApi where
 
 import Fcf (Eval, Exp, Pure1, type (@@))
 import Fcf.Class.Functor (FMap)
-import Prelude hiding (send)
+import Prelude hiding (send, type (@@))
 
+import Chiasma.Data.CodecError (CodecError)
 import Chiasma.Data.TmuxRequest (TmuxRequest)
 import Chiasma.Effect.Codec (Codec, decode, encode)
 import Chiasma.Effect.TmuxApi (TmuxApi (Schedule, Send), send)
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
-import Chiasma.Data.CodecError (CodecError)
 
 type family (f :: l -> k) <$> (fa :: [l]) :: [k] where
   f <$> fa =

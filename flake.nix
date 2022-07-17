@@ -2,19 +2,19 @@
   description = "Tmux Client";
 
   inputs = {
-    hix.url = github:tek/hix;
-    incipit.url = github:tek/incipit;
+    hix.url = git+https://git.tryp.io/tek/hix;
+    prelate.url = git+https://git.tryp.io/tek/prelate;
     old.url = github:NixOS/nixpkgs/1db42b7fe3878f3f5f7a4f2dc210772fd080e205;
-    polysemy-conc.url = github:tek/polysemy-conc;
+    polysemy-conc.url = git+https://git.tryp.io/tek/polysemy-conc;
   };
 
-  outputs = { hix, incipit, old, polysemy-conc, ... }:
+  outputs = { hix, prelate, old, polysemy-conc, ... }:
   let
     overrides = { hackage, source, unbreak, pkgs, system, buildInputs, ... }:
     let
       oldPkgs = import old { inherit system; };
     in {
-      chiasma-test = buildInputs [oldPkgs.tmux pkgs.xterm];
+      chiasma-test = buildInputs [pkgs.tmux pkgs.xterm];
       exon = hackage "0.4.0.0" "098ym81pz8rv88kgf4fmwwh52gz3151j3zvmpmg0a535irajqmq1";
       flatparse = unbreak;
       polysemy = hackage "1.7.1.0" "0qwli1kx3hk68hqsgw65mk81bx0djw1wlk17v8ggym7mf3lailyc";
@@ -30,15 +30,15 @@
     };
     main = "chiasma-test";
     inherit overrides;
-    depsFull = [incipit];
+    depsFull = [prelate];
     compat.enable = false;
     hpack.packages = import ./ops/hpack.nix { inherit config lib; };
     hackage.versionFile = "ops/version.nix";
     ghci = {
       args = ["-fplugin=Polysemy.Plugin"];
       extensions = ["ImpredicativeTypes"];
-      preludePackage = "incipit";
-      preludeModule = "Incipit";
+      preludePackage = "prelate";
+      preludeModule = "Prelate";
     };
     ghcid.shellConfig =
       let oldPkgs = import old { inherit (config) system; };

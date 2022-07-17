@@ -49,7 +49,7 @@ let
 
   dependencies = [
       { name = "base"; version = ">= 4.12 && < 5"; mixin = "hiding (Prelude)"; }
-      { name = "incipit"; version = ">= 0.3"; mixin = ["(Incipit as Prelude)" "hiding (Incipit)"]; }
+      { name = "prelate"; version = ">= 0.1"; mixin = ["(Prelate as Prelude)" "hiding (Prelate)"]; }
       "polysemy"
       "polysemy-plugin"
     ];
@@ -88,6 +88,7 @@ in {
       "extra"
       "first-class-families"
       "lens >= 4"
+      "microlens >= 0.4"
       "path"
       "parsec"
       "parsers >= 0.12"

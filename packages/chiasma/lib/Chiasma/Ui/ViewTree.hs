@@ -1,24 +1,13 @@
 module Chiasma.Ui.ViewTree where
 
-import Control.Lens (
-  Traversal,
-  Traversal',
-  anyOf,
-  cosmos,
-  filtered,
-  has,
-  ix,
-  mapMOf,
-  over,
-  transformM,
-  )
+import Control.Lens (anyOf, cosmos, ix, mapMOf, transformM)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT)
 import Control.Monad.Trans.Writer (WriterT, runWriterT, tell)
 import Data.Composition ((.:))
 import Data.Semigroup (Sum (Sum))
 import Exon (exon)
-import Prelude hiding (tell)
+import Prelude hiding (ix, tell)
 
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Lens.Tree (

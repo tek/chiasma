@@ -3,7 +3,6 @@ module Chiasma.Data.Ident where
 import Data.Data (Data)
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID (fromText, toText)
-import Polysemy.Time.Json (json)
 import Prettyprinter (Pretty (..))
 import System.Random (randomIO)
 

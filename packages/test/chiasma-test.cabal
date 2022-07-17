@@ -101,7 +101,6 @@ library
     , chronos
     , exon
     , hedgehog
-    , incipit >=0.3
     , path
     , path-io
     , polysemy
@@ -112,12 +111,13 @@ library
     , polysemy-process
     , polysemy-test >=0.6
     , polysemy-time
+    , prelate >=0.1
     , text
     , typed-process >=0.2
   mixins:
       base hiding (Prelude)
-    , incipit (Incipit as Prelude)
-    , incipit hiding (Incipit)
+    , prelate (Prelate as Prelude)
+    , prelate hiding (Prelate)
   default-language: Haskell2010
 
 test-suite chiasma-test-integration
@@ -200,19 +200,19 @@ test-suite chiasma-test-integration
     , chiasma
     , chiasma-test
     , hedgehog
-    , incipit >=0.3
     , lens >=4
     , path-io
     , polysemy
     , polysemy-chronos
     , polysemy-plugin
     , polysemy-test >=0.6
+    , prelate >=0.1
     , tasty
     , tasty-hedgehog
   mixins:
       base hiding (Prelude)
-    , incipit (Incipit as Prelude)
-    , incipit hiding (Incipit)
+    , prelate (Prelate as Prelude)
+    , prelate hiding (Prelate)
   default-language: Haskell2010
 
 test-suite chiasma-test-unit
@@ -294,15 +294,15 @@ test-suite chiasma-test-unit
       base >=4.12 && <5
     , chiasma
     , hedgehog
-    , incipit >=0.3
     , lens >=4
     , polysemy
     , polysemy-plugin
     , polysemy-test >=0.6
+    , prelate >=0.1
     , tasty
     , tasty-hedgehog
   mixins:
       base hiding (Prelude)
-    , incipit (Incipit as Prelude)
-    , incipit hiding (Incipit)
+    , prelate (Prelate as Prelude)
+    , prelate hiding (Prelate)
   default-language: Haskell2010

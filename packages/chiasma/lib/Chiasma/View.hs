@@ -1,7 +1,6 @@
 module Chiasma.View where
 
-import Control.Lens (Lens', over)
-import qualified Control.Lens as Lens (over, set, view)
+import qualified Control.Lens as Lens
 import Exon (exon)
 import Prettyprinter (Doc, pretty)
 import Prettyprinter.Render.Terminal (AnsiStyle)
@@ -26,11 +25,11 @@ viewById viewsL id' =
   find (sameId id') . Lens.view viewsL
 
 insertView :: Lens' Views [View a] -> View a -> Views -> Views
-insertView viewsL newView = Lens.over viewsL (newView :)
+insertView viewsL newView = over viewsL (newView :)
 
 updateView :: Lens' Views [View a] -> (Ident -> ViewsError) -> View a -> Views -> Views
 updateView viewsL _ newView =
-  Lens.set (viewsL . where1 (sameIdent (viewIdent newView))) newView
+  set (viewsL . where1 (sameIdent (viewIdent newView))) newView
 
 session :: Ident -> Views -> Either ViewsError (View SessionId)
 session = view Views.sessions NoSuchSession

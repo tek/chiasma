@@ -1,11 +1,8 @@
-module Chiasma.Ui.Lens.Ident(
-  matchIdent,
-  matchIdentL,
-  matchIdentP,
-) where
+module Chiasma.Ui.Lens.Ident where
 
-import Control.Lens (Traversal', Prism', filtered, each, prism)
-import Chiasma.Data.Ident (Ident, Identifiable(..), sameIdent)
+import Control.Lens (Prism', prism)
+
+import Chiasma.Data.Ident (Ident, Identifiable (..), sameIdent)
 
 matchIdent :: Identifiable a => Ident -> Traversal' a a
 matchIdent i =

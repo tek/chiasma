@@ -6,18 +6,14 @@ import Control.Lens (
   IxValue,
   Ixed (ix),
   Plated (..),
-  Traversal',
   cosmos,
-  each,
   makeClassy_,
-  over,
   preview,
-  toListOf,
   transform,
   )
 import Data.Data (Data)
 import Data.Foldable (foldrM)
-import Prelude hiding (transform)
+import Prelude hiding (ix, transform)
 
 import Chiasma.Data.Ident (Ident, Identifiable (..))
 import Chiasma.Ui.Data.View (

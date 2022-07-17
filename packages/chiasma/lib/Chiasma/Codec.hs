@@ -2,6 +2,7 @@ module Chiasma.Codec where
 
 import qualified Data.Text as Text
 import GHC.Generics (Rep, to)
+import Prelude hiding (to)
 
 import Chiasma.Codec.Decode (TmuxDataDecode (..))
 import Chiasma.Codec.Query (TmuxDataQuery (..))

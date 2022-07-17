@@ -1,6 +1,6 @@
 module Chiasma.Pack where
 
-import Control.Lens (each, mapMOf_)
+import Control.Lens (mapMOf_)
 import qualified Data.List.NonEmpty as NonEmpty (reverse, toList)
 import qualified Data.Set as Set (fromList, size)
 import Prettyprinter (Doc, line, pretty, (<+>))
