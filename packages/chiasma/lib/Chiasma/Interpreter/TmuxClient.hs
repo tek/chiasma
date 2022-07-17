@@ -30,7 +30,7 @@ import Chiasma.Data.TmuxNative (TmuxNative (TmuxNative))
 import qualified Chiasma.Data.TmuxOutputBlock as TmuxOutputBlock
 import Chiasma.Data.TmuxOutputBlock (TmuxOutputBlock)
 import qualified Chiasma.Data.TmuxRequest as TmuxRequest
-import Chiasma.Data.TmuxRequest (TmuxRequest)
+import Chiasma.Data.TmuxRequest (TmuxRequest (TmuxRequest))
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
 import Chiasma.Interpreter.ProcessOutput (interpretProcessOutputTmuxBlock)
@@ -72,7 +72,7 @@ tmuxProc ::
   TmuxNative ->
   ProcessConfig () () ()
 tmuxProc (TmuxNative exe socket) =
-  proc (toFilePath exe) (foldMap socketArg socket <> ["-C", "-u", "attach-session"])
+  proc (toFilePath exe) (foldMap socketArg socket <> ["-C", "-u", "attach-session", "-f", "ignore-size"])
 
 interpretSystemProcessTmux ::
   Members [Reader TmuxNative, Resource, Race, Async, Embed IO] r =>
@@ -108,6 +108,7 @@ tmuxSession ::
 tmuxSession action =
   resumeHoist @ProcessError @(Scoped res TmuxProc) TmuxError.ProcessFailed $ withProcess_ do
     void Process.recv
+    tmuxRequest (TmuxRequest "refresh-client" ["-C", "10000x10000"] Nothing)
     raiseUnder action <* flush
 
 interpretTmuxProcessBuffered ::

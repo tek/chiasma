@@ -42,6 +42,6 @@
     };
     ghcid.shellConfig =
       let oldPkgs = import old { inherit (config) system; };
-      in { buildInputs = [oldPkgs.tmux config.devGhc.pkgs.xterm]; };
+      in { buildInputs = [config.pkgs.tmux config.devGhc.pkgs.xterm]; };
   });
 }

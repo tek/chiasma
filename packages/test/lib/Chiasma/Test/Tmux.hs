@@ -231,10 +231,10 @@ tmuxTest ::
 tmuxTest =
   runTmuxTest def
 
-tmuxTestDebug ::
+tmuxTestTrace ::
   Sem TestStack a ->
   TestT IO a
-tmuxTestDebug =
+tmuxTestTrace =
   runTmuxTest def { TmuxTestConfig.logLevel = Trace }
 
 tmuxGuiTest ::
@@ -242,3 +242,9 @@ tmuxGuiTest ::
   TestT IO a
 tmuxGuiTest =
   runTmuxTest def { TmuxTestConfig.gui = True }
+
+tmuxGuiTestTrace ::
+  Sem TestStack a ->
+  TestT IO a
+tmuxGuiTestTrace =
+  runTmuxTest def { TmuxTestConfig.gui = True, TmuxTestConfig.logLevel = Trace  }
