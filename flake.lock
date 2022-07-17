@@ -397,10 +397,10 @@
         "thax": "thax"
       },
       "locked": {
-        "lastModified": 1658019491,
-        "narHash": "sha256-gZ4LTmZ7Pyw/84l/2hAqViPjKrivEXO2jv4vhtNKgQ0=",
+        "lastModified": 1658021306,
+        "narHash": "sha256-chR2NPBuJgI/aaN5IdH83DabILJQ8AEfjRsDlhkEQiM=",
         "ref": "refs/heads/master",
-        "rev": "c140c6334d27ff49748e45d314c03dbbc716f82c",
+        "rev": "bedd71655b5fe8af681d28f197dff483edfc2f19",
         "revCount": 203,
         "type": "git",
         "url": "https://git.tryp.io/tek/hix"
