@@ -15,6 +15,7 @@ import Chiasma.Data.TmuxQuery (TmuxQuery)
 import Chiasma.Data.TmuxRequest (TmuxRequest (TmuxRequest))
 import Chiasma.Data.WithPaneId (WithPaneId (WithPaneId))
 import Chiasma.Effect.TmuxApi (TmuxApi)
+import Chiasma.Data.TmuxResponse (TmuxResponse(TmuxResponse))
 
 -- |A 'TmuxApi' command for listing panes, with different query criteria.
 -- The constructors taking a 'PaneSelection' list all panes that are present in the selected scope, but may constrain
@@ -86,10 +87,10 @@ paneById paneId out = do
 decode ::
   ∀ p a .
   TmuxCodec p =>
-  [Text] ->
+  TmuxResponse ->
   Panes p a ->
   Either DecodeError a
-decode out = \case
+decode (TmuxResponse out) = \case
   List _ ->
     multi out
   First _ ->

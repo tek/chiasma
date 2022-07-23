@@ -17,10 +17,10 @@ import Chiasma.Interpreter.TmuxApi (
 import Chiasma.Data.Panes (Panes, TmuxPanes)
 
 withTmuxApis' ::
-  ∀ commands err encode decode resource r a .
-  InterpretApis commands err encode decode r =>
-  Member (ScopedTmux resource encode decode) r =>
-  Sem (TmuxApis commands err ++ TmuxClient encode decode : r) a ->
+  ∀ commands err i o resource r a .
+  InterpretApis commands err i o r =>
+  Member (ScopedTmux resource i o) r =>
+  Sem (TmuxApis commands err ++ TmuxClient i o : r) a ->
   Sem r a
 withTmuxApis' =
   scoped . interpretApis @commands @err
@@ -34,38 +34,38 @@ insertAfter =
   hoistSem $ hoist (insertAfter @left @e @r) . weakenMid @r (singList @left) (singList @'[e])
 
 withTmuxApis ::
-  ∀ commands err encode decode resource r .
+  ∀ commands err i o resource r .
   KnownList (TmuxApis commands err) =>
-  InterpretApis commands err encode decode r =>
-  Member (ScopedTmux resource encode decode) r =>
+  InterpretApis commands err i o r =>
+  Member (ScopedTmux resource i o) r =>
   InterpretersFor (TmuxApis commands err) r
 withTmuxApis =
   scoped .
   interpretApis @commands @err .
-  insertAfter @(TmuxApis commands err) @(TmuxClient encode decode) @r
+  insertAfter @(TmuxApis commands err) @(TmuxClient i o) @r
 
 withTmuxApis_ ::
-  ∀ commands err encode decode resource apis r .
+  ∀ commands err i o resource apis r .
   apis ~ TmuxApi <$> commands =>
   KnownList apis =>
-  RestopApis commands err encode decode r =>
-  Member (ScopedTmux resource encode decode) r =>
+  RestopApis commands err i o r =>
+  Member (ScopedTmux resource i o) r =>
   InterpretersFor apis r
 withTmuxApis_ =
   scoped .
   restopApis @commands @err .
-  insertAfter @apis @(TmuxClient encode decode) @r
+  insertAfter @apis @(TmuxClient i o) @r
 
 withTmux ::
-  ∀ command err encode decode resource r .
-  Members [ScopedTmux resource encode decode, Codec command encode decode !! err] r =>
+  ∀ command err i o resource r .
+  Members [ScopedTmux resource i o, Codec command i o !! err] r =>
   InterpreterFor (TmuxApi command !! err) r
 withTmux =
   scoped . interpretTmuxApi . raiseUnder
 
 withTmux_ ::
-  ∀ command err encode decode resource r .
-  Members [ScopedTmux resource encode decode, Codec command encode decode !! err, Stop err] r =>
+  ∀ command err i o resource r .
+  Members [ScopedTmux resource i o, Codec command i o !! err, Stop err] r =>
   InterpreterFor (TmuxApi command) r
 withTmux_ =
   scoped .
@@ -75,15 +75,15 @@ withTmux_ =
   raiseUnder
 
 withPanes ::
-  ∀ p err encode decode resource r .
-  Members [ScopedTmux resource encode decode, Codec (Panes p) encode decode !! err] r =>
+  ∀ p err i o resource r .
+  Members [ScopedTmux resource i o, Codec (Panes p) i o !! err] r =>
   InterpreterFor (TmuxPanes p !! err) r
 withPanes =
   withTmux
 
 withPanes_ ::
-  ∀ p err encode decode resource r .
-  Members [ScopedTmux resource encode decode, Codec (Panes p) encode decode !! err, Stop err] r =>
+  ∀ p err i o resource r .
+  Members [ScopedTmux resource i o, Codec (Panes p) i o !! err, Stop err] r =>
   InterpreterFor (TmuxPanes p) r
 withPanes_ =
   withTmux_

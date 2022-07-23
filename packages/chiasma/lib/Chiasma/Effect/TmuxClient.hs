@@ -3,18 +3,19 @@ module Chiasma.Effect.TmuxClient where
 import Prelude hiding (send)
 
 import Chiasma.Data.TmuxRequest (TmuxRequest)
+import Chiasma.Data.TmuxResponse (TmuxResponse)
 
-data TmuxClient (encode :: Type -> Type) (decode :: Type -> Type) :: Effect where
-  Send :: encode a -> TmuxClient encode decode m (decode a)
-  Schedule :: encode a -> TmuxClient encode decode m ()
+data TmuxClient (i :: Type) (o :: Type) :: Effect where
+  Send :: i -> TmuxClient i o m o
+  Schedule :: i -> TmuxClient i o m ()
 
 makeSem ''TmuxClient
 
-type ScopedTmux resource encode decode =
-  Scoped resource (TmuxClient encode decode)
+type ScopedTmux resource i o =
+  Scoped resource (TmuxClient i o)
 
 type NativeTmux =
-  ScopedTmux () (Const TmuxRequest) (Const [Text])
+  ScopedTmux () TmuxRequest TmuxResponse
 
 flush ::
   Member (TmuxClient e d) r =>

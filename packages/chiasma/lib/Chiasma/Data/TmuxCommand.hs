@@ -28,6 +28,7 @@ import Chiasma.Data.Target (Target)
 import Chiasma.Data.TmuxId (ClientId (ClientId))
 import Chiasma.Data.TmuxQuery (TmuxQuery)
 import Chiasma.Data.TmuxRequest (TmuxRequest (TmuxRequest))
+import Chiasma.Data.TmuxResponse (TmuxResponse (TmuxResponse))
 import Chiasma.Data.WindowParams (WindowParams)
 import Chiasma.Data.WindowSelection (WindowSelection)
 import Chiasma.Function (applyWhen)
@@ -167,10 +168,10 @@ encode :: TmuxCommand a -> TmuxRequest
 encode cmd =
   request cmd (query cmd)
 
-decode :: [Text] -> TmuxCommand a -> Either DecodeError a
-decode out = \case
+decode :: TmuxResponse -> TmuxCommand a -> Either DecodeError a
+decode (TmuxResponse out) = \case
   Fmap f cmd ->
-    f <$> decode out cmd
+    f <$> decode (TmuxResponse out) cmd
   ListPanes _ ->
     multi out
   ListWindows _ ->

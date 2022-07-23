@@ -223,6 +223,7 @@ test-suite chiasma-test-unit
       Chiasma.Test.LensTest
       Chiasma.Test.OutputParseTest
       Chiasma.Test.PinTest
+      Chiasma.Test.PureTest
       Chiasma.Test.Util
   hs-source-dirs:
       test

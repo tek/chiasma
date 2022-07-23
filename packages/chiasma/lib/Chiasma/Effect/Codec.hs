@@ -3,15 +3,16 @@ module Chiasma.Effect.Codec where
 import Chiasma.Data.CodecError (CodecError)
 import Chiasma.Data.TmuxCommand (TmuxCommand)
 import Chiasma.Data.TmuxRequest (TmuxRequest)
+import Chiasma.Data.TmuxResponse (TmuxResponse)
 
-data Codec (command :: Type -> Type) (encode :: Type -> Type) (decode :: Type -> Type) :: Effect where
-  Encode :: command a -> Codec command encode decode m (encode a)
-  Decode :: command a -> encode a -> decode a -> Codec command encode decode m a
+data Codec (command :: Type -> Type) (i :: Type) (o :: Type) :: Effect where
+  WithCodec :: command a -> (i -> m o) -> Codec command i o m a
+  Encode :: command a -> Codec command i o m i
 
 makeSem ''Codec
 
 type NativeCodec command =
-  Codec command (Const TmuxRequest) (Const [Text])
+  Codec command TmuxRequest TmuxResponse
 
 type NativeCodecE command =
   NativeCodec command !! CodecError

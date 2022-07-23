@@ -5,6 +5,7 @@ import Polysemy.Internal.Sing (KnownList)
 import Chiasma.Data.CodecError (CodecError)
 import Chiasma.Data.Panes (Panes, TmuxPanes)
 import Chiasma.Data.TmuxRequest (TmuxRequest)
+import Chiasma.Data.TmuxResponse (TmuxResponse)
 import Chiasma.Effect.Codec (NativeCodecE)
 import Chiasma.Effect.TmuxApi (TmuxApi)
 import Chiasma.Effect.TmuxClient (NativeTmux, TmuxClient)
@@ -15,7 +16,7 @@ withTmuxApisNative' ::
   ∀ commands r a .
   InterpretApisNative commands r =>
   Member NativeTmux r =>
-  Sem (TmuxApis commands CodecError ++ TmuxClient (Const TmuxRequest) (Const [Text]) : r) a ->
+  Sem (TmuxApis commands CodecError ++ TmuxClient TmuxRequest TmuxResponse : r) a ->
   Sem r a
 withTmuxApisNative' =
   withTmuxApis' @commands @CodecError

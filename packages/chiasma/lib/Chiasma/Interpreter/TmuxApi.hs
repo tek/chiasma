@@ -6,7 +6,8 @@ import Prelude hiding (send, type (@@))
 
 import Chiasma.Data.CodecError (CodecError)
 import Chiasma.Data.TmuxRequest (TmuxRequest)
-import Chiasma.Effect.Codec (Codec, decode, encode)
+import Chiasma.Data.TmuxResponse (TmuxResponse)
+import Chiasma.Effect.Codec (Codec, encode, withCodec)
 import Chiasma.Effect.TmuxApi (TmuxApi (Schedule, Send), send)
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
@@ -26,15 +27,14 @@ flush =
       void (send cmd)
 
 interpretTmuxApi ::
-  ∀ command encode decode err r .
-  Members [TmuxClient encode decode, Codec command encode decode !! err] r =>
+  ∀ command i o err r .
+  Members [TmuxClient i o, Codec command i o !! err] r =>
   InterpreterFor (TmuxApi command !! err) r
 interpretTmuxApi =
   interpretResumable \case
-    Send (cmd :: command a) -> do
-      encoded <- restop (encode cmd)
-      response <- TmuxClient.send encoded
-      restop (decode cmd encoded response)
+    Send cmd -> do
+      restop @_ @(Codec _ _ _) $ withCodec cmd \ encoded -> do
+        TmuxClient.send encoded
     Schedule cmd -> do
       encoded <- restop (encode cmd)
       TmuxClient.schedule encoded
@@ -48,43 +48,43 @@ type family TmuxApis (commands :: [Type -> Type]) (err :: Type) :: EffectRow whe
   TmuxApis commands err =
     FMap (TmuxApiEffect err) @@ commands
 
-class InterpretApis (commands :: [Type -> Type]) err encode decode r where
-  interpretApis :: InterpretersFor (TmuxApis commands err) (TmuxClient encode decode : r)
+class InterpretApis (commands :: [Type -> Type]) err i o r where
+  interpretApis :: InterpretersFor (TmuxApis commands err) (TmuxClient i o : r)
 
-instance InterpretApis '[] err encode decode r where
+instance InterpretApis '[] err i o r where
   interpretApis =
     id
 
 instance (
-    r1 ~ (TmuxApis commands err ++ TmuxClient encode decode : r),
-    Member (TmuxClient encode decode) r1,
-    Member (Codec command encode decode !! err) r1,
-    InterpretApis commands err encode decode r
-  ) => InterpretApis (command : commands) err encode decode r where
+    r1 ~ (TmuxApis commands err ++ TmuxClient i o : r),
+    Member (TmuxClient i o) r1,
+    Member (Codec command i o !! err) r1,
+    InterpretApis commands err i o r
+  ) => InterpretApis (command : commands) err i o r where
     interpretApis =
       interpretApis @commands @err . interpretTmuxApi
 
 type InterpretApisNative commands r =
-  InterpretApis commands CodecError (Const TmuxRequest) (Const [Text]) r
+  InterpretApis commands CodecError TmuxRequest TmuxResponse r
 
-class RestopApis (commands :: [Type -> Type]) err encode decode r where
-  restopApis :: InterpretersFor (TmuxApi <$> commands) (TmuxClient encode decode : r)
+class RestopApis (commands :: [Type -> Type]) err i o r where
+  restopApis :: InterpretersFor (TmuxApi <$> commands) (TmuxClient i o : r)
 
-instance RestopApis '[] err encode decode r where
+instance RestopApis '[] err i o r where
   restopApis =
     id
 
 instance (
-    r1 ~ (TmuxApi <$> commands ++ TmuxClient encode decode : r),
-    Members [TmuxClient encode decode, Stop err] r1,
-    Member (Codec command encode decode !! err) r1,
-    RestopApis commands err encode decode r
-  ) => RestopApis (command : commands) err encode decode r where
+    r1 ~ (TmuxApi <$> commands ++ TmuxClient i o : r),
+    Members [TmuxClient i o, Stop err] r1,
+    Member (Codec command i o !! err) r1,
+    RestopApis commands err i o r
+  ) => RestopApis (command : commands) err i o r where
     restopApis =
-      restopApis @commands @err @encode @decode .
-      interpretTmuxApi @command @encode @decode .
+      restopApis @commands @err @i @o .
+      interpretTmuxApi @command @i @o .
       restop @err @(TmuxApi command) .
       raiseUnder
 
 type RestopApisNative commands r =
-  RestopApis commands CodecError (Const TmuxRequest) (Const [Text]) r
+  RestopApis commands CodecError TmuxRequest TmuxResponse r

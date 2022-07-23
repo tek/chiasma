@@ -16,6 +16,7 @@ import qualified Chiasma.Data.TmuxError as TmuxError
 import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Data.TmuxId (PaneId (PaneId), SessionId (SessionId), WindowId (WindowId))
 import Chiasma.Data.TmuxRequest (TmuxRequest)
+import Chiasma.Data.TmuxResponse (TmuxResponse)
 import Chiasma.Data.View (viewIdent)
 import qualified Chiasma.Data.View as Tmux (View (View))
 import Chiasma.Data.Views (Views (Views))
@@ -47,9 +48,9 @@ views =
     []
 
 renderOnce ::
-  Member (Codec TmuxCommand (Const TmuxRequest) (Const [Text]) !! CodecError) r =>
-  Member (Codec (Panes Pane) (Const TmuxRequest) (Const [Text]) !! CodecError) r =>
-  Members [ScopedTmux () (Const TmuxRequest) (Const [Text]), AtomicState Views, Stop RenderError, Embed IO] r =>
+  Member (Codec TmuxCommand TmuxRequest TmuxResponse !! CodecError) r =>
+  Member (Codec (Panes Pane) TmuxRequest TmuxResponse !! CodecError) r =>
+  Members [ScopedTmux () TmuxRequest TmuxResponse, AtomicState Views, Stop RenderError, Embed IO] r =>
   ViewTree ->
   Sem r ()
 renderOnce tree = do
@@ -58,9 +59,9 @@ renderOnce tree = do
 
 runRender ::
   ∀ r .
-  Member (Codec TmuxCommand (Const TmuxRequest) (Const [Text]) !! CodecError) r =>
-  Member (Codec (Panes Pane) (Const TmuxRequest) (Const [Text]) !! CodecError) r =>
-  Member (ScopedTmux () (Const TmuxRequest) (Const [Text])) r =>
+  Member (Codec TmuxCommand TmuxRequest TmuxResponse !! CodecError) r =>
+  Member (Codec (Panes Pane) TmuxRequest TmuxResponse !! CodecError) r =>
+  Member (ScopedTmux () TmuxRequest TmuxResponse) r =>
   Members [Stop RenderError, Stop TmuxError, ChronosTime, Embed IO] r =>
   ViewTree ->
   Sem r ([Tmux.View PaneId], [Pane])
@@ -75,7 +76,7 @@ renderTest ::
   UnitTest
 renderTest tree target = do
   tmuxTest do
-    (_, ps) <- restop @TmuxError @(ScopedTmux _ _ _) (runRender tree)
+    (_, ps) <- restop @TmuxError @(_ _ _ _) (runRender tree)
     target === ps
 
 treeImbalanced :: ViewTree

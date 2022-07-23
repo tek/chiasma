@@ -1,27 +1,28 @@
 module Chiasma.Interpreter.TmuxClient where
 
+import Conc (interpretAtomic, interpretScopedResumableWith_, interpretScopedResumable_)
 import Data.Sequence ((|>))
 import qualified Data.Text as Text
 import Exon (exon)
+import qualified Log as Log
 import Path (Abs, File, Path, toFilePath)
-import Polysemy.Conc (interpretAtomic)
-import Polysemy.Conc.Interpreter.Scoped (interpretScopedResumableWith_)
-import qualified Polysemy.Log as Log
-import qualified Polysemy.Process as Process
-import Polysemy.Process (
+import Polysemy.Process.Interpreter.Process (ProcessQueues)
+import qualified Process as Process
+import Process (
   OutputPipe (Stderr, Stdout),
+  PipesProcess,
   Process,
+  ProcessError,
   SystemProcess,
+  SystemProcessError,
+  SystemProcessScopeError,
   interpretProcessInputId,
   interpretProcessOutputLeft,
+  interpretProcessOutputTextLines,
   interpretProcess_,
+  interpretSystemProcessNative_,
   withProcess_,
   )
-import Polysemy.Process.Data.ProcessError (ProcessError)
-import Polysemy.Process.Data.SystemProcessError (SystemProcessError, SystemProcessScopeError)
-import Polysemy.Process.Interpreter.Process (ProcessQueues)
-import Polysemy.Process.Interpreter.ProcessOutput (interpretProcessOutputTextLines)
-import Polysemy.Process.Interpreter.SystemProcess (PipesProcess, interpretSystemProcessNative_)
 import System.Process.Typed (ProcessConfig, proc)
 
 import qualified Chiasma.Data.TmuxError as TmuxError
@@ -30,7 +31,8 @@ import Chiasma.Data.TmuxNative (TmuxNative (TmuxNative))
 import qualified Chiasma.Data.TmuxOutputBlock as TmuxOutputBlock
 import Chiasma.Data.TmuxOutputBlock (TmuxOutputBlock)
 import qualified Chiasma.Data.TmuxRequest as TmuxRequest
-import Chiasma.Data.TmuxRequest (TmuxRequest)
+import Chiasma.Data.TmuxRequest (TmuxRequest (TmuxRequest))
+import Chiasma.Data.TmuxResponse (TmuxResponse (TmuxResponse))
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
 import Chiasma.Interpreter.ProcessOutput (interpretProcessOutputTmuxBlock)
@@ -41,17 +43,17 @@ type TmuxQueues =
 type TmuxProc =
   Process ByteString (Either Text TmuxOutputBlock)
 
-validate :: TmuxRequest -> TmuxOutputBlock -> Either TmuxError [Text]
+validate :: TmuxRequest -> TmuxOutputBlock -> Either TmuxError TmuxResponse
 validate request = \case
   TmuxOutputBlock.Success a ->
-    Right a
+    Right (TmuxResponse a)
   TmuxOutputBlock.Error a ->
     Left (TmuxError.RequestFailed request a)
 
 tmuxRequest ::
   Members [Process ByteString (Either Text TmuxOutputBlock), Log, Stop TmuxError] r =>
   TmuxRequest ->
-  Sem r [Text]
+  Sem r TmuxResponse
 tmuxRequest request = do
   Log.trace [exon|tmux request: #{Text.stripEnd (decodeUtf8 cmdline)}|]
   Process.send cmdline
@@ -112,19 +114,19 @@ tmuxSession action =
 
 interpretTmuxProcessBuffered ::
   Members [AtomicState (Seq TmuxRequest), Scoped res TmuxProc !! ProcessError, Log, Embed IO] r =>
-  InterpreterFor (Scoped () (TmuxClient (Const TmuxRequest) (Const [Text])) !! TmuxError) r
+  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxProcessBuffered =
   interpretScopedResumableWith_ @'[TmuxProc] tmuxSession \case
-    TmuxClient.Schedule (Const request) ->
+    TmuxClient.Schedule request ->
       atomicModify' (|> request)
-    TmuxClient.Send (Const cmd) -> do
+    TmuxClient.Send cmd -> do
       flush
-      Const <$> tmuxRequest cmd
+      tmuxRequest cmd
 {-# inline interpretTmuxProcessBuffered #-}
 
 interpretTmuxWithProcess ::
   Members [Scoped res TmuxProc !! ProcessError, Log, Embed IO] r =>
-  InterpreterFor (Scoped () (TmuxClient (Const TmuxRequest) (Const [Text])) !! TmuxError) r
+  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxWithProcess =
   interpretAtomic mempty .
   interpretTmuxProcessBuffered .
@@ -134,10 +136,20 @@ interpretTmuxWithProcess =
 interpretTmuxNative ::
   ∀ r .
   Members [Reader TmuxNative, Log, Resource, Race, Async, Embed IO] r =>
-  InterpreterFor (Scoped () (TmuxClient (Const TmuxRequest) (Const [Text])) !! TmuxError) r
+  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNative =
   interpretSystemProcessTmux .
   interpretProcessTmux .
   interpretTmuxWithProcess .
   raiseUnder2
 {-# inline interpretTmuxNative #-}
+
+interpretTmuxClientNull ::
+  InterpreterFor (Scoped () (TmuxClient i ()) !! TmuxError) r
+interpretTmuxClientNull =
+  interpretScopedResumable_ (pure ()) \ () -> \case
+    TmuxClient.Schedule _ ->
+      unit
+    TmuxClient.Send _ ->
+      unit
+{-# inline interpretTmuxClientNull #-}

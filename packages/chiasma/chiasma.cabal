@@ -73,6 +73,7 @@ library
       Chiasma.Data.TmuxOutputBlock
       Chiasma.Data.TmuxQuery
       Chiasma.Data.TmuxRequest
+      Chiasma.Data.TmuxResponse
       Chiasma.Data.TmuxThunk
       Chiasma.Data.View
       Chiasma.Data.Views
@@ -87,6 +88,7 @@ library
       Chiasma.Function
       Chiasma.Interpreter.Codec
       Chiasma.Interpreter.ProcessOutput
+      Chiasma.Interpreter.Pure
       Chiasma.Interpreter.TmuxApi
       Chiasma.Interpreter.TmuxClient
       Chiasma.Lens.Tree
@@ -196,7 +198,6 @@ library
     , extra
     , first-class-families
     , lens >=4
-    , microlens >=0.4
     , parsec
     , parsers >=0.12
     , path

@@ -88,7 +88,6 @@ in {
       "extra"
       "first-class-families"
       "lens >= 4"
-      "microlens >= 0.4"
       "path"
       "parsec"
       "parsers >= 0.12"
