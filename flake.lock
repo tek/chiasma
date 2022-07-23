@@ -2291,22 +2291,6 @@
         "type": "github"
       }
     },
-    "old": {
-      "locked": {
-        "lastModified": 1620055814,
-        "narHash": "sha256-8LEHoYSJiL901bTMVatq+rf8y7QtWuZhwwpKE2fyaRY=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "1db42b7fe3878f3f5f7a4f2dc210772fd080e205",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "1db42b7fe3878f3f5f7a4f2dc210772fd080e205",
-        "type": "github"
-      }
-    },
     "polysemy-conc": {
       "inputs": {
         "hix": "hix_2",
@@ -2464,7 +2448,6 @@
     "root": {
       "inputs": {
         "hix": "hix",
-        "old": "old",
         "polysemy-conc": "polysemy-conc",
         "prelate": "prelate"
       }

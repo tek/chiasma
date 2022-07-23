@@ -4,16 +4,12 @@
   inputs = {
     hix.url = git+https://git.tryp.io/tek/hix;
     prelate.url = git+https://git.tryp.io/tek/prelate;
-    old.url = github:NixOS/nixpkgs/1db42b7fe3878f3f5f7a4f2dc210772fd080e205;
     polysemy-conc.url = git+https://git.tryp.io/tek/polysemy-conc;
   };
 
-  outputs = { hix, prelate, old, polysemy-conc, ... }:
+  outputs = { hix, prelate, polysemy-conc, ... }:
   let
-    overrides = { hackage, source, unbreak, pkgs, system, buildInputs, ... }:
-    let
-      oldPkgs = import old { inherit system; };
-    in {
+    overrides = { hackage, source, unbreak, pkgs, system, buildInputs, ... }: {
       chiasma-test = buildInputs [pkgs.tmux pkgs.xterm];
       exon = hackage "0.4.0.0" "098ym81pz8rv88kgf4fmwwh52gz3151j3zvmpmg0a535irajqmq1";
       flatparse = unbreak;
@@ -40,8 +36,6 @@
       preludePackage = "prelate";
       preludeModule = "Prelate";
     };
-    ghcid.shellConfig =
-      let oldPkgs = import old { inherit (config) system; };
-      in { buildInputs = [oldPkgs.tmux config.devGhc.pkgs.xterm]; };
+    ghcid.shellConfig = { buildInputs = [config.pkgs.tmux config.devGhc.pkgs.xterm]; };
   });
 }
