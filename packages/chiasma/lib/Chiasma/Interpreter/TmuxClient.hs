@@ -173,7 +173,7 @@ runReaderTmuxNativeEnv socket sem = do
 {-# inline runReaderTmuxNativeEnv #-}
 
 interpretTmuxNativeEnv ::
-  Members [Reader TmuxNative, Error TmuxError, Log, Resource, Race, Async, Embed IO] r =>
+  Members [Error TmuxError, Log, Resource, Race, Async, Embed IO] r =>
   Maybe (Path Abs File) ->
   InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnv socket =
@@ -181,7 +181,7 @@ interpretTmuxNativeEnv socket =
 {-# inline interpretTmuxNativeEnv #-}
 
 interpretTmuxNativeEnvGraceful ::
-  Members [Reader TmuxNative, Log, Resource, Race, Async, Embed IO] r =>
+  Members [Log, Resource, Race, Async, Embed IO] r =>
   Maybe (Path Abs File) ->
   InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnvGraceful socket sem =
