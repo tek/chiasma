@@ -14,6 +14,8 @@ data TmuxError =
   DecodeFailed TmuxRequest DecodeError
   |
   NoClients
+  |
+  NoExe
   deriving stock (Eq, Show)
 
 codec :: CodecError -> TmuxError

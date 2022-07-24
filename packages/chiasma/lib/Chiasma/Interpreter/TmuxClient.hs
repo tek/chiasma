@@ -5,7 +5,7 @@ import Data.Sequence ((|>))
 import qualified Data.Text as Text
 import Exon (exon)
 import qualified Log as Log
-import Path (Abs, File, Path, toFilePath)
+import Path (Abs, File, Path, relfile, toFilePath)
 import Polysemy.Process.Interpreter.Process (ProcessQueues)
 import qualified Process as Process
 import Process (
@@ -21,12 +21,13 @@ import Process (
   interpretProcessOutputTextLines,
   interpretProcess_,
   interpretSystemProcessNative_,
+  resolveExecutable,
   withProcess_,
   )
 import System.Process.Typed (ProcessConfig, proc)
 
 import qualified Chiasma.Data.TmuxError as TmuxError
-import Chiasma.Data.TmuxError (TmuxError)
+import Chiasma.Data.TmuxError (TmuxError (NoExe))
 import Chiasma.Data.TmuxNative (TmuxNative (TmuxNative))
 import qualified Chiasma.Data.TmuxOutputBlock as TmuxOutputBlock
 import Chiasma.Data.TmuxOutputBlock (TmuxOutputBlock)
@@ -143,6 +144,51 @@ interpretTmuxNative =
   interpretTmuxWithProcess .
   raiseUnder2
 {-# inline interpretTmuxNative #-}
+
+interpretTmuxFailing ::
+  TmuxError ->
+  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+interpretTmuxFailing err =
+  interpretScopedResumable_ (pure ()) \ () -> \case
+    TmuxClient.Schedule _ ->
+      stop err
+    TmuxClient.Send _ ->
+      stop err
+
+withTmuxNativeEnv ::
+  Member (Embed IO) r =>
+  Maybe (Path Abs File) ->
+  (Maybe TmuxNative -> Sem r a) ->
+  Sem r a
+withTmuxNativeEnv socket use =
+  use . fmap (flip TmuxNative socket) . rightToMaybe =<< resolveExecutable [relfile|tmux|] Nothing
+
+runReaderTmuxNativeEnv ::
+  Members [Error TmuxError, Embed IO] r =>
+  Maybe (Path Abs File) ->
+  InterpreterFor (Reader TmuxNative) r
+runReaderTmuxNativeEnv socket sem = do
+  tn <- withTmuxNativeEnv socket (note NoExe)
+  runReader tn sem
+{-# inline runReaderTmuxNativeEnv #-}
+
+interpretTmuxNativeEnv ::
+  Members [Reader TmuxNative, Error TmuxError, Log, Resource, Race, Async, Embed IO] r =>
+  Maybe (Path Abs File) ->
+  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+interpretTmuxNativeEnv socket =
+  runReaderTmuxNativeEnv socket . interpretTmuxNative . raiseUnder
+{-# inline interpretTmuxNativeEnv #-}
+
+interpretTmuxNativeEnvGraceful ::
+  Members [Reader TmuxNative, Log, Resource, Race, Async, Embed IO] r =>
+  Maybe (Path Abs File) ->
+  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+interpretTmuxNativeEnvGraceful socket sem =
+  withTmuxNativeEnv socket \case
+    Just tn -> runReader tn (interpretTmuxNative (raiseUnder sem))
+    Nothing -> interpretTmuxFailing NoExe sem
+{-# inline interpretTmuxNativeEnvGraceful #-}
 
 interpretTmuxClientNull ::
   InterpreterFor (Scoped () (TmuxClient i ()) !! TmuxError) r
