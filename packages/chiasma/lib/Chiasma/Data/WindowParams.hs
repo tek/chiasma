@@ -5,7 +5,7 @@ import Path (Abs, Dir, Path)
 import Chiasma.Class.CmdArgs (CmdArgs (cmdArgs), arg, envVars, flag1, identOption, optionWith)
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.Target (Target)
-import Chiasma.Path (pathText)
+import Chiasma.Path (pathText')
 
 data WindowParams =
   WindowParams {
@@ -45,7 +45,7 @@ instance CmdArgs WindowParams where
     <>
     flag1 "-P" printInfo
     <>
-    optionWith "-c" pathText cwd
+    optionWith "-c" pathText' cwd
     <>
     envVars environment
     <>
