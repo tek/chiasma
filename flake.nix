@@ -25,6 +25,7 @@
       chiasma-test = ./packages/test;
     };
     main = "chiasma-test";
+    devGhc.compiler = "ghc902";
     inherit overrides;
     depsFull = [prelate];
     compat.enable = false;
