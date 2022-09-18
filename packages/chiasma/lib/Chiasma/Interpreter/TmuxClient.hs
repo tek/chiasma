@@ -79,15 +79,15 @@ tmuxProc (TmuxNative exe socket) =
 
 interpretSystemProcessTmux ::
   Members [Reader TmuxNative, Resource, Race, Async, Embed IO] r =>
-  InterpreterFor (Scoped PipesProcess (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r
+  InterpreterFor (Scoped_ PipesProcess (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r
 interpretSystemProcessTmux sem = do
   conf <- tmuxProc <$> ask
   interpretSystemProcessNative_ conf sem
 
 interpretProcessTmux ::
-  Member (Scoped res (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r =>
+  Member (Scoped_ res (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r =>
   Members [Resource, Race, Async, Embed IO] r =>
-  InterpreterFor (Scoped () TmuxProc !! ProcessError) r
+  InterpreterFor (Scoped_ () TmuxProc !! ProcessError) r
 interpretProcessTmux sem = do
   interpretProcessOutputTmuxBlock @'Stdout $
     interpretProcessOutputTextLines @'Stderr $
@@ -105,20 +105,20 @@ flush =
 
 tmuxSession ::
   ∀ res r a .
-  Members [Scoped res TmuxProc !! ProcessError, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
+  Members [Scoped_ res TmuxProc !! ProcessError, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
   Sem (TmuxProc : r) a ->
   Sem r a
 tmuxSession action =
-  resumeHoist @ProcessError @(Scoped res TmuxProc) TmuxError.ProcessFailed $ withProcess_ do
+  resumeHoist @ProcessError @(Scoped_ res TmuxProc) TmuxError.ProcessFailed $ withProcess_ do
     void Process.recv
     tmuxRequest (TmuxRequest "refresh-client" ["-C", "10000x10000"] Nothing)
     raiseUnder action <* flush
 
 interpretTmuxProcessBuffered ::
-  Members [AtomicState (Seq TmuxRequest), Scoped res TmuxProc !! ProcessError, Log, Embed IO] r =>
-  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+  Members [AtomicState (Seq TmuxRequest), Scoped_ res TmuxProc !! ProcessError, Log, Embed IO] r =>
+  InterpreterFor (Scoped_ () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxProcessBuffered =
-  interpretScopedResumableWith_ @'[TmuxProc] tmuxSession \case
+  interpretScopedResumableWith_ @'[TmuxProc] (const tmuxSession) \case
     TmuxClient.Schedule request ->
       atomicModify' (|> request)
     TmuxClient.Send cmd -> do
@@ -127,8 +127,8 @@ interpretTmuxProcessBuffered =
 {-# inline interpretTmuxProcessBuffered #-}
 
 interpretTmuxWithProcess ::
-  Members [Scoped res TmuxProc !! ProcessError, Log, Embed IO] r =>
-  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+  Members [Scoped_ res TmuxProc !! ProcessError, Log, Embed IO] r =>
+  InterpreterFor (Scoped_ () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxWithProcess =
   interpretAtomic mempty .
   interpretTmuxProcessBuffered .
@@ -138,7 +138,7 @@ interpretTmuxWithProcess =
 interpretTmuxNative ::
   ∀ r .
   Members [Reader TmuxNative, Log, Resource, Race, Async, Embed IO] r =>
-  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+  InterpreterFor (Scoped_ () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNative =
   interpretSystemProcessTmux .
   interpretProcessTmux .
@@ -148,9 +148,9 @@ interpretTmuxNative =
 
 interpretTmuxFailing ::
   TmuxError ->
-  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+  InterpreterFor (Scoped_ () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxFailing err =
-  interpretScopedResumable_ (pure ()) \ () -> \case
+  interpretScopedResumable_ mempty \ () -> \case
     TmuxClient.Schedule _ ->
       stop err
     TmuxClient.Send _ ->
@@ -176,7 +176,7 @@ runReaderTmuxNativeEnv socket sem = do
 interpretTmuxNativeEnv ::
   Members [Error TmuxError, Log, Resource, Race, Async, Embed IO] r =>
   Maybe (Path Abs File) ->
-  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+  InterpreterFor (Scoped_ () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnv socket =
   runReaderTmuxNativeEnv socket . interpretTmuxNative . raiseUnder
 {-# inline interpretTmuxNativeEnv #-}
@@ -184,7 +184,7 @@ interpretTmuxNativeEnv socket =
 interpretTmuxNativeEnvGraceful ::
   Members [Log, Resource, Race, Async, Embed IO] r =>
   Maybe (Path Abs File) ->
-  InterpreterFor (Scoped () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
+  InterpreterFor (Scoped_ () (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnvGraceful socket sem =
   withTmuxNativeEnv socket \case
     Just tn -> runReader tn (interpretTmuxNative (raiseUnder sem))
@@ -192,9 +192,9 @@ interpretTmuxNativeEnvGraceful socket sem =
 {-# inline interpretTmuxNativeEnvGraceful #-}
 
 interpretTmuxClientNull ::
-  InterpreterFor (Scoped () (TmuxClient i ()) !! TmuxError) r
+  InterpreterFor (Scoped_ () (TmuxClient i ()) !! TmuxError) r
 interpretTmuxClientNull =
-  interpretScopedResumable_ (pure ()) \ () -> \case
+  interpretScopedResumable_ mempty \ () -> \case
     TmuxClient.Schedule _ ->
       unit
     TmuxClient.Send _ ->

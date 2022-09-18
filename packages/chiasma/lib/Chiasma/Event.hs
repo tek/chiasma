@@ -38,10 +38,10 @@ listen ::
   ∀ tmuxResource resource enc dec err t d r .
   Show err =>
   Member (Codec ReceiveEvent enc dec !! err) r =>
-  Members [Scoped tmuxResource (TmuxClient enc dec) !! TmuxError, Events resource Event, Time t d, Log] r =>
+  Members [Scoped_ tmuxResource (TmuxClient enc dec) !! TmuxError, Events resource Event, Time t d, Log] r =>
   Sem r ()
 listen = do
-  resume @_ @(Scoped tmuxResource _) (withTmux listenLoop) \ err -> do
+  resume @_ @(Scoped_ tmuxResource _) (withTmux listenLoop) \ err -> do
     Log.error [exon|Lost connection to tmux: #{show err}
 Reconnecting...|]
     Time.sleep (Seconds 1)
@@ -49,7 +49,7 @@ Reconnecting...|]
 withTmuxEvents ::
   Show err =>
   Member (Codec ReceiveEvent enc dec !! err) r =>
-  Member (Scoped tmuxResource (TmuxClient enc dec) !! TmuxError) r =>
+  Member (Scoped_ tmuxResource (TmuxClient enc dec) !! TmuxError) r =>
   Members [Events resource Event, Time t d, Log, Race, Async, Resource] r =>
   Sem r a ->
   Sem r a

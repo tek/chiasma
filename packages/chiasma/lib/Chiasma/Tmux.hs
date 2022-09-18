@@ -23,7 +23,7 @@ withTmuxApis' ::
   Sem (TmuxApis commands err ++ TmuxClient i o : r) a ->
   Sem r a
 withTmuxApis' =
-  scoped . interpretApis @commands @err
+  scoped_ . interpretApis @commands @err
 
 insertAfter ::
   ∀ left e r a .
@@ -40,7 +40,7 @@ withTmuxApis ::
   Member (ScopedTmux resource i o) r =>
   InterpretersFor (TmuxApis commands err) r
 withTmuxApis =
-  scoped .
+  scoped_ .
   interpretApis @commands @err .
   insertAfter @(TmuxApis commands err) @(TmuxClient i o) @r
 
@@ -52,7 +52,7 @@ withTmuxApis_ ::
   Member (ScopedTmux resource i o) r =>
   InterpretersFor apis r
 withTmuxApis_ =
-  scoped .
+  scoped_ .
   restopApis @commands @err .
   insertAfter @apis @(TmuxClient i o) @r
 
@@ -61,14 +61,14 @@ withTmux ::
   Members [ScopedTmux resource i o, Codec command i o !! err] r =>
   InterpreterFor (TmuxApi command !! err) r
 withTmux =
-  scoped . interpretTmuxApi . raiseUnder
+  scoped_ . interpretTmuxApi . raiseUnder
 
 withTmux_ ::
   ∀ command err i o resource r .
   Members [ScopedTmux resource i o, Codec command i o !! err, Stop err] r =>
   InterpreterFor (TmuxApi command) r
 withTmux_ =
-  scoped .
+  scoped_ .
   interpretTmuxApi .
   raiseUnder .
   restop @err @(TmuxApi command) .

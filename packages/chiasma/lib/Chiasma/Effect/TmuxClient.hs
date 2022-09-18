@@ -12,7 +12,7 @@ data TmuxClient (i :: Type) (o :: Type) :: Effect where
 makeSem ''TmuxClient
 
 type ScopedTmux resource i o =
-  Scoped resource (TmuxClient i o)
+  Scoped_ resource (TmuxClient i o)
 
 type NativeTmux =
   ScopedTmux () TmuxRequest TmuxResponse
