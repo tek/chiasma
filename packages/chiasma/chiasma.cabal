@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.34.7.
 --
 -- see: https://github.com/sol/hpack
 
@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:
+      Chiasma
       Chiasma.Class.CmdArgs
       Chiasma.Codec
       Chiasma.Codec.Data
