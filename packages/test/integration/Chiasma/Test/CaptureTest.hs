@@ -14,7 +14,7 @@ import Chiasma.Tmux (withTmux)
 test_capture :: UnitTest
 test_capture =
   tmuxTest do
-    restop @TmuxError @(ScopedTmux _ _ _) do
+    restop @TmuxError @(ScopedTmux _ _) do
       withTmux $ resumeHoist TmuxError.codec do
         sendKeys 0 [Lit "echo 1"]
         assertWait (capturePane 0) (assertEq ["$ echo 1", "1", "$"])

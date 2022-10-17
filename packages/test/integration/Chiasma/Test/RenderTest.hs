@@ -50,7 +50,7 @@ views =
 renderOnce ::
   Member (Codec TmuxCommand TmuxRequest TmuxResponse !! CodecError) r =>
   Member (Codec (Panes Pane) TmuxRequest TmuxResponse !! CodecError) r =>
-  Members [ScopedTmux () TmuxRequest TmuxResponse, AtomicState Views, Stop RenderError, Embed IO] r =>
+  Members [ScopedTmux TmuxRequest TmuxResponse, AtomicState Views, Stop RenderError, Embed IO] r =>
   ViewTree ->
   Sem r ()
 renderOnce tree = do
@@ -61,7 +61,7 @@ runRender ::
   ∀ r .
   Member (Codec TmuxCommand TmuxRequest TmuxResponse !! CodecError) r =>
   Member (Codec (Panes Pane) TmuxRequest TmuxResponse !! CodecError) r =>
-  Member (ScopedTmux () TmuxRequest TmuxResponse) r =>
+  Member (ScopedTmux TmuxRequest TmuxResponse) r =>
   Members [Stop RenderError, Stop TmuxError, ChronosTime, Embed IO] r =>
   ViewTree ->
   Sem r ([Tmux.View PaneId], [Pane])
@@ -76,7 +76,7 @@ renderTest ::
   UnitTest
 renderTest tree target = do
   tmuxTest do
-    (_, ps) <- restop @TmuxError @(_ _ _ _) (runRender tree)
+    (_, ps) <- restop @TmuxError @(Scoped _ _) (runRender tree)
     target === ps
 
 treeImbalanced :: ViewTree
@@ -213,7 +213,7 @@ togglePaneE i t =
 test_successiveOpen :: UnitTest
 test_successiveOpen = do
   tmuxTest do
-    restop @TmuxError @(ScopedTmux _ _ _) do
+    restop @TmuxError @(ScopedTmux _ _) do
       evalState views $ atomicStateToState do
         renderOnce treeSuccessiveOpen
         tree1 <- togglePaneE id1 treeSuccessiveOpen

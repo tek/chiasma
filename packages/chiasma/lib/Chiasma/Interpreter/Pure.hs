@@ -8,6 +8,6 @@ import Chiasma.Interpreter.TmuxClient (interpretTmuxClientNull)
 
 interpretTmuxPure ::
   (∀ a . command a -> Sem r (Either Text a)) ->
-  InterpretersFor [Scoped_ () (TmuxClient () ()) !! TmuxError, Codec command () () !! Text] r
+  InterpretersFor [Scoped_ (TmuxClient () ()) !! TmuxError, Codec command () () !! Text] r
 interpretTmuxPure run =
   interpretCodecPure run . interpretTmuxClientNull

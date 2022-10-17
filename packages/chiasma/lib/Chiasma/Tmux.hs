@@ -4,9 +4,10 @@ import Polysemy.Internal (hoistSem)
 import Polysemy.Internal.Sing (KnownList (singList))
 import Polysemy.Internal.Union (hoist, weakenMid)
 
+import Chiasma.Data.Panes (Panes, TmuxPanes)
 import Chiasma.Effect.Codec (Codec)
 import Chiasma.Effect.TmuxApi (TmuxApi)
-import Chiasma.Effect.TmuxClient (TmuxClient, ScopedTmux)
+import Chiasma.Effect.TmuxClient (ScopedTmux, TmuxClient)
 import Chiasma.Interpreter.TmuxApi (
   InterpretApis (interpretApis),
   RestopApis (restopApis),
@@ -14,12 +15,11 @@ import Chiasma.Interpreter.TmuxApi (
   interpretTmuxApi,
   type (<$>),
   )
-import Chiasma.Data.Panes (Panes, TmuxPanes)
 
 withTmuxApis' ::
-  ∀ commands err i o resource r a .
+  ∀ commands err i o r a .
   InterpretApis commands err i o r =>
-  Member (ScopedTmux resource i o) r =>
+  Member (ScopedTmux i o) r =>
   Sem (TmuxApis commands err ++ TmuxClient i o : r) a ->
   Sem r a
 withTmuxApis' =
@@ -34,10 +34,10 @@ insertAfter =
   hoistSem $ hoist (insertAfter @left @e @r) . weakenMid @r (singList @left) (singList @'[e])
 
 withTmuxApis ::
-  ∀ commands err i o resource r .
+  ∀ commands err i o r .
   KnownList (TmuxApis commands err) =>
   InterpretApis commands err i o r =>
-  Member (ScopedTmux resource i o) r =>
+  Member (ScopedTmux i o) r =>
   InterpretersFor (TmuxApis commands err) r
 withTmuxApis =
   scoped_ .
@@ -45,11 +45,11 @@ withTmuxApis =
   insertAfter @(TmuxApis commands err) @(TmuxClient i o) @r
 
 withTmuxApis_ ::
-  ∀ commands err i o resource apis r .
+  ∀ commands err i o apis r .
   apis ~ TmuxApi <$> commands =>
   KnownList apis =>
   RestopApis commands err i o r =>
-  Member (ScopedTmux resource i o) r =>
+  Member (ScopedTmux i o) r =>
   InterpretersFor apis r
 withTmuxApis_ =
   scoped_ .
@@ -57,15 +57,15 @@ withTmuxApis_ =
   insertAfter @apis @(TmuxClient i o) @r
 
 withTmux ::
-  ∀ command err i o resource r .
-  Members [ScopedTmux resource i o, Codec command i o !! err] r =>
+  ∀ command err i o r .
+  Members [ScopedTmux i o, Codec command i o !! err] r =>
   InterpreterFor (TmuxApi command !! err) r
 withTmux =
   scoped_ . interpretTmuxApi . raiseUnder
 
 withTmux_ ::
-  ∀ command err i o resource r .
-  Members [ScopedTmux resource i o, Codec command i o !! err, Stop err] r =>
+  ∀ command err i o r .
+  Members [ScopedTmux i o, Codec command i o !! err, Stop err] r =>
   InterpreterFor (TmuxApi command) r
 withTmux_ =
   scoped_ .
@@ -75,15 +75,15 @@ withTmux_ =
   raiseUnder
 
 withPanes ::
-  ∀ p err i o resource r .
-  Members [ScopedTmux resource i o, Codec (Panes p) i o !! err] r =>
+  ∀ p err i o r .
+  Members [ScopedTmux i o, Codec (Panes p) i o !! err] r =>
   InterpreterFor (TmuxPanes p !! err) r
 withPanes =
   withTmux
 
 withPanes_ ::
-  ∀ p err i o resource r .
-  Members [ScopedTmux resource i o, Codec (Panes p) i o !! err, Stop err] r =>
+  ∀ p err i o r .
+  Members [ScopedTmux i o, Codec (Panes p) i o !! err, Stop err] r =>
   InterpreterFor (TmuxPanes p) r
 withPanes_ =
   withTmux_

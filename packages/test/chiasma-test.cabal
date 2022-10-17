@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.34.7.
 --
 -- see: https://github.com/sol/hpack
 
@@ -31,6 +31,7 @@ library
   hs-source-dirs:
       lib
   default-extensions:
+      ImpredicativeTypes
       AllowAmbiguousTypes
       ApplicativeDo
       BangPatterns
@@ -92,7 +93,6 @@ library
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      ImpredicativeTypes
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin
   build-depends:
       base >=4.12 && <5
@@ -111,7 +111,7 @@ library
     , polysemy-process
     , polysemy-test >=0.6
     , polysemy-time
-    , prelate >=0.1
+    , prelate >=0.2
     , text
     , typed-process >=0.2
   mixins:
@@ -132,6 +132,7 @@ test-suite chiasma-test-integration
   hs-source-dirs:
       integration
   default-extensions:
+      ImpredicativeTypes
       AllowAmbiguousTypes
       ApplicativeDo
       BangPatterns
@@ -193,7 +194,6 @@ test-suite chiasma-test-integration
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      ImpredicativeTypes
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.12 && <5
@@ -206,7 +206,7 @@ test-suite chiasma-test-integration
     , polysemy-chronos
     , polysemy-plugin
     , polysemy-test >=0.6
-    , prelate >=0.1
+    , prelate >=0.2
     , tasty
     , tasty-hedgehog
   mixins:
@@ -228,6 +228,7 @@ test-suite chiasma-test-unit
   hs-source-dirs:
       test
   default-extensions:
+      ImpredicativeTypes
       AllowAmbiguousTypes
       ApplicativeDo
       BangPatterns
@@ -289,7 +290,6 @@ test-suite chiasma-test-unit
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      ImpredicativeTypes
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.12 && <5
@@ -299,7 +299,7 @@ test-suite chiasma-test-unit
     , polysemy
     , polysemy-plugin
     , polysemy-test >=0.6
-    , prelate >=0.1
+    , prelate >=0.2
     , tasty
     , tasty-hedgehog
   mixins:

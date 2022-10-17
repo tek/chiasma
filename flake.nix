@@ -10,13 +10,9 @@
   let
     overrides = { hackage, source, unbreak, pkgs, system, buildInputs, notest, ... }: {
       chiasma-test = buildInputs [pkgs.tmux pkgs.xterm];
-      exon = hackage "0.5.0.0" "1i5r4ixmxwna3b36hz254jgkm3wbp6iggs71igfhzc9fym1z10hv";
-      polysemy = hackage "1.7.1.0" "0qwli1kx3hk68hqsgw65mk81bx0djw1wlk17v8ggym7mf3lailyc";
-      polysemy-plugin = hackage "0.4.3.0" "1r7j1ffsd6z2q2fgpg78brl2gb0dg8r5ywfiwdrsjd2fxkinjcg1";
       type-errors = notest;
     };
-  in hix.lib.flake ({ config, lib, ... }: {
-    base = ./.;
+  in hix.lib.pro ({ config, lib, ... }: {
     packages = {
       chiasma = ./packages/chiasma;
       chiasma-test = ./packages/test;

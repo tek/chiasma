@@ -1,6 +1,5 @@
 module Chiasma.Window where
 
-import Data.List.Extra (firstJust)
 import qualified Data.List.NonEmpty as NonEmpty (head, nonEmpty)
 import Path (Abs, Dir, Path, parseAbsDir)
 import Prettyprinter (line, pretty, vsep, (<+>))

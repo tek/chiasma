@@ -126,6 +126,7 @@ library
   hs-source-dirs:
       lib
   default-extensions:
+      ImpredicativeTypes
       AllowAmbiguousTypes
       ApplicativeDo
       BangPatterns
@@ -187,7 +188,6 @@ library
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      ImpredicativeTypes
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin
   build-depends:
       attoparsec >=0.13
@@ -208,7 +208,7 @@ library
     , polysemy-plugin
     , polysemy-process >=0.9
     , polysemy-time >=0.5
-    , prelate >=0.1
+    , prelate >=0.2
     , prettyprinter >=1.6
     , prettyprinter-ansi-terminal >=1.1
     , random >=1.1

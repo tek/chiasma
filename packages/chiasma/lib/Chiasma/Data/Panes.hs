@@ -1,7 +1,5 @@
 module Chiasma.Data.Panes where
 
-import Data.List.Extra (firstJust)
-
 import Chiasma.Class.CmdArgs (cmdArgs)
 import qualified Chiasma.Codec as Codec
 import Chiasma.Codec (TmuxCodec, multi, single)
@@ -13,9 +11,9 @@ import qualified Chiasma.Data.Target as Target
 import Chiasma.Data.TmuxId (PaneId)
 import Chiasma.Data.TmuxQuery (TmuxQuery)
 import Chiasma.Data.TmuxRequest (TmuxRequest (TmuxRequest))
+import Chiasma.Data.TmuxResponse (TmuxResponse (TmuxResponse))
 import Chiasma.Data.WithPaneId (WithPaneId (WithPaneId))
 import Chiasma.Effect.TmuxApi (TmuxApi)
-import Chiasma.Data.TmuxResponse (TmuxResponse(TmuxResponse))
 
 -- |A 'TmuxApi' command for listing panes, with different query criteria.
 -- The constructors taking a 'PaneSelection' list all panes that are present in the selected scope, but may constrain
