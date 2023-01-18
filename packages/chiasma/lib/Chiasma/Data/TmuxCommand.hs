@@ -3,7 +3,7 @@ module Chiasma.Data.TmuxCommand where
 import Data.List (dropWhileEnd)
 import qualified Data.Text as Text
 import Exon (exon)
-import Text.Show (Show (showsPrec), showParen, showString, shows)
+import Text.Show (shows)
 
 import Chiasma.Class.CmdArgs (cmdArgs)
 import qualified Chiasma.Codec as Codec

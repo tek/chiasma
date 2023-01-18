@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 module Chiasma.Command.Pane where
 
 import Prelude hiding (output)

@@ -1,6 +1,6 @@
 module Chiasma.Interpreter.TmuxClient where
 
-import Conc (interpretAtomic, interpretScopedResumableWith_, interpretScopedResumable_)
+import Conc (interpretAtomic)
 import Data.Sequence ((|>))
 import qualified Data.Text as Text
 import Exon (exon)
