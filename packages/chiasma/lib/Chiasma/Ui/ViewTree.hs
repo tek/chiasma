@@ -10,11 +10,7 @@ import Exon (exon)
 import Prelude hiding (ix, tell)
 
 import Chiasma.Data.Ident (Ident)
-import Chiasma.Lens.Tree (
-  LeafIndexTree (..),
-  _litTree,
-  leafDataTraversal,
-  )
+import Chiasma.Lens.Tree (LeafIndexTree (..), _litTree, leafDataTraversal)
 import Chiasma.Ui.Data.TreeModError (TreeModError (AmbiguousLayout, AmbiguousPane, LayoutMissing, PaneMissing))
 import Chiasma.Ui.Data.View (
   Pane (Pane),
@@ -25,9 +21,6 @@ import Chiasma.Ui.Data.View (
   ViewTree,
   ViewTreeSub,
   )
-import qualified Chiasma.Ui.Data.View as Pane (open)
-import qualified Chiasma.Ui.Data.View as TreeSub (leafData)
-import qualified Chiasma.Ui.Data.View as View (extra)
 import Chiasma.Ui.Data.ViewState (ViewState (ViewState))
 import Chiasma.Ui.Pane (paneSetOpen, paneToggleOpen)
 
@@ -61,7 +54,7 @@ modifyPaneUniqueM f ident tree = do
   let st = (transformM $ mapMOf (ix ident) (modCounted f)) (LeafIndexTree tree)
   (result, Sum count) <- lift $ runWriterT st
   case count of
-    1 -> pure $ litTree result
+    1 -> pure $ (.litTree) result
     0 -> ExceptT (pure (Left (PaneMissing ident)))
     n -> ExceptT (pure (Left (AmbiguousPane ident n)))
 
@@ -252,7 +245,7 @@ skipFold f =
 
 isOpenPaneNode :: ViewTreeSub -> Bool
 isOpenPaneNode =
-  anyOf (TreeSub.leafData . View.extra . Pane.open) id
+  anyOf (#_TreeLeaf . #extra . #open) id
 
 openPinnedPaneView :: PaneView -> (ToggleStatus, PaneView)
 openPinnedPaneView (View i s g (Pane False True c)) =

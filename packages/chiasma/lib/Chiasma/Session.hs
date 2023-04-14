@@ -1,6 +1,7 @@
 module Chiasma.Session where
 
 import Exon (exon)
+
 import qualified Chiasma.Codec.Data.Session as Codec (Session (Session))
 import qualified Chiasma.Codec.Data.Window as Codec (Window (Window))
 import Chiasma.Command.Session (existingSessionId, newSession)
@@ -8,7 +9,7 @@ import Chiasma.Command.Window (newSessionWindow)
 import Chiasma.Data.Ident (Ident)
 import Chiasma.Data.LayoutError (LayoutError)
 import Chiasma.Data.TmuxId (SessionId, WindowId)
-import qualified Chiasma.Data.View as Tmux (View (viewId, viewIdent), setViewId)
+import qualified Chiasma.Data.View as Tmux
 import Chiasma.Data.Views (Views)
 import Chiasma.Effect.TmuxApi (Tmux)
 import Chiasma.View (findOrCreateView, viewsLogS)
@@ -27,7 +28,7 @@ spawnSession ::
   Tmux.View WindowId ->
   Sem r (SessionId, WindowId)
 spawnSession session' window = do
-  Codec.Session sid _ <- newSession (Tmux.viewIdent session')
+  Codec.Session sid _ <- newSession session'.ident
   atomicModify' (Views.updateSession (Tmux.setViewId sid session'))
   Codec.Window wid _ _ <- newSessionWindow sid
   atomicModify' (Views.updateWindow (Tmux.setViewId wid window))
@@ -40,7 +41,7 @@ ensureSession ::
   Tmux.View WindowId ->
   Sem r (SessionId, Maybe WindowId)
 ensureSession session' window = do
-  existing <- join <$> traverse existingSessionId (Tmux.viewId session')
+  existing <- join <$> traverse existingSessionId session'.id
   case existing of
     Just sid -> pure (sid, Nothing)
     Nothing -> second Just <$> spawnSession session' window

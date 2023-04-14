@@ -1,27 +1,28 @@
 module Chiasma.Test.LensTest where
 
-import Chiasma.Data.Ident (Ident(Str))
+import Control.Lens (transformM)
+import qualified Control.Lens as Lens (set)
+import Hedgehog ((===))
+import Test.Tasty (TestTree, testGroup)
+
+import Chiasma.Data.Ident (Ident (Str))
 import Chiasma.Lens.Tree (leafByIdent, modifyLeafByIdent, treesAndSubs)
+import Chiasma.Test.Util (UnitTest, unitTest)
+import qualified Chiasma.Ui.Data.View as View
 import Chiasma.Ui.Data.View (
-  Pane(Pane),
+  Pane (Pane),
   PaneView,
-  Tree(Tree),
-  TreeSub(TreeNode, TreeLeaf),
-  View(View),
+  Tree (Tree),
+  TreeSub (TreeLeaf, TreeNode),
+  View (View),
   ViewTree,
   ViewTreeSub,
   consLayout,
   consPane,
   )
-import qualified Chiasma.Ui.Data.View as View (_ident, ident)
-import Chiasma.Ui.Data.ViewState (ViewState(ViewState))
+import Chiasma.Ui.Data.ViewState (ViewState (ViewState))
 import Chiasma.Ui.ViewTree (togglePane)
-import qualified Chiasma.Ui.ViewTree as ToggleResult (ToggleResult(..))
-import Control.Lens (transformM)
-import qualified Control.Lens as Lens (set)
-import Hedgehog ((===))
-import Test.Tasty (TestTree, testGroup)
-import Chiasma.Test.Util (UnitTest, unitTest)
+import qualified Chiasma.Ui.ViewTree as ToggleResult (ToggleResult (..))
 
 id0, id1, id2, id3, id4 :: Ident
 id0 = Str "0"
@@ -45,9 +46,9 @@ test_modify :: UnitTest
 test_modify = do
   let
     ident = Str "changed"
-    modded = modifyLeafByIdent id1 (Lens.set View.ident ident) tree
+    modded = modifyLeafByIdent id1 (Lens.set #ident ident) tree
   Nothing === leafByIdent ident tree
-  Just ident === (View._ident <$> leafByIdent ident modded)
+  Just ident === ((.ident) <$> leafByIdent ident modded)
 
 failOnPaneIdent :: Ident -> ViewTree -> Maybe ViewTree
 failOnPaneIdent target t@(Tree _ sub) =
@@ -63,7 +64,7 @@ test_monadicModify = do
 
 insertPane :: Ident -> PaneView -> ViewTree -> ViewTree
 insertPane targetLayout pane (Tree l sub) =
-  if View._ident l == targetLayout then Tree l (TreeLeaf pane : sub) else Tree l sub
+  if l.ident == targetLayout then Tree l (TreeLeaf pane : sub) else Tree l sub
 
 ensurePaneUnique :: Ident -> ViewTreeSub -> Maybe ViewTreeSub
 ensurePaneUnique paneIdent (TreeLeaf (View ident _ _ _)) | ident == paneIdent = Nothing

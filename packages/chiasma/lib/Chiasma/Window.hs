@@ -5,7 +5,7 @@ import Path (Abs, Dir, Path, parseAbsDir)
 import Prettyprinter (line, pretty, vsep, (<+>))
 
 import qualified Chiasma.Codec.Data.Pane as Pane
-import qualified Chiasma.Codec.Data.Pane as Codec (Pane (Pane, paneId))
+import qualified Chiasma.Codec.Data.Pane as Codec (Pane (Pane))
 import Chiasma.Codec.Data.Pane (Pane (Pane))
 import qualified Chiasma.Codec.Data.Window as Codec (Window (Window, windowId))
 import qualified Chiasma.Command.Pane as Cmd (closePane, firstWindowPane, windowPanes)
@@ -21,13 +21,7 @@ import Chiasma.Data.Views (Views)
 import Chiasma.Data.WindowState (WindowState (..))
 import Chiasma.Effect.TmuxApi (Tmux)
 import Chiasma.Pane (addPane)
-import Chiasma.Ui.Data.RenderableTree (
-  RLayout (..),
-  RPane (..),
-  Renderable (..),
-  RenderableNode,
-  RenderableTree,
-  )
+import Chiasma.Ui.Data.RenderableTree (RLayout (..), RPane (..), Renderable (..), RenderableNode, RenderableTree)
 import qualified Chiasma.Ui.Data.Tree as Tree (Node (Leaf, Sub), Tree (Tree))
 import Chiasma.Ui.Data.View (Tree (..), TreeSub (..), ViewTree, ViewTreeSub)
 import qualified Chiasma.Ui.Data.View as Ui (Layout (..), Pane (Pane), PaneView, View (View))
@@ -107,7 +101,7 @@ ensureWindow ::
 ensureWindow sid (Tmux.View ident mayWid) newSessionWid tree = do
   preexisting <- join <$> traverse Cmd.window (newSessionWid <|> mayWid)
   window <- maybe (spawnWindow sid ident) pure preexisting
-  syncPrincipal (Codec.windowId window) tree
+  syncPrincipal ((.windowId) window) tree
   pure window
 
 findOrCreatePane ::
@@ -135,7 +129,7 @@ openPane ::
   Sem r Pane
 openPane dir windowId = do
   detail <- Cmd.splitWindowInDir dir windowId
-  viewsLogS $ "opened pane " <> show (Pane.paneId detail) <> " in window " <> show windowId
+  viewsLogS $ "opened pane " <> show ((.paneId) detail) <> " in window " <> show windowId
   pure detail
 
 ensurePaneOpen ::
@@ -170,7 +164,7 @@ ensurePane cwd windowId (Ui.View paneIdent vState geometry (Ui.Pane open _ custo
   updatedPane <-
     if open then Just <$> ensurePaneOpen dir existingPane windowId
     else Nothing <$ ensurePaneClosed existingPane
-  atomicModify' $ Views.updatePane (Tmux.View paneIdent (Pane.paneId <$> updatedPane))
+  atomicModify' $ Views.updatePane (Tmux.View paneIdent ((.paneId) <$> updatedPane))
   pure $ cons <$> updatedPane
   where
     dir = fromMaybe cwd (parseAbsDir . toString =<< customDir)
@@ -226,5 +220,5 @@ windowState ::
   RenderableTree ->
   Sem r WindowState
 windowState windowIdent window tree = do
-  nativeRef <- Cmd.firstWindowPane (Codec.windowId window)
-  pure $ WindowState window nativeRef windowIdent tree (Codec.paneId nativeRef)
+  nativeRef <- Cmd.firstWindowPane window.windowId
+  pure $ WindowState window nativeRef windowIdent tree nativeRef.paneId

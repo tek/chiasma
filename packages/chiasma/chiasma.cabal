@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.7.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -13,10 +13,13 @@ homepage:       https://github.com/tek/chiasma#readme
 bug-reports:    https://github.com/tek/chiasma/issues
 author:         Torsten Schmits
 maintainer:     hackage@tryp.io
-copyright:      2022 Torsten Schmits
+copyright:      2023 Torsten Schmits
 license:        BSD-2-Clause-Patent
 license-file:   LICENSE
 build-type:     Simple
+extra-source-files:
+    readme.md
+    changelog.md
 
 source-repository head
   type: git
@@ -126,72 +129,44 @@ library
   hs-source-dirs:
       lib
   default-extensions:
-      ImpredicativeTypes
       AllowAmbiguousTypes
       ApplicativeDo
-      BangPatterns
-      BinaryLiterals
       BlockArguments
-      ConstraintKinds
       DataKinds
       DefaultSignatures
       DeriveAnyClass
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
       DerivingVia
       DisambiguateRecordFields
-      DoAndIfThenElse
       DuplicateRecordFields
-      EmptyCase
-      EmptyDataDecls
-      ExistentialQuantification
-      FlexibleContexts
-      FlexibleInstances
       FunctionalDependencies
       GADTs
-      GeneralizedNewtypeDeriving
-      InstanceSigs
-      KindSignatures
       LambdaCase
       LiberalTypeSynonyms
-      MultiParamTypeClasses
       MultiWayIf
-      NamedFieldPuns
       OverloadedLabels
       OverloadedLists
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
-      PatternGuards
       PatternSynonyms
-      PolyKinds
       QuantifiedConstraints
       QuasiQuotes
-      RankNTypes
       RecordWildCards
       RecursiveDo
       RoleAnnotations
-      ScopedTypeVariables
-      StandaloneDeriving
       TemplateHaskell
-      TupleSections
-      TypeApplications
       TypeFamilies
       TypeFamilyDependencies
-      TypeOperators
-      TypeSynonymInstances
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -fplugin=Polysemy.Plugin
+      OverloadedRecordDot
+      NoFieldSelectors
+  ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages -fplugin=Polysemy.Plugin
   build-depends:
       attoparsec >=0.13
-    , base >=4.12 && <5
+    , base ==4.*
     , bytestring
     , composition >=1.0
     , containers
@@ -208,7 +183,7 @@ library
     , polysemy-plugin
     , polysemy-process >=0.9
     , polysemy-time >=0.5
-    , prelate >=0.2
+    , prelate >=0.5.1 && <0.6
     , prettyprinter >=1.6
     , prettyprinter-ansi-terminal >=1.1
     , random >=1.1
@@ -220,4 +195,4 @@ library
       base hiding (Prelude)
     , prelate (Prelate as Prelude)
     , prelate hiding (Prelate)
-  default-language: Haskell2010
+  default-language: GHC2021

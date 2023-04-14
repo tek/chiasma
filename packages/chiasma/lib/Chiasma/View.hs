@@ -7,7 +7,8 @@ import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Chiasma.Data.Ident (Ident, identText, sameIdent)
 import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
-import Chiasma.Data.View (View (View), viewIdent)
+import qualified Chiasma.Data.View
+import Chiasma.Data.View (View (View))
 import Chiasma.Data.Views (Views, ViewsError (..))
 import qualified Chiasma.Data.Views as Views (log, panes, sessions, windows)
 import Chiasma.Lens.Where (where1)
@@ -27,9 +28,15 @@ viewById viewsL id' =
 insertView :: Lens' Views [View a] -> View a -> Views -> Views
 insertView viewsL newView = over viewsL (newView :)
 
-updateView :: Lens' Views [View a] -> (Ident -> ViewsError) -> View a -> Views -> Views
+updateView ::
+  ∀ a .
+  Lens' Views [View a] ->
+  (Ident -> ViewsError) ->
+  View a ->
+  Views ->
+  Views
 updateView viewsL _ newView =
-  set (viewsL . where1 (sameIdent (viewIdent newView))) newView
+  set (viewsL . where1 (sameIdent newView.ident)) newView
 
 session :: Ident -> Views -> Either ViewsError (View SessionId)
 session = view Views.sessions NoSuchSession

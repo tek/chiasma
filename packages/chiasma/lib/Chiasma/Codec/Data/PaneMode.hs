@@ -13,4 +13,4 @@ data PaneMode =
   deriving anyclass (TmuxCodec)
 
 instance HasPaneId PaneMode where
-  paneId = paneId
+  paneId = (.paneId)

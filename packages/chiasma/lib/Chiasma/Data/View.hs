@@ -1,21 +1,19 @@
 module Chiasma.Data.View where
 
-import Chiasma.Data.Ident (Ident, Identifiable(..))
-import Control.Lens (makeClassy_)
 import qualified Control.Lens as Lens (set)
+
+import Chiasma.Data.Ident (Ident, Identifiable (..))
 
 data View a =
   View {
-    viewIdent :: Ident,
-    viewId :: Maybe a
+    ident :: Ident,
+    id :: Maybe a
   }
-  deriving stock (Eq, Show)
-
-makeClassy_ ''View
+  deriving stock (Eq, Show, Generic)
 
 instance Identifiable (View a) where
-  identify = viewIdent
+  identify = (.ident)
 
 setViewId :: a -> View a -> View a
 setViewId =
-  Lens.set _viewId . Just
+  Lens.set #id . Just

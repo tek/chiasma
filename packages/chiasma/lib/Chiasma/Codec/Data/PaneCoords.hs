@@ -14,4 +14,4 @@ data PaneCoords =
   deriving anyclass (TmuxCodec)
 
 instance HasPaneId PaneCoords where
-  paneId = paneId
+  paneId = (.paneId)

@@ -14,11 +14,11 @@ import Chiasma.Ui.Measure.Balance (balanceSizes)
 import Chiasma.Ui.Measure.Weights (viewWeights)
 
 minimizedSizeOrDefault :: ViewGeometry -> Float
-minimizedSizeOrDefault = fromMaybe 2 . minSize
+minimizedSizeOrDefault = fromMaybe 2 . (.minSize)
 
 effectiveFixedSize :: ViewState -> ViewGeometry -> Maybe Float
 effectiveFixedSize (ViewState minimized) viewGeom =
-  if minimized then Just (minimizedSizeOrDefault viewGeom) else fixedSize viewGeom
+  if minimized then Just (minimizedSizeOrDefault viewGeom) else viewGeom.fixedSize
 
 actualSize :: (ViewGeometry -> Maybe Float) ->  ViewState -> ViewGeometry -> Maybe Float
 actualSize getter viewState viewGeom =
@@ -26,11 +26,11 @@ actualSize getter viewState viewGeom =
 
 actualMinSizes :: NonEmpty (ViewState, ViewGeometry) -> NonEmpty Float
 actualMinSizes =
-  fmap (fromMaybe 0.0 . uncurry (actualSize minSize))
+  fmap (fromMaybe 0.0 . uncurry (actualSize (.minSize)))
 
 actualMaxSizes :: NonEmpty (ViewState, ViewGeometry) -> NonEmpty (Maybe Float)
 actualMaxSizes =
-  fmap (uncurry $ actualSize maxSize)
+  fmap (uncurry $ actualSize (.maxSize))
 
 isMinimized :: ViewState -> ViewGeometry -> Bool
 isMinimized (ViewState minimized) _ = minimized

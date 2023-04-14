@@ -63,7 +63,7 @@ instance CmdArgs SessionParams where
     <>
     identOption "-s" name
     <>
-    optionWith "-t" unSessionGroupId target
+    optionWith "-t" (.unSessionGroupId) target
     <>
     optionWith "-x" show width
     <>

@@ -17,8 +17,7 @@ import Chiasma.Data.TmuxError (TmuxError)
 import Chiasma.Data.TmuxId (PaneId (PaneId), SessionId (SessionId), WindowId (WindowId))
 import Chiasma.Data.TmuxRequest (TmuxRequest)
 import Chiasma.Data.TmuxResponse (TmuxResponse)
-import Chiasma.Data.View (viewIdent)
-import qualified Chiasma.Data.View as Tmux (View (View))
+import qualified Chiasma.Data.View as Tmux
 import Chiasma.Data.Views (Views (Views))
 import Chiasma.Effect.Codec (Codec)
 import Chiasma.Effect.TmuxApi (TmuxApi)
@@ -68,7 +67,7 @@ runRender ::
 runRender tree = do
   (Views _ _ viewsResult _) <- execState views (atomicStateToState (renderOnce tree))
   panesResult <- withTmux (resumeHoist TmuxError.codec (windowPanes 1))
-  pure (sortOn viewIdent viewsResult, sortOn paneLeft panesResult)
+  pure (sortOn (.ident) viewsResult, sortOn (.paneLeft) panesResult)
 
 renderTest ::
   ViewTree ->

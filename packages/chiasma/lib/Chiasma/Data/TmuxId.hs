@@ -8,7 +8,7 @@ newtype ClientId =
   deriving newtype (IsString)
 
 instance Pretty ClientId where
-  pretty = pretty . unClientId
+  pretty = pretty . (.unClientId)
 
 sessionPrefix :: Text
 sessionPrefix = "$"

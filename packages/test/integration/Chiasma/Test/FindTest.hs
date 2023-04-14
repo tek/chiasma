@@ -25,8 +25,8 @@ test_find = do
   tmuxTest $ interpretCodecPanes do
     (Pid pid, found) <- withTmuxApis_ @[TmuxCommand, Panes Pid] @CodecError do
       win <- TmuxApi.send (NewWindow def)
-      pane <- splitWindow (windowId win)
-      p1 <- TmuxApi.send (Panes.Get (Pane.paneId pane))
+      pane <- splitWindow win.windowId
+      p1 <- TmuxApi.send (Panes.Get (pane.paneId))
       p2 <- TmuxApi.send (Panes.Find 100)
       pure (p1, p2)
     assert (pid > 0)

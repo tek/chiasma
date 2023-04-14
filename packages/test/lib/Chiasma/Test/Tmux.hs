@@ -221,7 +221,7 @@ runTmuxTest conf thunk =
   stopToError $
   mapError @CodecError @Text show $
   stopToError $
-  interpretLogStdoutLevelConc (Just (TmuxTestConfig.logLevel conf)) $
+  interpretLogStdoutLevelConc (Just conf.logLevel) $
   interpretTimeChronos do
     withSystemTempDir (withTestTmux conf thunk)
 

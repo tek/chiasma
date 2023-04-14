@@ -17,7 +17,7 @@ data WithPaneId a =
   deriving stock (Eq, Show, Generic)
 
 instance HasPaneId (WithPaneId a) where
-  paneId = paneId
+  paneId = (.paneId)
 
 safeBreakOn :: Text -> Text -> Maybe (Text, Text)
 safeBreakOn n = \case

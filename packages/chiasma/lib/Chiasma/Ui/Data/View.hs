@@ -1,6 +1,6 @@
 module Chiasma.Ui.Data.View where
 
-import Control.Lens (Index, IxValue, Ixed (ix), makeClassy, makeClassy_)
+import Control.Lens (Index, IxValue, Ixed (ix))
 import Control.Lens.Plated (Plated)
 import Data.Bifoldable (Bifoldable (bifoldMap))
 import Data.Data (Data)
@@ -14,13 +14,11 @@ import Chiasma.Ui.Lens.Ident (matchIdentP)
 
 data Pane =
   Pane {
-    _open :: Bool,
-    _pin :: Bool,
-    _cwd :: Maybe Text
+    open :: Bool,
+    pin :: Bool,
+    cwd :: Maybe Text
   }
   deriving stock (Eq, Show, Data, Generic)
-
-makeClassy ''Pane
 
 instance Default Pane where
   def = Pane False False Nothing
@@ -32,18 +30,14 @@ newtype Layout =
   deriving stock (Eq, Show, Data, Generic)
   deriving newtype (Default)
 
-makeClassy_ ''Layout
-
 data View a =
   View {
-    _ident :: Ident,
-    _state :: ViewState,
-    _geometry :: ViewGeometry,
-    _extra :: a
+    ident :: Ident,
+    state :: ViewState,
+    geometry :: ViewGeometry,
+    extra :: a
   }
   deriving stock (Eq, Show, Data, Generic)
-
-makeClassy ''View
 
 instance Default a => Default (View a) where
   def = View def def def def
@@ -89,7 +83,7 @@ consLayoutVertical =
   consLayoutAs Vertical
 
 instance Identifiable (View a) where
-  identify = _ident
+  identify = (.ident)
 
 -- split in two so there can be no lone leaves (panes without layout) as type 'Tree'
 data Tree l p =
@@ -109,9 +103,9 @@ instance Bifoldable Tree where
   bifoldMap fl fr (Tree l sub) = mappend (fl l) (foldMap (bifoldMap fl fr) sub)
 
 data TreeSub l p =
-  TreeNode { _subTree :: Tree l p }
+  TreeNode { subTree :: Tree l p }
   |
-  TreeLeaf { _leafData :: p }
+  TreeLeaf { leafData :: p }
   deriving stock (Eq, Show, Data, Generic)
 
 instance Bifunctor TreeSub where
@@ -126,9 +120,6 @@ instance Bifoldable TreeSub where
   bifoldMap _ fr (TreeLeaf p) = fr p
 
 instance (Data l, Data p) => Plated (Tree l p)
-
-makeClassy_ ''Tree
-makeClassy ''TreeSub
 
 type ViewTree = Tree LayoutView PaneView
 type ViewTreeSub = TreeSub LayoutView PaneView

@@ -1,29 +1,12 @@
 module Chiasma.Lens.Tree where
 
-import Control.Lens (
-  Fold,
-  Index,
-  IxValue,
-  Ixed (ix),
-  Plated (..),
-  cosmos,
-  makeClassy_,
-  preview,
-  transform,
-  )
+import Control.Lens (Fold, Index, IxValue, Ixed (ix), Plated (..), cosmos, makeClassy_, preview, transform)
 import Data.Data (Data)
 import Data.Foldable (foldrM)
 import Prelude hiding (ix, transform)
 
 import Chiasma.Data.Ident (Ident, Identifiable (..))
-import Chiasma.Ui.Data.View (
-  HasTree (_treeSubs),
-  HasTreeSub (leafData),
-  LayoutView,
-  PaneView,
-  Tree (Tree),
-  TreeSub (TreeNode),
-  )
+import Chiasma.Ui.Data.View (LayoutView, PaneView, Tree (Tree), TreeSub (TreeNode))
 import Chiasma.Ui.Lens.Ident (matchIdentP)
 
 newtype NodeIndexTree l p =
@@ -49,10 +32,10 @@ plateWrap consWrapper unconsWrapper f wrappedTree =
     g tree' = unconsWrapper <$> f (consWrapper tree')
 
 instance (Data l, Data p) => Plated (NodeIndexTree l p) where
-  plate = plateWrap NodeIndexTree nitTree
+  plate = plateWrap NodeIndexTree (.nitTree)
 
 instance (Data l, Data p) => Plated (LeafIndexTree l p) where
-  plate = plateWrap LeafIndexTree litTree
+  plate = plateWrap LeafIndexTree (.litTree)
 
 type LayoutIndexTree = NodeIndexTree LayoutView PaneView
 type PaneIndexTree = LeafIndexTree LayoutView PaneView
@@ -64,7 +47,7 @@ type instance IxValue (NodeIndexTree l _) = l
 type instance IxValue (LeafIndexTree _ p) = p
 
 leafDataTraversal :: Traversal' (Tree l p) p
-leafDataTraversal = _treeSubs . each . leafData
+leafDataTraversal = #treeSubs . each . #_TreeLeaf
 
 leafByIdentTraversal :: Identifiable p => Ident -> Traversal' (Tree l p) p
 leafByIdentTraversal ident' = leafDataTraversal . matchIdentP ident'
@@ -83,9 +66,8 @@ leavesByIdent ident' = toListOf (leavesByIdentRecursive ident') . LeafIndexTree
 
 modifyLeafByIdent :: (Identifiable p, Data l, Data p) => Ident -> (p -> p) -> Tree l p -> Tree l p
 modifyLeafByIdent ident' f tree' =
-  litTree $ (transform $ over (ix ident') f) (LeafIndexTree tree')
+  (.litTree) $ (transform $ over (ix ident') f) (LeafIndexTree tree')
 
--- subtreesWithLayout :: Traversal' (Tree l p) (l, TreeSub l p)
 subtreesWithLayout :: ∀ l p m. Monad m => ((l, TreeSub l p) -> m (l, TreeSub l p)) -> Tree l p -> m (Tree l p)
 subtreesWithLayout f (Tree l0 sub) = do
   (newL, newSub) <- foldrM applySub (l0, []) sub
