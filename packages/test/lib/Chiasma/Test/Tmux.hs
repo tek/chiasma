@@ -93,7 +93,7 @@ testTmuxProcessConfig wait (TmuxTestConfig {..}) socket = do
 
 waitForServer ::
   ∀ enc dec t d r .
-  Members [Scoped_ (TmuxClient enc dec) !! TmuxError, Codec TmuxCommand enc dec !! CodecError, Time t d] r =>
+  Members [Scoped_ (TmuxClient enc dec) !! TmuxError, Codec TmuxCommand enc dec !! CodecError, Time t d, RunStop] r =>
   Sem r ()
 waitForServer =
   Time.while (MilliSeconds 10) do
@@ -103,7 +103,7 @@ waitForServer =
 
 waitForEmptyPrompt ::
   ∀ enc dec t d r .
-  Members [Scoped_ (TmuxClient enc dec) !! TmuxError, Codec TmuxCommand enc dec !! CodecError, Time t d] r =>
+  Members [Scoped_ (TmuxClient enc dec) !! TmuxError, Codec TmuxCommand enc dec !! CodecError, Time t d, RunStop] r =>
   Sem r ()
 waitForEmptyPrompt =
   Time.while (MilliSeconds 10) do
@@ -122,7 +122,7 @@ waitForFile file =
 runAndKillTmux ::
   ∀ err enc dec t d r a .
   Members [Scoped_ (TmuxClient enc dec) !! TmuxError, Codec TmuxCommand enc dec !! CodecError] r =>
-  Members [SystemProcess !! err, Time t d, Log, Resource, Error Text, Race, Embed IO] r =>
+  Members [SystemProcess !! err, Time t d, Log, RunStop, Bracket, Error Text, Race, Embed IO] r =>
   Bool ->
   Sem r a ->
   Sem r a
@@ -145,7 +145,7 @@ type TestTmuxEffects =
   ]
 
 withTestTmux ::
-  Members [Test, Time t d, Log, Resource, Stop TmuxError, Error Text, Race, Async, Embed IO] r =>
+  Members [Test, Time t d, Log, Bracket, Stop TmuxError, Error Text, RunStop, Race, Async, Embed IO] r =>
   TmuxTestConfig ->
   Sem (TestTmuxEffects ++ r) a ->
   Path Abs Dir ->
@@ -162,7 +162,7 @@ withTestTmux tConf@TmuxTestConfig {waitForPrompt} thunk tempDir = do
         runAndKillTmux waitForPrompt (insertAt @5 thunk)
 
 withTempDir ::
-  Members [Resource, Embed IO] r =>
+  Members [Bracket, Embed IO] r =>
   Path Abs Dir ->
   (Path Abs Dir -> Sem r a) ->
   Sem r a
@@ -172,7 +172,7 @@ withTempDir targetDir =
     (tryAny . removeDirRecur)
 
 withSystemTempDir ::
-  Members [Resource, Embed IO] r =>
+  Members [Bracket, Embed IO] r =>
   (Path Abs Dir -> Sem r a) ->
   Sem r a
 withSystemTempDir f = do
@@ -183,6 +183,7 @@ type TestStack =
   TestTmuxEffects ++ [
     ChronosTime,
     Log,
+    RunStop,
     Stop CodecError,
     Error CodecError,
     Stop RenderError,
@@ -197,8 +198,8 @@ type TestStack =
     Error TestError,
     Hedgehog IO,
     Error Failure,
+    Bracket,
     Embed IO,
-    Resource,
     Final IO
   ]
 
@@ -210,7 +211,7 @@ runTmuxTest ::
   TmuxTestConfig ->
   Sem TestStack a ->
   TestT IO a
-runTmuxTest conf thunk =
+runTmuxTest conf ma =
   runTestAuto $
   asyncToIOFinal $
   interpretRace $
@@ -221,9 +222,10 @@ runTmuxTest conf thunk =
   stopToError $
   mapError @CodecError @Text show $
   stopToError $
+  interpretRunStopIO $
   interpretLogStdoutLevelConc (Just conf.logLevel) $
   interpretTimeChronos do
-    withSystemTempDir (withTestTmux conf thunk)
+    withSystemTempDir (withTestTmux conf ma)
 
 tmuxTest ::
   Sem TestStack a ->

@@ -4,18 +4,26 @@
   inputs = {
     hix.url = "git+https://git.tryp.io/tek/hix";
     hls.url = "github:haskell/haskell-language-server?ref=1.9.0.0";
-    prelate.url = "git+https://git.tryp.io/tek/prelate";
+    polysemy.url = "git+ssh://gitea/polysemy/polysemy?ref=prof/no-vector";
+    polysemy-resume.url = "git+ssh://gitea/tek/polysemy-resume?ref=prof/no-vector";
+    polysemy-conc.url = "path:/home/tek/code/tek/haskell/polysemy-conc-old";
+    polysemy-log.url = "path:/home/tek/code/tek/haskell/polysemy-log-old";
+    prelate.url = "git+https://git.tryp.io/tek/prelate?ref=ps2";
   };
 
-  outputs = { hix, hls, prelate, ... }: hix.lib.pro ({config, ...}: {
+  outputs = { hix, hls, prelate, polysemy, polysemy-resume, polysemy-conc, polysemy-log, ... }: hix.lib.pro ({config, ...}: {
     hackage.versionFile = "ops/version.nix";
     depsFull = [prelate];
     main = "chiasma-test";
-    compiler = "ghc925";
 
     overrides = { hackage, source, unbreak, pkgs, system, buildInputs, notest, ... }: {
       chiasma-test = buildInputs [pkgs.tmux pkgs.xterm];
-      type-errors = notest;
+      polysemy = source.root polysemy;
+      polysemy-plugin = source.sub polysemy "polysemy-plugin";
+      polysemy-resume = source.package polysemy-resume "resume";
+      polysemy-conc = source.package polysemy-conc "conc";
+      polysemy-process = source.package polysemy-conc "process";
+      polysemy-log = source.package polysemy-log "polysemy-log";
     };
 
     cabal = {
@@ -37,7 +45,7 @@
         };
         module = "Prelate";
       };
-      dependencies = ["polysemy" "polysemy-plugin"];
+      dependencies = ["polysemy ^>= 2" "polysemy-plugin ^>= 0.5"];
     };
 
     packages.chiasma = {

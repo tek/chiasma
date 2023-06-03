@@ -77,7 +77,7 @@ tmuxProc (TmuxNative exe socket) =
   proc (toFilePath exe) (foldMap socketArg socket <> ["-C", "-u", "attach-session", "-f", "ignore-size"])
 
 interpretSystemProcessTmux ::
-  Members [Reader TmuxNative, Resource, Race, Async, Embed IO] r =>
+  Members [Reader TmuxNative, RunStop, Bracket, Race, Async, Embed IO] r =>
   InterpreterFor (Scoped_ (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r
 interpretSystemProcessTmux sem = do
   conf <- tmuxProc <$> ask
@@ -85,7 +85,7 @@ interpretSystemProcessTmux sem = do
 
 interpretProcessTmux ::
   Member (Scoped_ (SystemProcess !! SystemProcessError) !! SystemProcessScopeError) r =>
-  Members [Resource, Race, Async, Embed IO] r =>
+  Members [RunStop, Bracket, Race, Async, Embed IO] r =>
   InterpreterFor (Scoped_ TmuxProc !! ProcessError) r
 interpretProcessTmux sem = do
   interpretProcessOutputTmuxBlock @'Stdout $
@@ -94,7 +94,6 @@ interpretProcessTmux sem = do
     interpretProcessInputId $
     interpretProcess_ def $
     insertAt @1 sem
-{-# inline interpretProcessTmux #-}
 
 flush ::
   Members [TmuxProc, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
@@ -114,7 +113,7 @@ tmuxSession action =
     raiseUnder action <* flush
 
 interpretTmuxProcessBuffered ::
-  Members [AtomicState (Seq TmuxRequest), Scoped_ TmuxProc !! ProcessError, Log, Embed IO] r =>
+  Members [AtomicState (Seq TmuxRequest), Scoped_ TmuxProc !! ProcessError, RunStop, Log, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxProcessBuffered =
   interpretScopedResumableWith_ @'[TmuxProc] (const tmuxSession) \case
@@ -123,10 +122,9 @@ interpretTmuxProcessBuffered =
     TmuxClient.Send cmd -> do
       flush
       tmuxRequest cmd
-{-# inline interpretTmuxProcessBuffered #-}
 
 interpretTmuxWithProcess ::
-  Members [Scoped_ TmuxProc !! ProcessError, Log, Embed IO] r =>
+  Members [Scoped_ TmuxProc !! ProcessError, RunStop, Log, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxWithProcess =
   interpretAtomic mempty .
@@ -136,16 +134,17 @@ interpretTmuxWithProcess =
 
 interpretTmuxNative ::
   ∀ r .
-  Members [Reader TmuxNative, Log, Resource, Race, Async, Embed IO] r =>
+  Members [Reader TmuxNative, RunStop, Log, Bracket, Race, Async, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNative =
   interpretSystemProcessTmux .
   interpretProcessTmux .
   interpretTmuxWithProcess .
-  raiseUnder2
+  raise2Under
 {-# inline interpretTmuxNative #-}
 
 interpretTmuxFailing ::
+  Member RunStop r =>
   TmuxError ->
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxFailing err =
@@ -173,7 +172,7 @@ runReaderTmuxNativeEnv socket sem = do
 {-# inline runReaderTmuxNativeEnv #-}
 
 interpretTmuxNativeEnv ::
-  Members [Error TmuxError, Log, Resource, Race, Async, Embed IO] r =>
+  Members [Error TmuxError, RunStop, Log, Bracket, Race, Async, Embed IO] r =>
   Maybe (Path Abs File) ->
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnv socket =
@@ -181,7 +180,7 @@ interpretTmuxNativeEnv socket =
 {-# inline interpretTmuxNativeEnv #-}
 
 interpretTmuxNativeEnvGraceful ::
-  Members [Log, Resource, Race, Async, Embed IO] r =>
+  Members [Log, RunStop, Bracket, Race, Async, Embed IO] r =>
   Maybe (Path Abs File) ->
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnvGraceful socket sem =
@@ -191,6 +190,7 @@ interpretTmuxNativeEnvGraceful socket sem =
 {-# inline interpretTmuxNativeEnvGraceful #-}
 
 interpretTmuxClientNull ::
+  Member RunStop r =>
   InterpreterFor (Scoped_ (TmuxClient i ()) !! TmuxError) r
 interpretTmuxClientNull =
   interpretScopedResumable_ mempty \ () -> \case
