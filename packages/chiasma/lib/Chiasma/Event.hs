@@ -37,7 +37,7 @@ listenLoop = do
 listen ::
   ∀ enc dec err t d r .
   Show err =>
-  Member (Codec ReceiveEvent enc dec !! err) r =>
+  Members [Codec ReceiveEvent enc dec !! err, RunStop] r =>
   Members [Scoped_ (TmuxClient enc dec) !! TmuxError, Events Event, Time t d, Log] r =>
   Sem r ()
 listen = do
@@ -50,7 +50,7 @@ withTmuxEvents ::
   Show err =>
   Member (Codec ReceiveEvent enc dec !! err) r =>
   Member (Scoped_ (TmuxClient enc dec) !! TmuxError) r =>
-  Members [Events Event, Time t d, Log, Race, Async, Resource] r =>
+  Members [Events Event, Time t d, RunStop, Log, Race, Async, Bracket] r =>
   Sem r a ->
   Sem r a
 withTmuxEvents =

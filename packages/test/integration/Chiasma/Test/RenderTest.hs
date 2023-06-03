@@ -49,7 +49,7 @@ views =
 renderOnce ::
   Member (Codec TmuxCommand TmuxRequest TmuxResponse !! CodecError) r =>
   Member (Codec (Panes Pane) TmuxRequest TmuxResponse !! CodecError) r =>
-  Members [ScopedTmux TmuxRequest TmuxResponse, AtomicState Views, Stop RenderError, Embed IO] r =>
+  Members [ScopedTmux TmuxRequest TmuxResponse, AtomicState Views, Stop RenderError, RunStop, Embed IO] r =>
   ViewTree ->
   Sem r ()
 renderOnce tree = do
@@ -61,7 +61,7 @@ runRender ::
   Member (Codec TmuxCommand TmuxRequest TmuxResponse !! CodecError) r =>
   Member (Codec (Panes Pane) TmuxRequest TmuxResponse !! CodecError) r =>
   Member (ScopedTmux TmuxRequest TmuxResponse) r =>
-  Members [Stop RenderError, Stop TmuxError, ChronosTime, Embed IO] r =>
+  Members [Stop RenderError, Stop TmuxError, RunStop, ChronosTime, Embed IO] r =>
   ViewTree ->
   Sem r ([Tmux.View PaneId], [Pane])
 runRender tree = do
@@ -75,7 +75,7 @@ renderTest ::
   UnitTest
 renderTest tree target = do
   tmuxTest do
-    (_, ps) <- restop @TmuxError @(Scoped _ _) (runRender tree)
+    (_, ps) <- restop @TmuxError @(Scoped_ _) (runRender tree)
     target === ps
 
 treeImbalanced :: ViewTree

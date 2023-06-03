@@ -3,7 +3,7 @@
 
   inputs = {
     hix.url = "git+https://git.tryp.io/tek/hix";
-    prelate.url = "git+https://git.tryp.io/tek/prelate";
+    prelate.url = "git+https://git.tryp.io/tek/prelate?ref=ps2-vec";
   };
 
   outputs = { hix, prelate, ... }: hix.lib.pro ({config, ...}: {
@@ -30,7 +30,7 @@
         };
         module = "Prelate";
       };
-      dependencies = ["polysemy" "polysemy-plugin"];
+      dependencies = ["polysemy ^>= 2" "polysemy-plugin ^>= 0.5"];
     };
 
     packages.chiasma = {

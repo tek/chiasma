@@ -177,10 +177,10 @@ library
     , parsec
     , parsers >=0.12
     , path
-    , polysemy
+    , polysemy >=2 && <2.1
     , polysemy-conc >=0.9
     , polysemy-log >=0.7
-    , polysemy-plugin
+    , polysemy-plugin ==0.5.*
     , polysemy-process >=0.9
     , polysemy-time >=0.5
     , prelate >=0.6 && <0.8

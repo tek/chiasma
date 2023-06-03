@@ -28,7 +28,7 @@ flush =
 
 interpretTmuxApi ::
   ∀ command i o err r .
-  Members [TmuxClient i o, Codec command i o !! err] r =>
+  Members [TmuxClient i o, Codec command i o !! err, RunStop] r =>
   InterpreterFor (TmuxApi command !! err) r
 interpretTmuxApi =
   interpretResumable \case
@@ -57,8 +57,7 @@ instance InterpretApis '[] err i o r where
 
 instance (
     r1 ~ (TmuxApis commands err ++ TmuxClient i o : r),
-    Member (TmuxClient i o) r1,
-    Member (Codec command i o !! err) r1,
+    Members [Codec command i o !! err, TmuxClient i o, RunStop] r1,
     InterpretApis commands err i o r
   ) => InterpretApis (command : commands) err i o r where
     interpretApis =
@@ -76,8 +75,7 @@ instance RestopApis '[] err i o r where
 
 instance (
     r1 ~ (TmuxApi <$> commands ++ TmuxClient i o : r),
-    Members [TmuxClient i o, Stop err] r1,
-    Member (Codec command i o !! err) r1,
+    Members [Codec command i o !! err, TmuxClient i o, RunStop, Stop err] r1,
     RestopApis commands err i o r
   ) => RestopApis (command : commands) err i o r where
     restopApis =

@@ -78,11 +78,11 @@ library
     , hedgehog
     , path
     , path-io
-    , polysemy
+    , polysemy >=2 && <2.1
     , polysemy-chronos
     , polysemy-conc
     , polysemy-log
-    , polysemy-plugin
+    , polysemy-plugin ==0.5.*
     , polysemy-process
     , polysemy-test >=0.6
     , polysemy-time
@@ -149,8 +149,8 @@ test-suite chiasma-test-test
     , chiasma-test
     , hedgehog
     , lens >=4
-    , polysemy
-    , polysemy-plugin
+    , polysemy >=2 && <2.1
+    , polysemy-plugin ==0.5.*
     , polysemy-test >=0.6
     , prelate >=0.6 && <0.8
     , tasty
@@ -215,9 +215,9 @@ test-suite integration
     , hedgehog
     , lens >=4
     , path-io
-    , polysemy
+    , polysemy >=2 && <2.1
     , polysemy-chronos
-    , polysemy-plugin
+    , polysemy-plugin ==0.5.*
     , polysemy-test >=0.6
     , prelate >=0.6 && <0.8
     , tasty
