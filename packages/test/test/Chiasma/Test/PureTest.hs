@@ -49,8 +49,8 @@ responses = \case
 
 test_pureClient :: UnitTest
 test_pureClient =
-  runTestAuto $ interpretAtomic 0 $ interpretTmuxPure responses $ stopToErrorWith TestError $ mapStop @TmuxError show do
-    result <- restop @_ @(Scoped _ _) (withTmux_ @TmuxCommand @Text prog)
+  runTestAuto $ interpretRunStop $ interpretAtomic 0 $ interpretTmuxPure responses $ stopToErrorWith TestError $ mapStop @TmuxError show do
+    result <- restop @_ @(Scoped_ _) (withTmux_ @TmuxCommand @Text prog)
     ([p0], [p0, p1, p2], [w0, w1, w2]) === result
   where
     p0 = p 0

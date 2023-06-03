@@ -4,7 +4,7 @@
   inputs = {
     hix.url = "git+https://git.tryp.io/tek/hix";
     hls.url = "github:haskell/haskell-language-server?ref=1.9.0.0";
-    prelate.url = "git+https://git.tryp.io/tek/prelate";
+    prelate.url = "git+https://git.tryp.io/tek/prelate?ref=ps2";
   };
 
   outputs = { hix, hls, prelate, ... }: hix.lib.pro ({config, ...}: {
@@ -15,7 +15,6 @@
 
     overrides = { hackage, source, unbreak, pkgs, system, buildInputs, notest, ... }: {
       chiasma-test = buildInputs [pkgs.tmux pkgs.xterm];
-      type-errors = notest;
     };
 
     cabal = {
@@ -37,7 +36,7 @@
         };
         module = "Prelate";
       };
-      dependencies = ["polysemy" "polysemy-plugin"];
+      dependencies = ["polysemy ^>= 2" "polysemy-plugin ^>= 0.5"];
     };
 
     packages.chiasma = {

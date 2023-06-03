@@ -41,28 +41,28 @@ withTmuxApisNative_ =
 
 withTmuxNative ::
   ∀ command r .
-  Members [NativeTmux, NativeCodecE command] r =>
+  Members [NativeTmux, NativeCodecE command, RunStop] r =>
   InterpreterFor (TmuxApi command !! CodecError) r
 withTmuxNative =
   withTmux
 
 withTmuxNative_ ::
   ∀ command r .
-  Members [NativeTmux, NativeCodecE command, Stop CodecError] r =>
+  Members [NativeTmux, NativeCodecE command, Stop CodecError, RunStop] r =>
   InterpreterFor (TmuxApi command) r
 withTmuxNative_ =
   withTmux_
 
 withPanesNative ::
   ∀ p r .
-  Members [NativeTmux, NativeCodecE (Panes p)] r =>
+  Members [NativeTmux, NativeCodecE (Panes p), RunStop] r =>
   InterpreterFor (TmuxPanes p !! CodecError) r
 withPanesNative =
   withTmuxNative
 
 withPanesNative_ ::
   ∀ p r .
-  Members [NativeTmux, NativeCodecE (Panes p), Stop CodecError] r =>
+  Members [NativeTmux, NativeCodecE (Panes p), RunStop, Stop CodecError] r =>
   InterpreterFor (TmuxPanes p) r
 withPanesNative_ =
   withTmuxNative_

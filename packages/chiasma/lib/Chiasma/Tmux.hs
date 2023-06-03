@@ -1,8 +1,8 @@
 module Chiasma.Tmux where
 
-import Polysemy.Internal (hoistSem)
+import Polysemy.Internal (mapMembership)
+import Polysemy.Internal.Membership (extendMembershipLeft, underMembership)
 import Polysemy.Internal.Sing (KnownList (singList))
-import Polysemy.Internal.Union (hoist, weakenMid)
 
 import Chiasma.Data.Panes (Panes, TmuxPanes)
 import Chiasma.Effect.Codec (Codec)
@@ -23,7 +23,8 @@ withTmuxApis' ::
   Sem (TmuxApis commands err ++ TmuxClient i o : r) a ->
   Sem r a
 withTmuxApis' =
-  scoped_ . interpretApis @commands @err
+  scoped_ .
+  interpretApis @commands @err
 
 insertAfter ::
   ∀ left e r a .
@@ -31,7 +32,7 @@ insertAfter ::
   Sem (left ++ r) a ->
   Sem (left ++ e : r) a
 insertAfter =
-  hoistSem $ hoist (insertAfter @left @e @r) . weakenMid @r (singList @left) (singList @'[e])
+  mapMembership (underMembership @r (singList @left) (extendMembershipLeft (singList @'[e])))
 
 withTmuxApis ::
   ∀ commands err i o r .
@@ -58,32 +59,34 @@ withTmuxApis_ =
 
 withTmux ::
   ∀ command err i o r .
-  Members [ScopedTmux i o, Codec command i o !! err] r =>
+  Members [ScopedTmux i o, Codec command i o !! err, RunStop] r =>
   InterpreterFor (TmuxApi command !! err) r
 withTmux =
-  scoped_ . interpretTmuxApi . raiseUnder
+  scoped_ .
+  interpretTmuxApi .
+  raiseUnder
 
 withTmux_ ::
   ∀ command err i o r .
-  Members [ScopedTmux i o, Codec command i o !! err, Stop err] r =>
+  Members [ScopedTmux i o, Codec command i o !! err, RunStop, Stop err] r =>
   InterpreterFor (TmuxApi command) r
 withTmux_ =
   scoped_ .
   interpretTmuxApi .
   raiseUnder .
   restop @err @(TmuxApi command) .
-  raiseUnder
+  raiseUnder @(TmuxApi command !! err)
 
 withPanes ::
   ∀ p err i o r .
-  Members [ScopedTmux i o, Codec (Panes p) i o !! err] r =>
+  Members [ScopedTmux i o, Codec (Panes p) i o !! err, RunStop] r =>
   InterpreterFor (TmuxPanes p !! err) r
 withPanes =
   withTmux
 
 withPanes_ ::
   ∀ p err i o r .
-  Members [ScopedTmux i o, Codec (Panes p) i o !! err, Stop err] r =>
+  Members [ScopedTmux i o, Codec (Panes p) i o !! err, Stop err, RunStop] r =>
   InterpreterFor (TmuxPanes p) r
 withPanes_ =
   withTmux_
