@@ -3,20 +3,13 @@
 
   inputs = {
     hix.url = "git+https://git.tryp.io/tek/hix";
-    hls.url = "github:haskell/haskell-language-server?ref=1.9.0.0";
     prelate.url = "git+https://git.tryp.io/tek/prelate";
   };
 
-  outputs = { hix, hls, prelate, ... }: hix.lib.pro ({config, ...}: {
+  outputs = { hix, prelate, ... }: hix.lib.pro ({config, ...}: {
     hackage.versionFile = "ops/version.nix";
     depsFull = [prelate];
     main = "chiasma-test";
-    compiler = "ghc925";
-
-    overrides = { hackage, source, unbreak, pkgs, system, buildInputs, notest, ... }: {
-      chiasma-test = buildInputs [pkgs.tmux pkgs.xterm];
-      type-errors = notest;
-    };
 
     cabal = {
       license = "BSD-2-Clause-Patent";
@@ -33,7 +26,7 @@
         enable = true;
         package = {
           name = "prelate";
-          version = "^>= 0.5.1";
+          version = ">= 0.6 && < 0.8";
         };
         module = "Prelate";
       };
@@ -79,6 +72,7 @@
       src = ./packages/test;
 
       cabal.meta.synopsis = "Testing tools for chiasma";
+      buildInputs = pkgs: [pkgs.tmux pkgs.xterm];
 
       library = {
         enable = true;
@@ -130,6 +124,5 @@
     };
 
     envs.dev.buildInputs = [config.pkgs.tmux config.pkgs.xterm];
-    envs.hls.hls.package = hls.packages.${config.system}.haskell-language-server-925;
   });
 }
