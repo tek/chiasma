@@ -1,5 +1,6 @@
 module Chiasma.Data.TmuxId where
 
+import Data.Data (Data)
 import Prettyprinter (Pretty (..))
 
 newtype ClientId =
@@ -37,7 +38,7 @@ panePrefix = "%"
 
 newtype PaneId =
   PaneId Int
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Show, Generic, Data)
   deriving newtype (Num, Ord)
 
 instance Pretty PaneId where

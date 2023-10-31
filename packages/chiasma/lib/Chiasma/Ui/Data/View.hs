@@ -1,9 +1,10 @@
 module Chiasma.Ui.Data.View where
 
-import Control.Lens (Index, IxValue, Ixed (ix))
+import Control.Lens (Fold, Index, IxValue, Ixed (ix), cosmos, preview)
 import Control.Lens.Plated (Plated)
 import Data.Bifoldable (Bifoldable (bifoldMap))
 import Data.Data (Data)
+import Prelude hiding (ix)
 import Prettyprinter (Doc, Pretty (..), emptyDoc, nest, space, vsep, (<+>))
 
 import Chiasma.Data.Axis (Axis (Horizontal, Vertical))
@@ -131,8 +132,7 @@ type instance Index (Tree _ _) = Ident
 type instance IxValue (Tree l p) = Tree l p
 
 instance Identifiable l => Ixed (Tree l p) where
-  ix i =
-    matchIdentP i
+  ix i = matchIdentP i
 
 instance (Pretty l, Pretty p) => Pretty (TreeSub l p) where
   pretty (TreeNode a) =
@@ -143,3 +143,50 @@ instance (Pretty l, Pretty p) => Pretty (TreeSub l p) where
 instance (Pretty l, Pretty p) => Pretty (Tree l p) where
   pretty (Tree l sub) =
     nest 2 . vsep $ pretty l : (pretty <$> sub)
+
+treeTraversal :: Traversal' (Tree l p) (Tree l p)
+treeTraversal = #treeSubs . each . #_TreeNode
+
+treeByIdentTraversal :: Identifiable l => Ident -> Traversal' (Tree l p) (Tree l p)
+treeByIdentTraversal ident' = treeTraversal . ix ident'
+
+treesIdent ::
+  ∀ l p .
+  Identifiable l =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Fold (Tree l p) (Tree l p)
+treesIdent ident' = cosmos . ix ident'
+
+treeByIdent ::
+  ∀ l p .
+  Identifiable l =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Tree l p ->
+  Maybe (Tree l p)
+treeByIdent ident' = preview (treesIdent ident')
+
+treesByIdent ::
+  ∀ l p .
+  Identifiable l =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Tree l p ->
+  [Tree l p]
+treesByIdent ident' = toListOf (treesIdent ident')
+
+-- | All subtrees including self.
+trees :: (Data l, Data p) => Fold (Tree l p) (Tree l p)
+trees = cosmos
+
+-- | All transitive leaves in the tree.
+leaves :: (Data l, Data p) => Fold (Tree l p) p
+leaves = cosmos . #treeSubs . each . #_TreeLeaf
+
+-- | All transitive nodes in the tree.
+nodes :: (Data l, Data p) => Fold (Tree l p) l
+nodes = cosmos . #treeData

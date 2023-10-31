@@ -1,6 +1,6 @@
 module Chiasma.Lens.Tree where
 
-import Control.Lens (Fold, Index, IxValue, Ixed (ix), Plated (..), cosmos, makeClassy_, preview, transform)
+import Control.Lens (Fold, Index, IxValue, Ixed (ix), Plated (..), cosmos, makeClassy_, preview, transform, lens)
 import Data.Data (Data)
 import Data.Foldable (foldrM)
 import Prelude hiding (ix, transform)
@@ -46,27 +46,97 @@ type instance Index (LeafIndexTree _ _) = Ident
 type instance IxValue (NodeIndexTree l _) = l
 type instance IxValue (LeafIndexTree _ p) = p
 
+nodeTraversal :: Traversal' (Tree l p) l
+nodeTraversal = #treeSubs . each . #_TreeNode . #treeData
+
+nodeByIdentTraversal :: Identifiable l => Ident -> Traversal' (Tree l p) l
+nodeByIdentTraversal ident = nodeTraversal . matchIdentP ident
+
 leafDataTraversal :: Traversal' (Tree l p) p
 leafDataTraversal = #treeSubs . each . #_TreeLeaf
 
 leafByIdentTraversal :: Identifiable p => Ident -> Traversal' (Tree l p) p
-leafByIdentTraversal ident' = leafDataTraversal . matchIdentP ident'
+leafByIdentTraversal ident = leafDataTraversal . matchIdentP ident
+
+instance Identifiable l => Ixed (NodeIndexTree l p) where
+  ix ident = _nitTree . nodeByIdentTraversal ident
+
+nodesByIdentRecursive :: (Identifiable l, Data l, Data p) => Ident -> Fold (NodeIndexTree l p) l
+nodesByIdentRecursive ident = cosmos . ix ident
+
+nodesIdent ::
+  ∀ l p .
+  Identifiable l =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Fold (Tree l p) l
+nodesIdent ident = lens coerce (const (.nitTree)) . nodesByIdentRecursive ident
+
+nodeByIdent ::
+  ∀ l p .
+  Identifiable l =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Tree l p ->
+  Maybe l
+nodeByIdent ident = preview (nodesIdent ident)
+
+nodesByIdent ::
+  ∀ l p .
+  Identifiable l =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Tree l p ->
+  [l]
+nodesByIdent ident = toListOf (nodesIdent ident)
 
 instance Identifiable p => Ixed (LeafIndexTree l p) where
-  ix ident' = _litTree . leafByIdentTraversal ident'
+  ix ident = _litTree . leafByIdentTraversal ident
 
-leavesByIdentRecursive :: (Identifiable p, Data l, Data p) => Ident -> Fold (LeafIndexTree l p) p
-leavesByIdentRecursive ident' = cosmos . ix ident'
+leavesByIdentRecursive ::
+  ∀ l p .
+  Identifiable p =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Fold (LeafIndexTree l p) p
+leavesByIdentRecursive ident = cosmos . ix ident
 
-leafByIdent :: (Identifiable p, Data l, Data p) => Ident -> Tree l p -> Maybe p
-leafByIdent ident' = preview (leavesByIdentRecursive ident') . LeafIndexTree
+leavesIdent ::
+  ∀ l p .
+  Identifiable p =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Fold (Tree l p) p
+leavesIdent ident = lens coerce (const (.litTree)) . leavesByIdentRecursive ident
 
-leavesByIdent :: (Identifiable p, Data l, Data p) => Ident -> Tree l p -> [p]
-leavesByIdent ident' = toListOf (leavesByIdentRecursive ident') . LeafIndexTree
+leafByIdent ::
+  ∀ l p .
+  Identifiable p =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Tree l p ->
+  Maybe p
+leafByIdent ident = preview (leavesIdent ident)
+
+leavesByIdent ::
+  ∀ l p .
+  Identifiable p =>
+  Data l =>
+  Data p =>
+  Ident ->
+  Tree l p ->
+  [p]
+leavesByIdent ident = toListOf (leavesIdent ident)
 
 modifyLeafByIdent :: (Identifiable p, Data l, Data p) => Ident -> (p -> p) -> Tree l p -> Tree l p
-modifyLeafByIdent ident' f tree' =
-  (.litTree) $ (transform $ over (ix ident') f) (LeafIndexTree tree')
+modifyLeafByIdent ident f tree' =
+  (.litTree) $ (transform $ over (ix ident) f) (LeafIndexTree tree')
 
 subtreesWithLayout :: ∀ l p m. Monad m => ((l, TreeSub l p) -> m (l, TreeSub l p)) -> Tree l p -> m (Tree l p)
 subtreesWithLayout f (Tree l0 sub) = do
