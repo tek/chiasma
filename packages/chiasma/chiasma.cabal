@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           chiasma
-version:        0.10.0.0
+version:        0.10.1.0
 synopsis:       A tmux client for Polysemy
 description:    See https://hackage.haskell.org/package/chiasma/docs/Chiasma.html
 category:       Terminal
