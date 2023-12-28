@@ -3,13 +3,14 @@
 
   inputs = {
     hix.url = "git+https://git.tryp.io/tek/hix";
-    prelate.url = "git+https://git.tryp.io/tek/prelate";
+    prelate.url = "git+https://git.tryp.io/tek/prelate?tag=v0.7.0.1";
   };
 
   outputs = { hix, prelate, ... }: hix.lib.pro ({config, ...}: {
     hackage.versionFile = "ops/version.nix";
     depsFull = [prelate];
     main = "chiasma-test";
+    gen-overrides.enable = true;
 
     cabal = {
       license = "BSD-2-Clause-Patent";
