@@ -1,38 +1,11 @@
 {
   description = "A tmux client for Polysemy";
 
-  inputs = {
-    hix.url = "git+https://git.tryp.io/tek/hix";
-    prelate.url = "git+https://git.tryp.io/tek/prelate?tag=v0.7.0.1";
-  };
+  inputs.hix.url = "git+https://git.tryp.io/tek/hix";
 
-  outputs = { hix, prelate, ... }: hix.lib.pro ({config, ...}: {
-    hackage.versionFile = "ops/version.nix";
-    depsFull = [prelate];
+  outputs = {hix, ...}: hix.lib.pro ({config, ...}: {
     main = "chiasma-test";
     gen-overrides.enable = true;
-
-    cabal = {
-      license = "BSD-2-Clause-Patent";
-      license-file = "LICENSE";
-      author = "Torsten Schmits";
-      meta = {
-        maintainer = "hackage@tryp.io";
-        category = "Terminal";
-        github = "tek/chiasma";
-        extra-source-files = ["readme.md" "changelog.md"];
-      };
-      ghc-options = ["-fplugin=Polysemy.Plugin"];
-      prelude = {
-        enable = true;
-        package = {
-          name = "prelate";
-          version = ">= 0.6 && < 0.8";
-        };
-        module = "Prelate";
-      };
-      dependencies = ["polysemy" "polysemy-plugin"];
-    };
 
     packages.chiasma = {
       src = ./packages/chiasma;
@@ -124,6 +97,71 @@
 
     };
 
+    cabal = {
+      language = "GHC2021";
+      license = "BSD-2-Clause-Patent";
+      license-file = "LICENSE";
+      author = "Torsten Schmits";
+      meta = {
+        maintainer = "hackage@tryp.io";
+        category = "Terminal";
+        github = "tek/chiasma";
+        extra-source-files = ["readme.md" "changelog.md"];
+      };
+      ghc-options = ["-fplugin=Polysemy.Plugin"];
+      prelude = {
+        enable = true;
+        package = {
+          name = "prelate";
+          version = ">= 0.6 && < 0.9";
+        };
+        module = "Prelate";
+      };
+      dependencies = ["polysemy" "polysemy-plugin"];
+    };
+
+    release.packages = ["chiasma"];
+
+    managed = {
+      enable = true;
+      latest.enable = false;
+    };
+
+    hackage.repos."hackage.haskell.org" = {
+      user = "tek";
+    };
+
+    overrides = {jailbreak, force, unbreak, notest, source, ...}: {
+      exon = jailbreak;
+      fuzzyfind = force;
+      incipit = jailbreak;
+      incipit-base = jailbreak;
+      incipit-core = jailbreak;
+      polysemy-chronos = jailbreak;
+      polysemy-conc = jailbreak;
+      polysemy-http = jailbreak;
+      polysemy-log = jailbreak;
+      polysemy-process = jailbreak;
+      polysemy-resume = jailbreak;
+      polysemy-test = jailbreak;
+      polysemy-time = jailbreak;
+      prelate = jailbreak;
+      streamly = force;
+      unicode-data = notest;
+      zeugma = jailbreak;
+    };
+
+    envs = {
+
+      ghc98.overrides = {jailbreak, ...}: {
+        chronos = jailbreak;
+      };
+
+    };
+
     envs.dev.buildInputs = [config.pkgs.tmux config.pkgs.xterm];
+
+    internal.hixCli.dev = true;
+
   });
 }

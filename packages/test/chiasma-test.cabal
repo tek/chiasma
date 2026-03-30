@@ -1,11 +1,11 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.38.2.
 --
 -- see: https://github.com/sol/hpack
 
 name:           chiasma-test
-version:        0.10.1.0
+version:        0.1.0.0
 synopsis:       Testing tools for chiasma
 description:    See https://hackage.haskell.org/package/chiasma-test/docs/Chiasma-Test.html
 category:       Terminal
@@ -13,7 +13,7 @@ homepage:       https://github.com/tek/chiasma#readme
 bug-reports:    https://github.com/tek/chiasma/issues
 author:         Torsten Schmits
 maintainer:     hackage@tryp.io
-copyright:      2023 Torsten Schmits
+copyright:      2025 Torsten Schmits
 license:        BSD-2-Clause-Patent
 license-file:   LICENSE
 build-type:     Simple
@@ -48,9 +48,12 @@ library
       GADTs
       LambdaCase
       LiberalTypeSynonyms
+      MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -66,8 +69,6 @@ library
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -fplugin=Polysemy.Plugin -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       base ==4.*
@@ -86,7 +87,7 @@ library
     , polysemy-process
     , polysemy-test >=0.6
     , polysemy-time
-    , prelate >=0.6 && <0.8
+    , prelate >=0.6 && <0.9
     , text
     , typed-process >=0.2
   mixins:
@@ -122,9 +123,12 @@ test-suite chiasma-test-test
       GADTs
       LambdaCase
       LiberalTypeSynonyms
+      MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -140,8 +144,6 @@ test-suite chiasma-test-test
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       base ==4.*
@@ -152,7 +154,7 @@ test-suite chiasma-test-test
     , polysemy
     , polysemy-plugin
     , polysemy-test >=0.6
-    , prelate >=0.6 && <0.8
+    , prelate >=0.6 && <0.9
     , tasty
     , tasty-hedgehog
   mixins:
@@ -187,9 +189,12 @@ test-suite integration
       GADTs
       LambdaCase
       LiberalTypeSynonyms
+      MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -205,8 +210,6 @@ test-suite integration
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       base ==4.*
@@ -219,7 +222,7 @@ test-suite integration
     , polysemy-chronos
     , polysemy-plugin
     , polysemy-test >=0.6
-    , prelate >=0.6 && <0.8
+    , prelate >=0.6 && <0.9
     , tasty
     , tasty-hedgehog
   mixins:

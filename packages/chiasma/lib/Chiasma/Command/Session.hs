@@ -3,7 +3,7 @@ module Chiasma.Command.Session where
 import Chiasma.Codec.Data.Client (Client (Client))
 import Chiasma.Codec.Data.Session (Session (Session))
 import Chiasma.Data.Ident (Ident)
-import Chiasma.Data.SessionParams (name)
+import Chiasma.Data.SessionParams (SessionParams (..))
 import qualified Chiasma.Data.Target as Target
 import Chiasma.Data.TmuxCommand (TmuxCommand (ListClients, ListSessions, NewSession, SwitchClient))
 import Chiasma.Data.TmuxError (TmuxError (NoClients))

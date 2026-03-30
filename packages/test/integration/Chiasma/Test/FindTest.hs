@@ -4,7 +4,7 @@ import Polysemy.Test (UnitTest, assert, (===))
 
 import Chiasma.Codec (TmuxCodec)
 import qualified Chiasma.Codec.Data.Pane as Pane
-import Chiasma.Codec.Data.Window (windowId)
+import Chiasma.Codec.Data.Window (Window (..))
 import Chiasma.Command.Window (splitWindow)
 import Chiasma.Data.CodecError (CodecError)
 import qualified Chiasma.Data.Panes as Panes

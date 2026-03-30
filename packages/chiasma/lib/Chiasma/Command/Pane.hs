@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 module Chiasma.Command.Pane where
 
 import Prelude hiding (output)
@@ -6,22 +5,20 @@ import Prelude hiding (output)
 import qualified Chiasma.Codec.Data.Pane as Codec (Pane)
 import qualified Chiasma.Codec.Data.PaneMode as Codec (PaneMode (PaneMode))
 import Chiasma.Data.Axis (Axis)
-import Chiasma.Data.CapturePaneParams (CaptureOutput (Stdout), escapeSequences, output, target)
-import Chiasma.Data.CopyModeParams (target)
-import Chiasma.Data.KillPaneParams (target)
+import Chiasma.Data.CapturePaneParams (CaptureOutput (Stdout), CapturePaneParams (..))
+import qualified Chiasma.Data.CopyModeParams as CopyModeParams
+import qualified Chiasma.Data.KillPaneParams as KillPaneParams
 import qualified Chiasma.Data.PaneSelection as PaneSelection
 import qualified Chiasma.Data.Panes as Panes
 import Chiasma.Data.Panes (TmuxPanes)
-import Chiasma.Data.PipePaneParams (command, target)
-import Chiasma.Data.ResizePaneParams (ResizeAbsolute (ResizeAbsolute), absolute, target)
-import Chiasma.Data.SelectParams (target)
+import Chiasma.Data.PipePaneParams (PipePaneParams (..))
+import Chiasma.Data.ResizePaneParams (ResizeAbsolute (ResizeAbsolute), ResizePaneParams (..))
+import qualified Chiasma.Data.SelectParams as SelectParams
 import qualified Chiasma.Data.SendKeysParams as SendKeysParams
-import Chiasma.Data.SendKeysParams (Key, keys, target)
+import Chiasma.Data.SendKeysParams (Key, SendKeysParams (..))
 import Chiasma.Data.SplitParams (JoinPaneParams (axis, detach, source, target))
 import qualified Chiasma.Data.Target as Target
-import Chiasma.Data.TmuxCommand (
-  TmuxCommand (CapturePane, CopyMode, KillPane, MovePane, PipePane, ResizePane, SelectPane, SendKeys),
-  )
+import Chiasma.Data.TmuxCommand (TmuxCommand (..))
 import Chiasma.Data.TmuxId (PaneId, WindowId)
 import Chiasma.Data.View (View (View))
 import qualified Chiasma.Effect.TmuxApi as Tmux
@@ -59,7 +56,7 @@ closePane ::
   PaneId ->
   Sem r ()
 closePane paneId =
-  Tmux.send (KillPane def { target = Target.Pane paneId })
+  Tmux.send (KillPane def { KillPaneParams.target = Target.Pane paneId })
 
 isPaneIdOpen ::
   Member (TmuxPanes Codec.Pane) r =>
@@ -132,14 +129,14 @@ selectPane ::
   PaneId ->
   Sem r ()
 selectPane paneId =
-  Tmux.send (SelectPane def { target = Target.Pane paneId })
+  Tmux.send (SelectPane def { SelectParams.target = Target.Pane paneId })
 
 copyMode ::
   Member Tmux r =>
   PaneId ->
   Sem r ()
 copyMode paneId =
-  Tmux.send (CopyMode def { target = Target.Pane paneId })
+  Tmux.send (CopyMode def { CopyModeParams.target = Target.Pane paneId })
 
 paneMode ::
   Member (TmuxPanes Codec.PaneMode) r =>

@@ -1,6 +1,6 @@
 module Chiasma.Ui.ViewTree where
 
-import Control.Lens (anyOf, cosmos, ix, mapMOf, transformM)
+import Control.Lens (cosmos, ix, transformM)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT)
 import Control.Monad.Trans.Writer (WriterT, runWriterT, tell)

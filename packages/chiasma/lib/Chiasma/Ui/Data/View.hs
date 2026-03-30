@@ -100,6 +100,9 @@ instance Bifunctor Tree where
   second f (Tree l sub) =
     Tree l (fmap (second f) sub)
 
+instance Functor (Tree l) where
+  fmap = second
+
 instance Bifoldable Tree where
   bifoldMap fl fr (Tree l sub) = mappend (fl l) (foldMap (bifoldMap fl fr) sub)
 
@@ -115,6 +118,9 @@ instance Bifunctor TreeSub where
 
   second f (TreeNode t) = TreeNode (second f t)
   second f (TreeLeaf p) = TreeLeaf (f p)
+
+instance Functor (TreeSub l) where
+  fmap = second
 
 instance Bifoldable TreeSub where
   bifoldMap fl fr (TreeNode t) = bifoldMap fl fr t

@@ -10,7 +10,7 @@ import Chiasma.Data.LayoutError (LayoutError (LayoutError))
 import qualified Chiasma.Data.Target as Target
 import Chiasma.Data.TmuxCommand (TmuxCommand (ListWindows, NewWindow, SplitWindow))
 import Chiasma.Data.TmuxId (SessionId, WindowId)
-import Chiasma.Data.WindowParams (cwd, detach, name, target)
+import Chiasma.Data.WindowParams (WindowParams (..))
 import qualified Chiasma.Data.WindowSelection as WindowSelection
 import qualified Chiasma.Effect.TmuxApi as Tmux
 import Chiasma.Effect.TmuxApi (Tmux)
