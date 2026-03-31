@@ -120,8 +120,6 @@
       dependencies = ["polysemy" "polysemy-plugin"];
     };
 
-    release.packages = ["chiasma"];
-
     managed = {
       enable = true;
       latest.enable = false;

@@ -1,2 +1,4 @@
 /result
 /dist-newstyle/
+/.tags
+*.orig
