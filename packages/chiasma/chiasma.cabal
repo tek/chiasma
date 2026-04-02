@@ -78,7 +78,6 @@ library
       Chiasma.Data.TmuxQuery
       Chiasma.Data.TmuxRequest
       Chiasma.Data.TmuxResponse
-      Chiasma.Data.TmuxThunk
       Chiasma.Data.View
       Chiasma.Data.Views
       Chiasma.Data.WindowParams
@@ -97,8 +96,6 @@ library
       Chiasma.Interpreter.TmuxClient
       Chiasma.Lens.Tree
       Chiasma.Lens.Where
-      Chiasma.Monad.EvalFreeT
-      Chiasma.Monad.Tmux
       Chiasma.Native.Parse
       Chiasma.Native.TmuxOutputBlock
       Chiasma.Pack
