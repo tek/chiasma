@@ -94,7 +94,6 @@ interpretProcessTmux sem = do
     interpretProcessInputId $
     interpretProcess_ def $
     insertAt @1 sem
-{-# inline interpretProcessTmux #-}
 
 flush ::
   Members [TmuxProc, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
@@ -123,7 +122,6 @@ interpretTmuxProcessBuffered =
     TmuxClient.Send cmd -> do
       flush
       tmuxRequest cmd
-{-# inline interpretTmuxProcessBuffered #-}
 
 interpretTmuxWithProcess ::
   Members [Scoped_ TmuxProc !! ProcessError, Log, Embed IO] r =>
@@ -132,7 +130,6 @@ interpretTmuxWithProcess =
   interpretAtomic mempty .
   interpretTmuxProcessBuffered .
   raiseUnder
-{-# inline interpretTmuxWithProcess #-}
 
 interpretTmuxNative ::
   ∀ r .
@@ -143,7 +140,6 @@ interpretTmuxNative =
   interpretProcessTmux .
   interpretTmuxWithProcess .
   raiseUnder2
-{-# inline interpretTmuxNative #-}
 
 interpretTmuxFailing ::
   TmuxError ->
@@ -170,7 +166,6 @@ runReaderTmuxNativeEnv ::
 runReaderTmuxNativeEnv socket sem = do
   tn <- withTmuxNativeEnv socket (note NoExe)
   runReader tn sem
-{-# inline runReaderTmuxNativeEnv #-}
 
 interpretTmuxNativeEnv ::
   Members [Error TmuxError, Log, Resource, Race, Async, Embed IO] r =>
@@ -178,7 +173,6 @@ interpretTmuxNativeEnv ::
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnv socket =
   runReaderTmuxNativeEnv socket . interpretTmuxNative . raiseUnder
-{-# inline interpretTmuxNativeEnv #-}
 
 interpretTmuxNativeEnvGraceful ::
   Members [Log, Resource, Race, Async, Embed IO] r =>
@@ -188,7 +182,6 @@ interpretTmuxNativeEnvGraceful socket sem =
   withTmuxNativeEnv socket \case
     Just tn -> runReader tn (interpretTmuxNative (raiseUnder sem))
     Nothing -> interpretTmuxFailing NoExe sem
-{-# inline interpretTmuxNativeEnvGraceful #-}
 
 interpretTmuxClientNull ::
   InterpreterFor (Scoped_ (TmuxClient i ()) !! TmuxError) r
@@ -198,4 +191,3 @@ interpretTmuxClientNull =
       unit
     TmuxClient.Send _ ->
       unit
-{-# inline interpretTmuxClientNull #-}

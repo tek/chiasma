@@ -30,14 +30,12 @@ interpretCodecTmuxCommand ::
   InterpreterFor (Codec TmuxCommand TmuxRequest TmuxResponse !! CodecError) r
 interpretCodecTmuxCommand =
   interpretCodecNative TmuxCommand.encode TmuxCommand.decode
-{-# inline interpretCodecTmuxCommand #-}
 
 interpretCodecPanes ::
   TmuxCodec p =>
   InterpreterFor (Codec (Panes p) TmuxRequest TmuxResponse !! CodecError) r
 interpretCodecPanes =
   interpretCodecNative Panes.encode Panes.decode
-{-# inline interpretCodecPanes #-}
 
 interpretCodecPure ::
   (∀ a . command a -> Sem r (Either Text a)) ->
