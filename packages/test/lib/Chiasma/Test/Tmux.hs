@@ -145,7 +145,7 @@ type TestTmuxEffects =
   ]
 
 withTestTmux ::
-  Members [Test, Time t d, Log, Resource, Stop TmuxError, Error Text, Race, Async, Embed IO] r =>
+  Members [Test, Time t d, Log, Resource, Stop TmuxError, Error Text, Race, Async, Final IO, Embed IO] r =>
   TmuxTestConfig ->
   Sem (TestTmuxEffects ++ r) a ->
   Path Abs Dir ->

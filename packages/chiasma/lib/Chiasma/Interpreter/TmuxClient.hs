@@ -1,11 +1,12 @@
 module Chiasma.Interpreter.TmuxClient where
 
-import Conc (interpretAtomic)
+import Conc (Lock, interpretAtomic, interpretLockReentrant, lock)
 import Data.Sequence ((|>))
 import qualified Data.Text as Text
 import Exon (exon)
 import qualified Log as Log
 import Path (Abs, File, Path, relfile, toFilePath)
+import Polysemy.Conc.Interpreter.Mask (interpretMaskFinal)
 import Polysemy.Process.Interpreter.Process (ProcessQueues)
 import qualified Process as Process
 import Process (
@@ -51,17 +52,18 @@ validate request = \case
     Left (TmuxError.RequestFailed request a)
 
 tmuxRequest ::
-  Members [Process ByteString (Either Text TmuxOutputBlock), Log, Stop TmuxError] r =>
+  Members [Lock, Process ByteString (Either Text TmuxOutputBlock), Log, Stop TmuxError] r =>
   TmuxRequest ->
   Sem r TmuxResponse
-tmuxRequest request = do
-  Log.trace [exon|tmux request: #{Text.stripEnd (decodeUtf8 cmdline)}|]
-  Process.send cmdline
-  Process.recv >>= \case
-    Left err -> stop (TmuxError.RequestFailed request [err])
-    Right block -> do
-      Log.trace [exon|tmux response: #{show block}|]
-      stopEither (validate request block)
+tmuxRequest request =
+  lock do
+    Log.trace [exon|tmux request: #{Text.stripEnd (decodeUtf8 cmdline)}|]
+    Process.send cmdline
+    Process.recv >>= \case
+      Left err -> stop (TmuxError.RequestFailed request [err])
+      Right block -> do
+        Log.trace [exon|tmux response: #{show block}|]
+        stopEither (validate request block)
   where
     cmdline =
       TmuxRequest.encode request
@@ -96,14 +98,14 @@ interpretProcessTmux sem = do
     insertAt @1 sem
 
 flush ::
-  Members [TmuxProc, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
+  Members [Lock, TmuxProc, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
   Sem r ()
 flush =
   traverse_ tmuxRequest =<< atomicState' (mempty,)
 
 tmuxSession ::
   ∀ r a .
-  Members [Scoped_ TmuxProc !! ProcessError, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
+  Members [Lock, Scoped_ TmuxProc !! ProcessError, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
   Sem (TmuxProc : r) a ->
   Sem r a
 tmuxSession action =
@@ -113,7 +115,7 @@ tmuxSession action =
     raiseUnder action <* flush
 
 interpretTmuxProcessBuffered ::
-  Members [AtomicState (Seq TmuxRequest), Scoped_ TmuxProc !! ProcessError, Log, Embed IO] r =>
+  Members [Lock, AtomicState (Seq TmuxRequest), Scoped_ TmuxProc !! ProcessError, Log, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxProcessBuffered =
   interpretScopedResumableWith_ @'[TmuxProc] (const tmuxSession) \case
@@ -124,16 +126,18 @@ interpretTmuxProcessBuffered =
       tmuxRequest cmd
 
 interpretTmuxWithProcess ::
-  Members [Scoped_ TmuxProc !! ProcessError, Log, Embed IO] r =>
+  Members [Scoped_ TmuxProc !! ProcessError, Log, Resource, Race, Final IO, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxWithProcess =
   interpretAtomic mempty .
+  interpretMaskFinal .
+  interpretLockReentrant .
   interpretTmuxProcessBuffered .
-  raiseUnder
+  raiseUnder3
 
 interpretTmuxNative ::
   ∀ r .
-  Members [Reader TmuxNative, Log, Resource, Race, Async, Embed IO] r =>
+  Members [Reader TmuxNative, Log, Resource, Race, Async, Final IO, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNative =
   interpretSystemProcessTmux .
@@ -168,14 +172,14 @@ runReaderTmuxNativeEnv socket sem = do
   runReader tn sem
 
 interpretTmuxNativeEnv ::
-  Members [Error TmuxError, Log, Resource, Race, Async, Embed IO] r =>
+  Members [Error TmuxError, Log, Resource, Race, Async, Final IO, Embed IO] r =>
   Maybe (Path Abs File) ->
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnv socket =
   runReaderTmuxNativeEnv socket . interpretTmuxNative . raiseUnder
 
 interpretTmuxNativeEnvGraceful ::
-  Members [Log, Resource, Race, Async, Embed IO] r =>
+  Members [Log, Resource, Race, Async, Final IO, Embed IO] r =>
   Maybe (Path Abs File) ->
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxNativeEnvGraceful socket sem =
