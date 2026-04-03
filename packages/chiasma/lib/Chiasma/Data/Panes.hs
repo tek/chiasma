@@ -15,20 +15,20 @@ import Chiasma.Data.TmuxResponse (TmuxResponse (TmuxResponse))
 import Chiasma.Data.WithPaneId (WithPaneId (WithPaneId))
 import Chiasma.Effect.TmuxApi (TmuxApi)
 
--- |A 'TmuxApi' command for listing panes, with different query criteria.
+-- | A 'TmuxApi' command for listing panes, with different query criteria.
 -- The constructors taking a 'PaneSelection' list all panes that are present in the selected scope, but may constrain
 -- the return value.
 -- The constructors 'Get' and 'Find' return only the pane with the requested ID.
 data Panes (p :: Type) (a :: Type) :: Type where
-  -- |Return all panes covered by the selection.
+  -- | Return all panes covered by the selection.
   List :: PaneSelection -> Panes p [p]
-  -- |Return one pane covered by the selection, fail if there is none.
+  -- | Return one pane covered by the selection, fail if there is none.
   First :: PaneSelection -> Panes p p
-  -- |Return one pane covered by the selection, fail if there is none or more than one.
+  -- | Return one pane covered by the selection, fail if there is none or more than one.
   One :: PaneSelection -> Panes p p
-  -- |Return the pane with the specified ID, fail if there is none.
+  -- | Return the pane with the specified ID, fail if there is none.
   Get :: PaneId -> Panes p p
-  -- |Return the pane with the specified ID if it exists.
+  -- | Return the pane with the specified ID if it exists.
   Find :: PaneId -> Panes p (Maybe p)
 
 type TmuxPanes p =

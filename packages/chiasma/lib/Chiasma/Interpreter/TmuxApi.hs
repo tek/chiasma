@@ -8,23 +8,13 @@ import Chiasma.Data.CodecError (CodecError)
 import Chiasma.Data.TmuxRequest (TmuxRequest)
 import Chiasma.Data.TmuxResponse (TmuxResponse)
 import Chiasma.Effect.Codec (Codec, encode, withCodec)
-import Chiasma.Effect.TmuxApi (TmuxApi (Schedule, Send), send)
+import Chiasma.Effect.TmuxApi (TmuxApi (..))
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
 
 type family (f :: l -> k) <$> (fa :: [l]) :: [k] where
   f <$> fa =
     FMap (Pure1 f) @@ fa
-
-flush ::
-  Member (TmuxApi c) r =>
-  InterpreterFor (TmuxApi c) r
-flush =
-  interpret \case
-    Send cmd ->
-      send cmd
-    Schedule cmd ->
-      void (send cmd)
 
 interpretTmuxApi ::
   ∀ command i o err r .
@@ -38,6 +28,8 @@ interpretTmuxApi =
     Schedule cmd -> do
       encoded <- restop (encode cmd)
       TmuxClient.schedule encoded
+    ReceiveNotification ->
+      TmuxClient.receiveNotification
 
 data TmuxApiEffect :: Type -> (Type -> Type) -> Exp Effect
 

@@ -217,7 +217,6 @@ test-suite integration
     , chiasma
     , chiasma-test
     , hedgehog
-    , lens >=4
     , path-io
     , polysemy
     , polysemy-chronos

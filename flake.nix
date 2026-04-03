@@ -86,7 +86,6 @@
           "chiasma"
           "chiasma-test"
           "hedgehog"
-          "lens >= 4"
           "path-io"
           "polysemy-chronos"
           "polysemy-test >= 0.6"

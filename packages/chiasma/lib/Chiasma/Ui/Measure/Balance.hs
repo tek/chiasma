@@ -135,7 +135,7 @@ roundSizes (h :| t) =
         (a1, z1) = diff a
     diff a = (floor a, a - fromIntegral (floor a :: Int))
 
--- |Tmux doesn't render panes smaller than two cells.
+-- | Tmux doesn't render panes smaller than two cells.
 ensureMinimum2 :: NonEmpty Float -> NonEmpty Float
 ensureMinimum2 sizes =
   choose <$> positives

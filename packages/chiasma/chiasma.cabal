@@ -51,7 +51,6 @@ library
       Chiasma.Data.CopyModeParams
       Chiasma.Data.DecodeError
       Chiasma.Data.Direction
-      Chiasma.Data.Event
       Chiasma.Data.Ident
       Chiasma.Data.KillPaneParams
       Chiasma.Data.LayoutError
@@ -60,7 +59,6 @@ library
       Chiasma.Data.PaneSelection
       Chiasma.Data.PipePaneParams
       Chiasma.Data.ProcessError
-      Chiasma.Data.ReceiveEvent
       Chiasma.Data.RenderError
       Chiasma.Data.ResizePaneParams
       Chiasma.Data.SelectParams
@@ -72,8 +70,10 @@ library
       Chiasma.Data.Target
       Chiasma.Data.TmuxCommand
       Chiasma.Data.TmuxError
+      Chiasma.Data.TmuxEvent
       Chiasma.Data.TmuxId
       Chiasma.Data.TmuxNative
+      Chiasma.Data.TmuxNotification
       Chiasma.Data.TmuxOutputBlock
       Chiasma.Data.TmuxQuery
       Chiasma.Data.TmuxRequest
@@ -87,7 +87,6 @@ library
       Chiasma.Effect.Codec
       Chiasma.Effect.TmuxApi
       Chiasma.Effect.TmuxClient
-      Chiasma.Event
       Chiasma.Function
       Chiasma.Interpreter.Codec
       Chiasma.Interpreter.ProcessOutput
