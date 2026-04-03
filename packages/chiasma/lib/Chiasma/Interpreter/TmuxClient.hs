@@ -1,6 +1,7 @@
 module Chiasma.Interpreter.TmuxClient where
 
-import Conc (Lock, interpretAtomic, interpretLockReentrant, lock)
+import qualified Conc
+import Conc (Consume, Lock, interpretAtomic, interpretLockReentrant, lock, withAsync_)
 import Data.Sequence ((|>))
 import qualified Data.Text as Text
 import Exon (exon)
@@ -28,7 +29,10 @@ import System.Process.Typed (ProcessConfig, proc)
 
 import qualified Chiasma.Data.TmuxError as TmuxError
 import Chiasma.Data.TmuxError (TmuxError (NoExe))
+import qualified Chiasma.Data.TmuxEvent as TmuxEvent
+import Chiasma.Data.TmuxEvent (TmuxEvent)
 import Chiasma.Data.TmuxNative (TmuxNative (TmuxNative))
+import Chiasma.Data.TmuxNotification (TmuxNotification (..))
 import qualified Chiasma.Data.TmuxOutputBlock as TmuxOutputBlock
 import Chiasma.Data.TmuxOutputBlock (TmuxOutputBlock)
 import qualified Chiasma.Data.TmuxRequest as TmuxRequest
@@ -36,13 +40,13 @@ import Chiasma.Data.TmuxRequest (TmuxRequest (TmuxRequest))
 import Chiasma.Data.TmuxResponse (TmuxResponse (TmuxResponse))
 import qualified Chiasma.Effect.TmuxClient as TmuxClient
 import Chiasma.Effect.TmuxClient (TmuxClient)
-import Chiasma.Interpreter.ProcessOutput (interpretProcessOutputTmuxBlock)
+import Chiasma.Interpreter.ProcessOutput (interpretProcessOutputTmuxEvent)
 
 type TmuxQueues =
-  ProcessQueues (Either Text TmuxOutputBlock) Text
+  ProcessQueues (Either Text TmuxEvent) Text
 
 type TmuxProc =
-  Process ByteString (Either Text TmuxOutputBlock)
+  Process ByteString (Either Text TmuxEvent)
 
 validate :: TmuxRequest -> TmuxOutputBlock -> Either TmuxError TmuxResponse
 validate request = \case
@@ -51,19 +55,20 @@ validate request = \case
   TmuxOutputBlock.Error a ->
     Left (TmuxError.RequestFailed request a)
 
+-- | Send a command and wait for the response.
+-- The lock ensures only one request is in flight at a time (tmux control mode responses are ordered).
+-- Opens a fresh subscription so only messages arriving after the send are seen.
 tmuxRequest ::
-  Members [Lock, Process ByteString (Either Text TmuxOutputBlock), Log, Stop TmuxError] r =>
+  Members [TmuxProc, EventConsumer TmuxEvent, Lock, Log, Stop TmuxError] r =>
   TmuxRequest ->
   Sem r TmuxResponse
 tmuxRequest request =
-  lock do
+  lock $ subscribe do
     Log.trace [exon|tmux request: #{Text.stripEnd (decodeUtf8 cmdline)}|]
     Process.send cmdline
-    Process.recv >>= \case
-      Left err -> stop (TmuxError.RequestFailed request [err])
-      Right block -> do
-        Log.trace [exon|tmux response: #{show block}|]
-        stopEither (validate request block)
+    stopEither =<< Conc.consumeFirstJust \case
+      TmuxEvent.Response block -> pure (Just (validate request block))
+      TmuxEvent.Notification _ -> pure Nothing
   where
     cmdline =
       TmuxRequest.encode request
@@ -90,43 +95,83 @@ interpretProcessTmux ::
   Members [Resource, Race, Async, Embed IO] r =>
   InterpreterFor (Scoped_ TmuxProc !! ProcessError) r
 interpretProcessTmux sem = do
-  interpretProcessOutputTmuxBlock @'Stdout $
+  interpretProcessOutputTmuxEvent @'Stdout $
     interpretProcessOutputTextLines @'Stderr $
     interpretProcessOutputLeft @'Stderr $
     interpretProcessInputId $
     interpretProcess_ def $
     insertAt @1 sem
 
+-- | Consume messages from the process until the first command response block.
+-- Tmux emits a response block for the implicit attach-session command on connect.
+-- Notification lines are discarded during this phase.
+drainInitial ::
+  Members [TmuxProc, Log] r =>
+  Sem r ()
+drainInitial =
+  Process.recv >>= \case
+    Right (TmuxEvent.Response _) ->
+      Log.trace "tmux: drained initial response"
+    Right (TmuxEvent.Notification n) -> do
+      Log.trace [exon|tmux: initial notification: #{n.name}|]
+      drainInitial
+    Left err -> do
+      Log.warn [exon|tmux: initial recv error: #{err}|]
+      drainInitial
+
+-- | Background receiver loop: reads from the tmux process and publishes each message.
+receiverLoop ::
+  Members [Events TmuxEvent, TmuxProc, Log] r =>
+  Sem r ()
+receiverLoop =
+  forever do
+    Process.recv >>= \case
+      Left err ->
+        Log.warn [exon|tmux recv error: #{err}|]
+      Right msg -> do
+        Log.trace [exon|tmux recv message: #{show msg}|]
+        Conc.publish msg
+
+-- | Send all scheduled requests and discard their responses.
 flush ::
-  Members [Lock, TmuxProc, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
+  Members [EventConsumer TmuxEvent, TmuxProc, AtomicState (Seq TmuxRequest), Lock, Log, Stop TmuxError] r =>
   Sem r ()
 flush =
   traverse_ tmuxRequest =<< atomicState' (mempty,)
 
 tmuxSession ::
   ∀ r a .
-  Members [Lock, Scoped_ TmuxProc !! ProcessError, AtomicState (Seq TmuxRequest), Log, Stop TmuxError] r =>
-  Sem (TmuxProc : r) a ->
+  Members [Scoped_ TmuxProc !! ProcessError, AtomicState (Seq TmuxRequest), Stop TmuxError] r =>
+  Members [Lock, Log, Resource, Race, Async, Embed IO] r =>
+  Sem (Consume TmuxEvent : EventConsumer TmuxEvent : TmuxProc : r) a ->
   Sem r a
 tmuxSession action =
-  resumeHoist @ProcessError @(Scoped_ TmuxProc) TmuxError.ProcessFailed $ withProcess_ do
-    void Process.recv
-    tmuxRequest (TmuxRequest "refresh-client" ["-C", "10000x10000"] Nothing)
-    raiseUnder action <* flush
+  resumeHoist TmuxError.ProcessFailed $ withProcess_ do
+    drainInitial
+    Conc.interpretEventsChan do
+      withAsync_ receiverLoop do
+        subscribe do
+          void $ tmuxRequest (TmuxRequest "refresh-client" ["-C", "10000x10000"] Nothing)
+          subsume_ action <* flush
 
 interpretTmuxProcessBuffered ::
-  Members [Lock, AtomicState (Seq TmuxRequest), Scoped_ TmuxProc !! ProcessError, Log, Embed IO] r =>
+  Members [AtomicState (Seq TmuxRequest), Scoped_ TmuxProc !! ProcessError] r =>
+  Members [Lock, Log, Resource, Race, Async, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxProcessBuffered =
-  interpretScopedResumableWith_ @'[TmuxProc] (const tmuxSession) \case
+  interpretScopedResumableWith_ @'[Consume TmuxEvent, EventConsumer TmuxEvent, TmuxProc] (const tmuxSession) \case
     TmuxClient.Schedule request ->
       atomicModify' (|> request)
     TmuxClient.Send cmd -> do
       flush
       tmuxRequest cmd
+    TmuxClient.ReceiveNotification ->
+      Conc.consumeFirstJust $ pure . \case
+        TmuxEvent.Notification n -> Just n
+        TmuxEvent.Response _ -> Nothing
 
 interpretTmuxWithProcess ::
-  Members [Scoped_ TmuxProc !! ProcessError, Log, Resource, Race, Final IO, Embed IO] r =>
+  Members [Scoped_ TmuxProc !! ProcessError, Log, Resource, Race, Async, Final IO, Embed IO] r =>
   InterpreterFor (Scoped_ (TmuxClient TmuxRequest TmuxResponse) !! TmuxError) r
 interpretTmuxWithProcess =
   interpretAtomic mempty .
@@ -153,6 +198,8 @@ interpretTmuxFailing err =
     TmuxClient.Schedule _ ->
       stop err
     TmuxClient.Send _ ->
+      stop err
+    TmuxClient.ReceiveNotification ->
       stop err
 
 withTmuxNativeEnv ::
@@ -195,3 +242,5 @@ interpretTmuxClientNull =
       unit
     TmuxClient.Send _ ->
       unit
+    TmuxClient.ReceiveNotification ->
+      pure (TmuxNotification {name = "null", args = []})

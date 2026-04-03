@@ -1,7 +1,7 @@
 module Main where
 
 import Chiasma.Test.CaptureTest (test_capture)
-import Chiasma.Test.ConcurrentTest (test_concurrent)
+import Chiasma.Test.ConcurrentTest (test_concurrent, test_notifications)
 import Chiasma.Test.FindTest (test_find)
 import Chiasma.Test.RenderTest (test_render)
 import Chiasma.Test.TmuxTest (test_tmux)
@@ -15,7 +15,8 @@ tests =
     integrationTest "find pane by ID" test_find,
     test_render,
     integrationTest "capture pane content" test_capture,
-    integrationTest "concurrent tmux access" test_concurrent
+    integrationTest "concurrent tmux access" test_concurrent,
+    integrationTest "tmux notifications" test_notifications
   ]
 
 main :: IO ()

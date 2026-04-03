@@ -1,39 +1,24 @@
 module Chiasma.Interpreter.ProcessOutput where
 
 import Data.Attoparsec.ByteString (parse)
-import Data.Attoparsec.Types (IResult (Done, Fail, Partial))
-import Polysemy.Conc (interpretAtomic)
-import Polysemy.Process.Effect.ProcessOutput (ProcessOutput (Chunk))
+import qualified Data.Attoparsec.Types as Attoparsec
+import qualified Polysemy.Process.Data.ProcessOutputParseResult as ProcessOutputParseResult
+import Polysemy.Process.Data.ProcessOutputParseResult (ProcessOutputParseResult)
+import Polysemy.Process.Effect.ProcessOutput (ProcessOutput)
+import Polysemy.Process.Interpreter.ProcessOutput (interpretProcessOutputIncremental)
 
-import Chiasma.Data.TmuxOutputBlock (TmuxOutputBlock)
-import Chiasma.Native.TmuxOutputBlock (parser)
+import Chiasma.Data.TmuxEvent (TmuxEvent)
+import Chiasma.Native.TmuxOutputBlock (messageParser)
 
-type ParseResult =
-  IResult ByteString TmuxOutputBlock
+-- | Convert an attoparsec 'Attoparsec.IResult' to 'ProcessOutputParseResult'.
+fromAttoparsec :: Attoparsec.IResult ByteString TmuxEvent -> ProcessOutputParseResult TmuxEvent
+fromAttoparsec = \case
+  Attoparsec.Fail _ _ err -> ProcessOutputParseResult.Fail (toText err)
+  Attoparsec.Partial c -> ProcessOutputParseResult.Partial (fromAttoparsec . c)
+  Attoparsec.Done rest a -> ProcessOutputParseResult.Done a rest
 
-type ParseCont =
-  ByteString -> IResult ByteString TmuxOutputBlock
-
-parseResult ::
-  Member (AtomicState (Maybe ParseCont)) r =>
-  ParseResult ->
-  Sem r ([Either Text TmuxOutputBlock], ByteString)
-parseResult = \case
-  Fail _ _ err -> pure ([Left (toText err)], "")
-  Partial c -> ([], "") <$ atomicPut (Just c)
-  Done rest block -> pure ([Right block], rest)
-
-interpretProcessOutputTmuxBlock ::
+interpretProcessOutputTmuxEvent ::
   ∀ p r .
-  Member (Embed IO) r =>
-  InterpreterFor (ProcessOutput p (Either Text TmuxOutputBlock)) r
-interpretProcessOutputTmuxBlock =
-  interpretAtomic (Nothing :: Maybe ParseCont) .
-  interpret \case
-    Chunk _ new ->
-      atomicState' (Nothing,) >>= \case
-        Just cont ->
-          parseResult (cont new)
-        Nothing ->
-          parseResult (parse parser new)
-  . raiseUnder
+  InterpreterFor (ProcessOutput p (Either Text TmuxEvent)) r
+interpretProcessOutputTmuxEvent =
+  interpretProcessOutputIncremental (fromAttoparsec . parse messageParser)

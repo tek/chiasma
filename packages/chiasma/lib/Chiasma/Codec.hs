@@ -11,7 +11,7 @@ import Chiasma.Data.DecodeError (DecodeError (DecodeError), DecodeFailure)
 import Chiasma.Data.TmuxId (PaneId, SessionId, WindowId)
 import Chiasma.Data.TmuxQuery (TmuxQuery (TmuxQuery))
 
--- |Remove one leading and trailing space from tmux output if both are present.
+-- | Remove one leading and trailing space from tmux output if both are present.
 tryTrim :: Text -> Maybe Text
 tryTrim text = do
   (prefix, lastChar) <- Text.unsnoc text

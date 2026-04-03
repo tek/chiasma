@@ -104,6 +104,7 @@ test-suite chiasma-test-test
       Chiasma.Test.LensTest
       Chiasma.Test.OutputParseTest
       Chiasma.Test.PinTest
+      Chiasma.Test.ProcessOutputTest
       Chiasma.Test.PureTest
       Chiasma.Test.Util
   hs-source-dirs:
@@ -153,6 +154,7 @@ test-suite chiasma-test-test
     , lens >=4
     , polysemy
     , polysemy-plugin
+    , polysemy-process
     , polysemy-test >=0.6
     , prelate ==0.9.*
     , tasty
@@ -217,7 +219,6 @@ test-suite integration
     , chiasma
     , chiasma-test
     , hedgehog
-    , lens >=4
     , path-io
     , polysemy
     , polysemy-chronos
