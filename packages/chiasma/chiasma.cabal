@@ -181,7 +181,7 @@ library
     , polysemy-plugin
     , polysemy-process >=0.9
     , polysemy-time >=0.5
-    , prelate >=0.6 && <0.9
+    , prelate ==0.9.*
     , prettyprinter >=1.6
     , prettyprinter-ansi-terminal >=1.1
     , random >=1.1

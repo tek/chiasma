@@ -87,7 +87,7 @@ library
     , polysemy-process
     , polysemy-test >=0.6
     , polysemy-time
-    , prelate >=0.6 && <0.9
+    , prelate ==0.9.*
     , text
     , typed-process >=0.2
   mixins:
@@ -154,7 +154,7 @@ test-suite chiasma-test-test
     , polysemy
     , polysemy-plugin
     , polysemy-test >=0.6
-    , prelate >=0.6 && <0.9
+    , prelate ==0.9.*
     , tasty
     , tasty-hedgehog
   mixins:
@@ -223,7 +223,7 @@ test-suite integration
     , polysemy-chronos
     , polysemy-plugin
     , polysemy-test >=0.6
-    , prelate >=0.6 && <0.9
+    , prelate ==0.9.*
     , tasty
     , tasty-hedgehog
   mixins:

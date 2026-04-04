@@ -113,7 +113,7 @@
         enable = true;
         package = {
           name = "prelate";
-          version = ">= 0.6 && < 0.9";
+          version = ">= 0.9 && < 0.10";
         };
         module = "Prelate";
       };
@@ -129,7 +129,7 @@
       user = "tek";
     };
 
-    overrides = {jailbreak, force, unbreak, notest, source, ...}: {
+    overrides = {jailbreak, hackage, force, unbreak, notest, source, ...}: {
       exon = jailbreak;
       fuzzyfind = force;
       incipit = jailbreak;
@@ -143,7 +143,7 @@
       polysemy-resume = jailbreak;
       polysemy-test = jailbreak;
       polysemy-time = jailbreak;
-      prelate = jailbreak;
+      prelate = hackage "0.9.0.0" "031cv6wjf8c6bfr29jikkydagnk4y2yk081nkbj307fk4nzgvjsw";
       streamly = force;
       unicode-data = notest;
       zeugma = jailbreak;
