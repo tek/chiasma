@@ -81,7 +81,7 @@ tmuxProc ::
   TmuxNative ->
   ProcessConfig () () ()
 tmuxProc (TmuxNative exe socket) =
-  proc (toFilePath exe) (foldMap socketArg socket <> ["-C", "-u", "attach-session", "-f", "ignore-size"])
+  proc (toFilePath exe) (foldMap socketArg socket <> ["-C", "-u", "attach-session", "-f", "ignore-size,no-output"])
 
 interpretSystemProcessTmux ::
   Members [Reader TmuxNative, Resource, Race, Async, Embed IO] r =>
@@ -151,7 +151,7 @@ tmuxSession action =
     Conc.interpretEventsChan do
       withAsync_ receiverLoop do
         subscribe do
-          void $ tmuxRequest (TmuxRequest "refresh-client" ["-C", "10000x10000"] Nothing)
+          void $ tmuxRequest (TmuxRequest "refresh-client" ["-C", "200x1000"] Nothing)
           subsume_ action <* flush
 
 interpretTmuxProcessBuffered ::
