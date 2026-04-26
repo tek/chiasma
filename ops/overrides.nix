@@ -1,10 +1,6 @@
 {
-  _meta = {
-    protocol = "2";
-  };
   dev = {
-    extraOverrides = {
-      prelate = {
+    prelate = {
   meta = {
     sha256 = "031cv6wjf8c6bfr29jikkydagnk4y2yk081nkbj307fk4nzgvjsw";
     ver = "0.9.0.0";
@@ -30,11 +26,9 @@ mkDerivation {
 ;
 }
 ;
-    };
   };
   ghc910-extends-ghc910 = {
-    extraOverrides = {
-      prelate = {
+    prelate = {
   meta = {
     sha256 = "031cv6wjf8c6bfr29jikkydagnk4y2yk081nkbj307fk4nzgvjsw";
     ver = "0.9.0.0";
@@ -60,11 +54,9 @@ mkDerivation {
 ;
 }
 ;
-    };
   };
   ghc912-extends-ghc912 = {
-    extraOverrides = {
-      prelate = {
+    prelate = {
   meta = {
     sha256 = "031cv6wjf8c6bfr29jikkydagnk4y2yk081nkbj307fk4nzgvjsw";
     ver = "0.9.0.0";
@@ -90,11 +82,9 @@ mkDerivation {
 ;
 }
 ;
-    };
   };
   ghc98-extends-ghc98 = {
-    extraOverrides = {
-      prelate = {
+    prelate = {
   meta = {
     sha256 = "031cv6wjf8c6bfr29jikkydagnk4y2yk081nkbj307fk4nzgvjsw";
     ver = "0.9.0.0";
@@ -120,11 +110,9 @@ mkDerivation {
 ;
 }
 ;
-    };
   };
   min = {
-    extraOverrides = {
-      prelate = {
+    prelate = {
   meta = {
     sha256 = "031cv6wjf8c6bfr29jikkydagnk4y2yk081nkbj307fk4nzgvjsw";
     ver = "0.9.0.0";
@@ -150,11 +138,9 @@ mkDerivation {
 ;
 }
 ;
-    };
   };
   profiled = {
-    extraOverrides = {
-      prelate = {
+    prelate = {
   meta = {
     sha256 = "031cv6wjf8c6bfr29jikkydagnk4y2yk081nkbj307fk4nzgvjsw";
     ver = "0.9.0.0";
@@ -180,6 +166,5 @@ mkDerivation {
 ;
 }
 ;
-    };
   };
 }
