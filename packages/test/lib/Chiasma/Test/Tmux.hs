@@ -56,14 +56,15 @@ bashrcContent =
 createTmuxConf ::
   Member Test r =>
   Path Abs File ->
+  Path Abs File ->
   [Text] ->
   Sem r (Path Abs File)
-createTmuxConf wait content = do
+createTmuxConf bash wait content = do
   bashrc <- Test.tempFile bashrcContent [relfile|bashrc|]
   Test.tempFile (defaultContent bashrc ++ content ++ initCommands) [relfile|tmux.conf|]
   where
     defaultContent rc =
-      [[exon|set -g default-command '/usr/bin/env bash --noprofile --rcfile #{pathText rc}'|]]
+      [[exon|set -g default-command '#{pathText bash} --noprofile --rcfile #{pathText rc}'|]]
     initCommands =
       [
         [exon|run-shell -b 'touch #{pathText wait}'|]
@@ -72,11 +73,12 @@ createTmuxConf wait content = do
 testTmuxProcessConfig ::
   Members [Pty, Test, Embed IO] r =>
   Path Abs File ->
+  Path Abs File ->
   TmuxTestConfig ->
   Path Abs File ->
   Sem r (ProcessConfig () () ())
-testTmuxProcessConfig wait (TmuxTestConfig {..}) socket = do
-  confFile <- createTmuxConf wait conf
+testTmuxProcessConfig bash wait (TmuxTestConfig {..}) socket = do
+  confFile <- createTmuxConf bash wait conf
   Pty.resize width height
   handle <- Pty.handle
   let
@@ -154,8 +156,9 @@ withTestTmux tConf@TmuxTestConfig {waitForPrompt} thunk tempDir = do
   let socket = tempDir </> [relfile|tmux_socket|]
   let wait = tempDir </> [relfile|wait|]
   exe <- fromEither =<< resolveExecutable [relfile|tmux|] Nothing
+  bash <- fromEither =<< resolveExecutable [relfile|bash|] Nothing
   interpretPty $ resumeHoistError @_ @(Scoped_ _) show $ withPty do
-    pc <- testTmuxProcessConfig wait tConf socket
+    pc <- testTmuxProcessConfig bash wait tConf socket
     interpretSystemProcessNativeOpaqueSingle pc $ runReader (TmuxNative exe (Just socket)) do
       void $ Race.timeout (throw "tmux didn't start") (Seconds 3) (waitForFile wait)
       interpretCodecPanes $ interpretCodecTmuxCommand $ interpretTmuxNative $ restop @TmuxError do

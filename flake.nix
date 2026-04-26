@@ -46,7 +46,7 @@
       src = ./packages/test;
 
       cabal.meta.synopsis = "Testing tools for chiasma";
-      buildInputs = pkgs: [pkgs.tmux pkgs.xterm];
+      buildInputs = pkgs: [pkgs.tmux pkgs.xterm pkgs.bashInteractive];
 
       library = {
         enable = true;
