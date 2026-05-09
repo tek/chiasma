@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.38.2.
+-- This file has been generated from package.yaml by hpack version 0.38.3.
 --
 -- see: https://github.com/sol/hpack
 
@@ -71,25 +71,25 @@ library
       ViewPatterns
   ghc-options: -fplugin=Polysemy.Plugin -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      base ==4.*
-    , bytestring
+      base >=4.17.2.1 && <4.22
+    , bytestring >=0.11.5.3 && <0.13
     , chiasma
-    , chronos
-    , exon
-    , hedgehog
-    , path
-    , path-io
-    , polysemy
-    , polysemy-chronos
-    , polysemy-conc
-    , polysemy-log
-    , polysemy-plugin
-    , polysemy-process
-    , polysemy-test >=0.6
-    , polysemy-time
-    , prelate ==0.9.*
-    , text
-    , typed-process >=0.2
+    , chronos >=1.1.5.1 && <1.2
+    , exon >=1.7.0.0 && <1.8
+    , hedgehog >=1.4 && <1.8
+    , path >=0.9.1 && <0.10
+    , path-io >=1.6.3 && <1.9
+    , polysemy >=1.9.1.0 && <1.10
+    , polysemy-chronos >=0.7.0.0 && <0.8
+    , polysemy-conc >=0.14.1.1 && <0.16
+    , polysemy-log >=0.11.0.0 && <0.12
+    , polysemy-plugin >=0.4.4.0 && <0.5
+    , polysemy-process >=0.14.1.0 && <0.16
+    , polysemy-test >=0.6.0.0 && <0.12
+    , polysemy-time >=0.7.0.0 && <0.8
+    , prelate >=0.9.0.1 && <0.10
+    , text >=2.0.2 && <2.2
+    , typed-process >=0.2.4.1 && <0.3
   mixins:
       base hiding (Prelude)
     , prelate (Prelate as Prelude)
@@ -147,18 +147,18 @@ test-suite chiasma-test-test
       ViewPatterns
   ghc-options: -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      base ==4.*
+      base >=4.17.2.1 && <4.22
     , chiasma
     , chiasma-test
-    , hedgehog
-    , lens >=4
-    , polysemy
-    , polysemy-plugin
-    , polysemy-process
-    , polysemy-test >=0.6
-    , prelate ==0.9.*
-    , tasty
-    , tasty-hedgehog
+    , hedgehog >=1.4 && <1.8
+    , lens >=5.2.1 && <5.4
+    , polysemy >=1.9.1.0 && <1.10
+    , polysemy-plugin >=0.4.4.0 && <0.5
+    , polysemy-process >=0.14.1.0 && <0.16
+    , polysemy-test >=0.6.0.0 && <0.12
+    , prelate >=0.9.0.1 && <0.10
+    , tasty >=1.5.2 && <1.6
+    , tasty-hedgehog >=1.4.0.2 && <1.5
   mixins:
       base hiding (Prelude)
     , prelate (Prelate as Prelude)
@@ -215,18 +215,18 @@ test-suite integration
       ViewPatterns
   ghc-options: -fplugin=Polysemy.Plugin -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      base ==4.*
+      base >=4.17.2.1 && <4.22
     , chiasma
     , chiasma-test
-    , hedgehog
-    , path-io
-    , polysemy
-    , polysemy-chronos
-    , polysemy-plugin
-    , polysemy-test >=0.6
-    , prelate ==0.9.*
-    , tasty
-    , tasty-hedgehog
+    , hedgehog >=1.4 && <1.8
+    , path-io >=1.6.3 && <1.9
+    , polysemy >=1.9.1.0 && <1.10
+    , polysemy-chronos >=0.7.0.0 && <0.8
+    , polysemy-plugin >=0.4.4.0 && <0.5
+    , polysemy-test >=0.6.0.0 && <0.12
+    , prelate >=0.9.0.1 && <0.10
+    , tasty >=1.5.2 && <1.6
+    , tasty-hedgehog >=1.4.0.2 && <1.5
   mixins:
       base hiding (Prelude)
     , prelate (Prelate as Prelude)
