@@ -46,8 +46,6 @@ test_concurrent =
         Conc.interpretAtomic @[Text] [] do
           withAsync_ (worker "A") (worker "B")
           wins <- TmuxApi.send (ListWindows def)
-          log' <- atomicGet
-          for_ log' (embed . putStrLn . toString)
           -- 10 windows from each thread + 1 initial = 21
           length wins === 21
 
