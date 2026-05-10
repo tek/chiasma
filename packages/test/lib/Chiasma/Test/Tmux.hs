@@ -19,7 +19,8 @@ import qualified Polysemy.Process.Effect.SystemProcess as SystemProcess
 import Polysemy.Process.Effect.SystemProcess (SystemProcess)
 import Polysemy.Process.Interpreter.Pty (interpretPty)
 import qualified Polysemy.Test as Test
-import Polysemy.Test (Hedgehog, Test, TestError (TestError), runTestAuto)
+import Polysemy.Test (Hedgehog, Test, TestError (..), runTestAuto)
+import Polysemy.Test.Data.TestError (SkipTestDefaultValue, skipTest)
 import qualified Polysemy.Time as Time
 import Polysemy.Time (MilliSeconds (MilliSeconds), Seconds (Seconds), mkDatetime)
 import System.Process.Typed (ProcessConfig, StreamSpec, proc, setStderr, setStdin, setStdout, useHandleClose)
@@ -31,7 +32,7 @@ import Chiasma.Data.CodecError (CodecError)
 import Chiasma.Data.Panes (Panes)
 import Chiasma.Data.RenderError (RenderError)
 import Chiasma.Data.TmuxCommand (TmuxCommand (KillServer, ListSessions))
-import Chiasma.Data.TmuxError (TmuxError)
+import Chiasma.Data.TmuxError (TmuxError (NoExe))
 import Chiasma.Data.TmuxNative (TmuxNative (..))
 import Chiasma.Effect.Codec (Codec, NativeCodecE)
 import qualified Chiasma.Effect.TmuxApi as TmuxApi
@@ -146,23 +147,40 @@ type TestTmuxEffects =
     Reader TmuxNative
   ]
 
+withTestTmuxExe ::
+  Members [Test, Time t d, Log, Resource, Stop TmuxError, Error Text, Error TestError, Race, Async, Final IO, Embed IO] r =>
+  TmuxTestConfig ->
+  Path Abs File ->
+  Path Abs File ->
+  Path Abs File ->
+  Path Abs File ->
+  Sem (TestTmuxEffects ++ r) a ->
+  Sem r a
+withTestTmuxExe tConf@TmuxTestConfig {waitForPrompt} tmux bash socket wait thunk =
+  interpretPty $ resumeHoistError @_ @(Scoped_ _) show $ withPty do
+    pc <- testTmuxProcessConfig bash wait tConf socket
+    interpretSystemProcessNativeOpaqueSingle pc $ runReader (TmuxNative tmux (Just socket)) do
+      void $ Race.timeout (throw "tmux didn't start") (Seconds 3) (waitForFile wait)
+      interpretCodecPanes $ interpretCodecTmuxCommand $ interpretTmuxNative $ restop @TmuxError do
+        runAndKillTmux waitForPrompt (insertAt @5 thunk)
+
 withTestTmux ::
-  Members [Test, Time t d, Log, Resource, Stop TmuxError, Error Text, Race, Async, Final IO, Embed IO] r =>
+  Members [Test, Time t d, Log, Resource, Stop TmuxError, Error Text, Error TestError, Race, Async, Final IO, Embed IO] r =>
   TmuxTestConfig ->
   Sem (TestTmuxEffects ++ r) a ->
   Path Abs Dir ->
   Sem r a
-withTestTmux tConf@TmuxTestConfig {waitForPrompt} thunk tempDir = do
+withTestTmux tConf thunk tempDir = do
   let socket = tempDir </> [relfile|tmux_socket|]
   let wait = tempDir </> [relfile|wait|]
-  exe <- fromEither =<< resolveExecutable [relfile|tmux|] Nothing
-  bash <- fromEither =<< resolveExecutable [relfile|bash|] Nothing
-  interpretPty $ resumeHoistError @_ @(Scoped_ _) show $ withPty do
-    pc <- testTmuxProcessConfig bash wait tConf socket
-    interpretSystemProcessNativeOpaqueSingle pc $ runReader (TmuxNative exe (Just socket)) do
-      void $ Race.timeout (throw "tmux didn't start") (Seconds 3) (waitForFile wait)
-      interpretCodecPanes $ interpretCodecTmuxCommand $ interpretTmuxNative $ restop @TmuxError do
-        runAndKillTmux waitForPrompt (insertAt @5 thunk)
+  tmux <- leftA (skipNoExe "tmux") =<< resolveExecutable [relfile|tmux|] Nothing
+  bash <- leftA (skipNoExe "bash") =<< resolveExecutable [relfile|bash|] Nothing
+  withTestTmuxExe tConf tmux bash socket wait thunk
+  where
+    skipNoExe name err = do
+      let msg = [exon|#{name} executable not found, skipping test: #{err}|]
+      Log.warn msg
+      skipTest msg
 
 withTempDir ::
   Members [Resource, Embed IO] r =>
@@ -210,6 +228,7 @@ testTime =
   datetimeToTime (mkDatetime 2030 3 20 12 0 0)
 
 runTmuxTest ::
+  SkipTestDefaultValue a =>
   TmuxTestConfig ->
   Sem TestStack a ->
   TestT IO a
@@ -218,8 +237,8 @@ runTmuxTest conf thunk =
   asyncToIOFinal $
   interpretRace $
   mapError TestError $
-  mapError show $
-  stopToError $
+  mapError @TmuxError show $
+  stopToErrorOr $
   mapError @RenderError @Text show $
   stopToError $
   mapError @CodecError @Text show $
@@ -227,26 +246,36 @@ runTmuxTest conf thunk =
   interpretLogStdoutLevelConc (Just conf.logLevel) $
   interpretTimeChronos do
     withSystemTempDir (withTestTmux conf thunk)
+  where
+    stopToErrorOr sem =
+      runStop @TmuxError sem >>= \case
+        Left NoExe -> skipTest "No tmux executable available"
+        Left e -> throw @Text (show e)
+        Right a -> pure a
 
 tmuxTest ::
+  SkipTestDefaultValue a =>
   Sem TestStack a ->
   TestT IO a
 tmuxTest =
   runTmuxTest def
 
 tmuxTestTrace ::
+  SkipTestDefaultValue a =>
   Sem TestStack a ->
   TestT IO a
 tmuxTestTrace =
   runTmuxTest def { TmuxTestConfig.logLevel = Trace }
 
 tmuxGuiTest ::
+  SkipTestDefaultValue a =>
   Sem TestStack a ->
   TestT IO a
 tmuxGuiTest =
   runTmuxTest def { TmuxTestConfig.gui = True }
 
 tmuxGuiTestTrace ::
+  SkipTestDefaultValue a =>
   Sem TestStack a ->
   TestT IO a
 tmuxGuiTestTrace =
